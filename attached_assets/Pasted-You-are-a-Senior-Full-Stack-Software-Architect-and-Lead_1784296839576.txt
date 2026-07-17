@@ -1,0 +1,388 @@
+You are a Senior Full Stack Software Architect and Lead Software Engineer.
+
+We are building a production-grade ERP system for a Hardware & Building Materials Trading Company located in Kuwait.
+
+IMPORTANT
+
+This is NOT a demo.
+
+This is NOT a college project.
+
+This is commercial software for a real client.
+
+This project will continue over multiple prompts.
+
+You must remember that every future prompt extends this project.
+
+Never regenerate the project from scratch.
+
+Never replace existing files unless absolutely necessary.
+
+Always extend the current project.
+
+====================================================
+OBJECTIVE
+====================================================
+
+Build a clean, scalable, modular ERP that I can reuse for multiple future clients.
+
+Every client will have
+
+• Separate deployment
+• Separate PostgreSQL database
+• Separate hosting
+
+This is NOT a SaaS platform.
+
+====================================================
+TECH STACK
+====================================================
+
+Frontend
+
+React
+TypeScript
+Vite
+Tailwind CSS
+Shadcn/UI
+React Router
+TanStack Query
+React Hook Form
+Zod
+Axios
+
+Backend
+
+Node.js
+Express.js
+TypeScript
+
+Database
+
+PostgreSQL
+
+ORM
+
+Prisma
+
+Authentication
+
+JWT
+bcrypt
+
+Other
+
+Docker Ready
+ESLint
+Prettier
+Environment Variables
+
+====================================================
+ARCHITECTURE
+====================================================
+
+Follow Clean Architecture.
+
+Use
+
+Controllers
+
+Services
+
+Repositories
+
+Middleware
+
+DTOs
+
+Validation
+
+Reusable Components
+
+Reusable Hooks
+
+Shared Types
+
+Centralized Error Handling
+
+Logging
+
+Proper Folder Structure
+
+SOLID Principles
+
+====================================================
+UI DESIGN
+====================================================
+
+Theme
+
+Primary Color
+
+Orange (#F97316)
+
+Background
+
+#F8FAFC
+
+Cards
+
+White
+
+Sidebar
+
+White
+
+Buttons
+
+Orange
+
+Text
+
+#1F2937
+
+Borders
+
+Light Gray
+
+Design Style
+
+Modern ERP
+
+Minimal
+
+Professional
+
+Fast
+
+Clean
+
+Rounded Corners
+
+Soft Shadows
+
+Smooth Animations
+
+Responsive
+
+Desktop First
+
+The UI should feel similar in quality to
+
+Zoho Inventory
+
+Oracle NetSuite
+
+Odoo
+
+but with its own identity.
+
+Do NOT create flashy landing pages.
+
+Build an application interface.
+
+====================================================
+LAYOUT
+====================================================
+
+Top Navigation
+
+Left Sidebar
+
+Breadcrumbs
+
+Page Title
+
+Action Buttons
+
+Filters
+
+Data Tables
+
+Pagination
+
+Professional Dashboard Cards
+
+====================================================
+LOCALIZATION
+====================================================
+
+The ERP is for Kuwait.
+
+Support
+
+English
+
+Arabic
+
+RTL Layout
+
+Kuwaiti Dinar (KWD)
+
+3 Decimal Precision
+
+====================================================
+DATABASE
+====================================================
+
+Create Prisma models ONLY.
+
+Do NOT create CRUD.
+
+Create relationships.
+
+Tables
+
+roles
+
+users
+
+categories
+
+brands
+
+units
+
+products
+
+customers
+
+suppliers
+
+purchases
+
+purchase_items
+
+delivery_orders
+
+delivery_order_items
+
+sales
+
+sale_items
+
+payments
+
+====================================================
+USER ROLES
+====================================================
+
+Owner
+
+Admin
+
+Manager
+
+Sales
+
+Warehouse
+
+====================================================
+CREATE ONLY
+====================================================
+
+Complete folder structure
+
+Frontend setup
+
+Backend setup
+
+Prisma setup
+
+Database configuration
+
+Environment variables
+
+Authentication skeleton
+
+JWT architecture
+
+Role architecture
+
+API folder structure
+
+Express server
+
+React routing
+
+Sidebar
+
+Navbar
+
+Dashboard layout
+
+Theme
+
+Localization structure
+
+Validation structure
+
+Logging structure
+
+Error handling
+
+Docker configuration
+
+README with setup instructions
+
+====================================================
+DO NOT BUILD
+====================================================
+
+Products
+
+Customers
+
+Suppliers
+
+Inventory
+
+Purchases
+
+Invoices
+
+Delivery Orders
+
+Reports
+
+Payments
+
+Forecasting
+
+Do NOT build business modules.
+
+Only create the foundation.
+
+====================================================
+CODE QUALITY
+====================================================
+
+Use production-quality code.
+
+Write comments where useful.
+
+Avoid duplicate code.
+
+Keep components reusable.
+
+Use strict TypeScript.
+
+Optimize for maintainability.
+
+====================================================
+OUTPUT
+====================================================
+
+Generate the complete project.
+
+Generate every required file.
+
+Generate complete code.
+
+Do NOT summarize.
+
+Do NOT skip files.
+
+Do NOT say "continue."
+
+Finish the entire foundation before stopping.

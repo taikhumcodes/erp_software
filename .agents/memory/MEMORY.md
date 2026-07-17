@@ -1,0 +1,2 @@
+- [Prisma v5 pinning](prisma-v5-pinning.md) — Use Prisma v5, not v6/v7; v7 broke datasource URL in schema.prisma
+- [ERP Architecture](erp-architecture.md) — Clean Arch layers, KWD decimal precision, dual-language fields, JWT auth setup

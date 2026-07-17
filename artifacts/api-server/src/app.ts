@@ -1,11 +1,13 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
-import router from "./routes";
-import { logger } from "./lib/logger";
+import router from "./routes/index.js";
+import { logger } from "./lib/logger.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app: Express = express();
 
+// ── HTTP request logging ──────────────────────────────────────────────────────
 app.use(
   pinoHttp({
     logger,
@@ -18,17 +20,29 @@ app.use(
         };
       },
       res(res) {
-        return {
-          statusCode: res.statusCode,
-        };
+        return { statusCode: res.statusCode };
       },
     },
   }),
 );
-app.use(cors());
+
+// ── CORS ─────────────────────────────────────────────────────────────────────
+// In production, set CORS_ORIGIN to the exact frontend domain.
+app.use(
+  cors({
+    origin: process.env["CORS_ORIGIN"] ?? true,
+    credentials: true,
+  }),
+);
+
+// ── Body parsing ─────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/api", router);
+
+// ── Centralized error handler (must be registered last) ──────────────────────
+app.use(errorHandler);
 
 export default app;
