@@ -76,10 +76,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     {
       label: t('inventory'),
       items: [
-        { name: t('products'), path: '/products', icon: Package, disabled: true },
-        { name: t('categories'), path: '/categories', icon: Tags, disabled: true },
-        { name: t('brands'), path: '/brands', icon: Tag, disabled: true },
-        { name: t('units'), path: '/units', icon: Scale, disabled: true }
+        { name: t('products'), path: '/products', icon: Package, disabled: false },
+        { name: t('categories'), path: '/categories', icon: Tags, disabled: false },
+        { name: t('brands'), path: '/brands', icon: Tag, disabled: false },
+        { name: t('units'), path: '/units', icon: Scale, disabled: false }
       ]
     },
     {
@@ -115,10 +115,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   // Derive breadcrumb from path
   const getBreadcrumb = () => {
-    if (location === '/') return t('dashboard');
-    if (location === '/users') return t('users');
-    if (location === '/settings') return t('settings');
-    return '';
+    const map: Record<string, string> = {
+      '/': t('dashboard'),
+      '/users': t('users'),
+      '/settings': t('settings'),
+      '/products': t('products'),
+      '/categories': t('categories'),
+      '/brands': t('brands'),
+      '/units': t('units'),
+    };
+    return map[location] ?? '';
   };
 
   return (

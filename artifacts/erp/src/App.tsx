@@ -15,6 +15,10 @@ import Login from '@/pages/login';
 import Dashboard from '@/pages/dashboard';
 import Users from '@/pages/users';
 import Settings from '@/pages/settings';
+import Categories from '@/pages/categories';
+import Brands from '@/pages/brands';
+import Units from '@/pages/units';
+import Products from '@/pages/products';
 
 // Import Layout
 import AppLayout from '@/components/layout/app-layout';
@@ -56,6 +60,18 @@ function Router() {
       </Route>
       <Route path="/settings">
         <ProtectedRoute component={Settings} />
+      </Route>
+      <Route path="/categories">
+        <ProtectedRoute component={Categories} />
+      </Route>
+      <Route path="/brands">
+        <ProtectedRoute component={Brands} />
+      </Route>
+      <Route path="/units">
+        <ProtectedRoute component={Units} />
+      </Route>
+      <Route path="/products">
+        <ProtectedRoute component={Products} />
       </Route>
       <Route component={NotFound} />
     </Switch>
