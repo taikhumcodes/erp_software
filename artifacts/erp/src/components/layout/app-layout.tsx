@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import { useLogout, useGetCurrentUser, getGetCurrentUserQueryKey } from '@workspace/api-client-react';
@@ -31,6 +31,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const logout = useAuthStore(state => state.logout);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const isRtl = i18n.language === 'ar';
+
+  // Single source of truth for dir/lang — runs after every language change
+  useEffect(() => {
+    const html = document.documentElement;
+    if (i18n.language === 'ar') {
+      html.setAttribute('dir', 'rtl');
+      html.setAttribute('lang', 'ar');
+    } else {
+      html.setAttribute('dir', 'ltr');
+      html.setAttribute('lang', 'en');
+    }
+  }, [i18n.language]);
+
   const { data: user } = useGetCurrentUser({
     query: {
       queryKey: getGetCurrentUserQueryKey()
@@ -48,16 +62,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'ar' : 'en';
-    i18n.changeLanguage(newLang);
     localStorage.setItem('erp_lang', newLang);
-    
-    if (newLang === 'ar') {
-      document.documentElement.dir = 'rtl';
-      document.documentElement.lang = 'ar';
-    } else {
-      document.documentElement.dir = 'ltr';
-      document.documentElement.lang = 'en';
-    }
+    i18n.changeLanguage(newLang);
+    // dir/lang are synced by the useEffect above
   };
 
   const navigation = [
@@ -115,7 +122,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="flex h-[100dvh] bg-background">
+    <div className="flex h-[100dvh] bg-background" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* Mobile sidebar overlay */}
       {isMobileMenuOpen && (
         <div 
@@ -126,8 +133,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Sidebar */}
       <aside 
-        className={`fixed xl:static inset-y-0 start-0 z-50 w-[240px] bg-sidebar border-r rtl:border-r-0 rtl:border-l flex flex-col transition-transform duration-300 ease-in-out ${
-          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'
+        className={`fixed xl:static inset-y-0 start-0 z-50 w-[240px] bg-sidebar border-e flex flex-col transition-transform duration-300 ease-in-out ${
+          isMobileMenuOpen ? 'translate-x-0' : isRtl ? 'translate-x-full xl:translate-x-0' : '-translate-x-full xl:translate-x-0'
         }`}
       >
         <div className="h-[60px] flex items-center px-6 border-b shrink-0">
