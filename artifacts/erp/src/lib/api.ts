@@ -1,10 +1,47 @@
 /**
  * Lightweight fetch wrapper for product-management API calls.
- * Uses the same auth token as the Orval-generated hooks.
+ *
+ * Features:
+ * - Attaches the stored Bearer token to every request.
+ * - On 401: automatically attempts a token refresh and retries the original
+ *   request exactly once.
+ * - On second 401 (or refresh failure): calls triggerLogout() to clear auth
+ *   state and redirect to the login page.
  */
+
+import { attemptTokenRefresh, triggerLogout } from './auth-refresh';
 
 function getToken(): string | null {
   return localStorage.getItem('erp_access_token');
+}
+
+function buildHeaders(token: string | null, hasBody: boolean): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (hasBody) headers['Content-Type'] = 'application/json';
+  return headers;
+}
+
+async function doFetch(
+  method: string,
+  path: string,
+  body: unknown | undefined,
+  token: string | null,
+): Promise<Response> {
+  return fetch(`/api${path}`, {
+    method,
+    headers: buildHeaders(token, body !== undefined),
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+}
+
+async function parseResponse<T>(res: Response): Promise<T> {
+  if (res.status === 204) return undefined as T;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error((data as { message?: string }).message ?? `HTTP ${res.status}`);
+  }
+  return data as T;
 }
 
 async function request<T>(
@@ -12,24 +49,32 @@ async function request<T>(
   path: string,
   body?: unknown,
 ): Promise<T> {
-  const headers: Record<string, string> = {};
-  const token = getToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  // ── First attempt ────────────────────────────────────────────────────────
+  const firstRes = await doFetch(method, path, body, getToken());
 
-  const res = await fetch(`/api${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error((data as { message?: string }).message ?? `HTTP ${res.status}`);
+  if (firstRes.status !== 401) {
+    return parseResponse<T>(firstRes);
   }
 
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+  // ── 401: try to refresh ───────────────────────────────────────────────────
+  const newToken = await attemptTokenRefresh();
+
+  if (!newToken) {
+    // Refresh token is missing or rejected — end the session.
+    triggerLogout();
+    throw new Error('Session expired. Please log in again.');
+  }
+
+  // ── Retry with the fresh access token ────────────────────────────────────
+  const retryRes = await doFetch(method, path, body, newToken);
+
+  if (retryRes.status === 401) {
+    // Still unauthorized after a fresh token — something is wrong.
+    triggerLogout();
+    throw new Error('Session expired. Please log in again.');
+  }
+
+  return parseResponse<T>(retryRes);
 }
 
 export const api = {
