@@ -118,6 +118,13 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const isHydrating = useAuthStore(state => state.isHydrating);
 
+  // All hooks must be called unconditionally — before any early return.
+  useEffect(() => {
+    if (!isHydrating && !isAuthenticated && location !== '/login') {
+      setLocation('/login');
+    }
+  }, [isHydrating, isAuthenticated, location, setLocation]);
+
   // Still validating stored tokens — show a neutral loading screen.
   if (isHydrating) {
     return (
@@ -129,12 +136,6 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
       </div>
     );
   }
-
-  useEffect(() => {
-    if (!isAuthenticated && location !== '/login') {
-      setLocation('/login');
-    }
-  }, [isAuthenticated, location, setLocation]);
 
   if (!isAuthenticated) return null;
 
