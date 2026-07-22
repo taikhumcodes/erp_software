@@ -13,7 +13,8 @@ export class BrandsController {
 
   async getOne(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await brandsService.getOne(req.params.id);
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const result = await brandsService.getOne(id);
       res.json(result);
     } catch (err) {
       next(err);
@@ -31,8 +32,9 @@ export class BrandsController {
 
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
       const result = await brandsService.update(
-        req.params.id,
+        id,
         req.body as Record<string, unknown>,
       );
       res.json(result);
@@ -43,7 +45,8 @@ export class BrandsController {
 
   async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await brandsService.delete(req.params.id);
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      await brandsService.delete(id);
       res.json({ message: 'Brand deleted successfully' });
     } catch (err) {
       next(err);

@@ -13,7 +13,8 @@ export class CategoriesController {
 
   async getOne(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await categoriesService.getOne(req.params.id);
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const result = await categoriesService.getOne(id);
       res.json(result);
     } catch (err) {
       next(err);
@@ -31,8 +32,9 @@ export class CategoriesController {
 
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
       const result = await categoriesService.update(
-        req.params.id,
+        id,
         req.body as Record<string, unknown>,
       );
       res.json(result);
@@ -43,7 +45,8 @@ export class CategoriesController {
 
   async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await categoriesService.delete(req.params.id);
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      await categoriesService.delete(id);
       res.json({ message: 'Category deleted successfully' });
     } catch (err) {
       next(err);

@@ -28,7 +28,9 @@ async function doFetch(
   body: unknown | undefined,
   token: string | null,
 ): Promise<Response> {
-  return fetch(`/api${path}`, {
+  const normalizedPath = path.startsWith('/api') ? path : `/api${path}`;
+
+  return fetch(normalizedPath, {
     method,
     headers: buildHeaders(token, body !== undefined),
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -39,7 +41,18 @@ async function parseResponse<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error((data as { message?: string }).message ?? `HTTP ${res.status}`);
+    const payload = data as {
+      message?: string;
+      errors?: unknown;
+      details?: { errors?: unknown };
+    };
+    const error = new Error(payload.message ?? `HTTP ${res.status}`) as Error & {
+      errors?: unknown;
+      details?: unknown;
+    };
+    error.errors = payload.errors ?? payload.details?.errors;
+    error.details = payload.details;
+    throw error;
   }
   return data as T;
 }
@@ -81,5 +94,7 @@ export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body: unknown) => request<T>('POST', path, body),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
+  patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   del: <T>(path: string) => request<T>('DELETE', path),
+  delete: <T>(path: string) => request<T>('DELETE', path),
 };

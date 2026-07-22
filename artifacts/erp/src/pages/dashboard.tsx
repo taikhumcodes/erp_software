@@ -20,7 +20,7 @@ export default function Dashboard() {
   const kpis = [
     {
       title: t('kpi_purchases'),
-      value: 'KD 45,231.500',
+      value: 'KD 0.000',
       change: '+12.5%',
       trend: 'up',
       icon: ShoppingCart,
@@ -29,7 +29,7 @@ export default function Dashboard() {
     },
     {
       title: t('kpi_sales'),
-      value: 'KD 89,400.000',
+      value: 'KD 0.000',
       change: '+8.2%',
       trend: 'up',
       icon: TrendingUp,
@@ -38,7 +38,7 @@ export default function Dashboard() {
     },
     {
       title: t('kpi_customers'),
-      value: '1,248',
+      value: '0',
       change: '+4.1%',
       trend: 'up',
       icon: Users,
@@ -47,7 +47,7 @@ export default function Dashboard() {
     },
     {
       title: t('kpi_suppliers'),
-      value: '84',
+      value: '0',
       change: '-2.4%',
       trend: 'down',
       icon: Truck,

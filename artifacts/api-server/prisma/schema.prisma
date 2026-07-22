@@ -30,6 +30,12 @@ enum PurchaseStatus {
   CANCELLED
 }
 
+enum PaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+}
+
 enum DeliveryStatus {
   PENDING
   IN_TRANSIT
@@ -225,8 +231,11 @@ model Purchase {
   discount     Decimal        @default(0) @db.Decimal(15, 3)          // KWD
   tax          Decimal        @default(0) @db.Decimal(15, 3)          // KWD
   netAmount    Decimal        @db.Decimal(15, 3) @map("net_amount")   // KWD
-  notes        String?
-  createdAt    DateTime       @default(now()) @map("created_at")
+  notes             String?
+  paidAmount        Decimal        @default(0) @db.Decimal(15, 3) @map("paid_amount") // KWD
+  outstandingAmount Decimal        @default(0) @db.Decimal(15, 3) @map("outstanding_amount") // KWD
+  paymentStatus     PaymentStatus  @default(UNPAID) @map("payment_status")
+  createdAt         DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
 
   items PurchaseItem[]

@@ -1,34 +1,18 @@
 import path from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'vite';
-
+import { defineConfig, loadEnv } from 'vite';
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
-const rawPort = process.env.PORT;
 
-if (!rawPort) {
-  throw new Error(
-    'PORT environment variable is required but was not provided.',
-  );
-}
 
-const port = Number(rawPort);
+export default defineConfig(async ({ mode }) => {
+  const env = loadEnv(mode, path.resolve(import.meta.dirname), '');
 
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+  const port = Number(env.PORT || 5173);
+  const basePath = env.BASE_PATH || '/';
 
-const basePath = process.env.BASE_PATH;
-
-if (!basePath) {
-  throw new Error(
-    'BASE_PATH environment variable is required but was not provided.',
-  );
-}
-
-export default defineConfig({
-  base: basePath,
+  return {  base: basePath,
   plugins: [
     react(),
     tailwindcss(),
@@ -65,17 +49,24 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port,
-    strictPort: true,
-    host: '0.0.0.0',
-    allowedHosts: true,
-    fs: {
-      strict: true,
+  port,
+  strictPort: true,
+  host: '0.0.0.0',
+  allowedHosts: true,
+  fs: {
+    strict: true,
+  },
+  proxy: {
+    '/api': {
+      target: 'http://localhost:8081',
+      changeOrigin: true,
     },
   },
+},
   preview: {
     port,
     host: '0.0.0.0',
     allowedHosts: true,
   },
+  };
 });

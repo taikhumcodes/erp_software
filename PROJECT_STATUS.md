@@ -1,855 +1,910 @@
 # Al-Bunyan ERP — Project Status
 
-> **Date:** July 18, 2026  
-> **Stack:** React 19 + Vite 7 + Express 5 + Prisma v5 + PostgreSQL  
-> **Company:** Hardware & Building Materials Trading Company, Kuwait  
-> **Deployment model:** Multi-client — separate deployment per client, not a SaaS product.
+> **Last updated:** July 21, 2026  
+> **Project:** Al-Bunyan ERP  
+> **Company domain:** Hardware & building materials trading company, Kuwait  
+> **Deployment model:** Multi-client deployment, not SaaS  
+> **Current phase:** Core ERP foundation complete; next phase is purchasing workflow
 
 ---
 
-## 1. Overall Completion
+## IMPORTANT FOR FUTURE AI DEVELOPERS
 
+This document is the current source of truth for future implementation work.
+
+Completed modules are considered production-ready. Do not redesign, rewrite, or refactor completed modules unless the user explicitly requests it.
+
+Always inspect the current codebase before implementing anything. The current project state takes priority over old prompts, old reports, generated zips, or prior assumptions.
+
+Future modules must preserve the existing architecture:
+
+- Backend: Controller → Service → Repository → Prisma
+- Frontend: React page → TanStack Query → `artifacts/erp/src/lib/api.ts`
+- Routing: all API routes registered in `artifacts/api-server/src/routes/index.ts`
+- Translations: all user-facing strings in `artifacts/erp/src/i18n.ts`
+- Types: shared frontend module types in `artifacts/erp/src/lib/types.ts`
+
+Never regenerate completed code. Never modify unrelated modules while implementing a new one.
+
+---
+
+## 1. Project Overview
+
+Al-Bunyan ERP is a bilingual English/Arabic ERP for trading companies dealing in hardware, building materials, and industrial supplies. The system currently includes authentication, authorization, product catalogue, contacts, suppliers, and users management.
+
+### Technology stack
+
+- Frontend: React 19, TypeScript, Vite 7, Tailwind CSS, shadcn/ui, TanStack Query, Wouter, Zustand, i18next
+- Backend: Node.js, Express 5, TypeScript, Prisma v5, PostgreSQL, JWT authentication
+- Workspace: pnpm monorepo
+- Currency/precision: Kuwaiti Dinar, `Decimal(15,3)` for money and quantities
+
+### Current development phase
+
+Core foundation is implemented:
+
+- Authentication and session hydration
+- Role-based authorization
+- Product catalogue foundation
+- Customers and suppliers
+- Users management with security improvements
+
+Next implementation priority is Purchases.
+
+---
+
+## 2. Current Module Status
+
+| Module | Status | Backend | Frontend | Current description |
+|---|---:|---:|---:|---|
+| Authentication | ✅ Complete | ✅ | ✅ | Login, logout, refresh tokens, `/me`, JWT hydration, inactive-user protection |
+| Dashboard | 🟡 In Progress | ⬜ | 🟡 | Placeholder summary page only; real KPIs not implemented |
+| Categories | ✅ Complete | ✅ | ✅ | CRUD, search, pagination, role guards, delete protection |
+| Brands | ✅ Complete | ✅ | ✅ | CRUD, search, pagination, role guards, delete protection |
+| Units | ✅ Complete | ✅ | ✅ | CRUD, search, pagination, role guards, delete protection |
+| Products | ✅ Complete | ✅ | ✅ | CRUD, search/filtering, category/brand/unit relations, KWD price fields, stock fields |
+| Customers | ✅ Complete | ✅ | ✅ | CRUD, search, pagination, duplicate prevention, auto code generation, phone/email validation |
+| Suppliers | ✅ Complete | ✅ | ✅ | CRUD, statistics, search, filters, pagination, balance display, delete protection |
+| Users | ✅ Complete | ✅ | ✅ | Full user management, statistics, role hierarchy, password reset, audit logging, security patch |
+| Purchases | ⬜ Not Started | ⬜ | ⬜ | Schema exists; API and UI not implemented |
+| Sales | ⬜ Not Started | ⬜ | ⬜ | Schema exists; API and UI not implemented |
+| Delivery Orders | ⬜ Not Started | ⬜ | ⬜ | Schema exists; API and UI not implemented |
+| Payments | ⬜ Not Started | ⬜ | ⬜ | Schema exists; API and UI not implemented |
+| Reports | ⬜ Not Started | ⬜ | ⬜ | Not implemented |
+| Settings | 🟡 In Progress | ⬜ | 🟡 | Route/page exists as a placeholder; no settings backend |
+
+---
+
+## 3. Users Module
+
+The Users module is complete and integrated into the ERP.
+
+### Backend
+
+Files:
+
+- `artifacts/api-server/src/modules/users/users.routes.ts`
+- `artifacts/api-server/src/modules/users/users.controller.ts`
+- `artifacts/api-server/src/modules/users/users.service.ts`
+- `artifacts/api-server/src/modules/users/users.repository.ts`
+- `artifacts/api-server/src/lib/audit.ts`
+
+Route registration:
+
+- Mounted at `/api/users` from `artifacts/api-server/src/routes/index.ts`
+
+Implemented backend features:
+
+- List users
+- Get user by ID
+- Create user
+- Update user profile/role/status
+- Activate/deactivate user
+- Reset another user’s password
+- Delete user
+- User statistics
+- Search
+- Pagination
+- Sorting
+- Role filter
+- Active/inactive filter
+- Password strength validation
+- bcrypt password hashing
+- Role hierarchy enforcement
+- OWNER protection
+- Self-protection
+- Audit logging for sensitive user-management events
+
+### Frontend
+
+File:
+
+- `artifacts/erp/src/pages/users.tsx`
+
+Route:
+
+- `/users`
+
+Implemented frontend features:
+
+- Statistics cards
+- Search
+- Role filter
+- Status filter
+- Sorting
+- Pagination
+- Create user dialog
+- Edit user dialog
+- Reset password dialog
+- Activate/deactivate confirmations
+- Delete confirmation
+- Role badges
+- Active/inactive status badges
+- Permission-aware actions
+- English and Arabic translations
+- RTL-compatible layout utilities
+
+### Statistics
+
+The module exposes:
+
+- Total users
+- Active users
+- Inactive users
+- Count by role
+
+Endpoint:
+
+- `GET /api/users/statistics`
+
+### Role hierarchy
+
+Current hierarchy:
+
+```text
+OWNER > ADMIN > MANAGER > SALES > WAREHOUSE
 ```
-Product Catalogue (Foundation)  ████████████████████  100%
-Authentication                  ████████████████████  100%
-Users Module (UI shell only)    ████░░░░░░░░░░░░░░░░   20%
-Dashboard                       ██░░░░░░░░░░░░░░░░░░   10%  (placeholder only)
-Customers                       ░░░░░░░░░░░░░░░░░░░░    0%
-Suppliers                       ░░░░░░░░░░░░░░░░░░░░    0%
-Purchases                       ░░░░░░░░░░░░░░░░░░░░    0%
-Sales                           ░░░░░░░░░░░░░░░░░░░░    0%
-Delivery Orders                 ░░░░░░░░░░░░░░░░░░░░    0%
-Payments                        ░░░░░░░░░░░░░░░░░░░░    0%
-Reports                         ░░░░░░░░░░░░░░░░░░░░    0%
 
-Overall project estimate:  ~20% complete
-```
+Rules:
+
+- Users may generally act only on lower-ranked users.
+- OWNER can create another OWNER.
+- ADMIN can manage MANAGER and below.
+- MANAGER can manage SALES and WAREHOUSE.
+- SALES and WAREHOUSE have read access only for user-management routes.
+
+### Owner protection
+
+- OWNER accounts cannot be deleted.
+- The last active OWNER cannot be deactivated.
+- Only OWNER can create another OWNER.
+- OWNER accounts require OWNER-level authority for sensitive changes.
+
+### Self protection
+
+- A user cannot delete their own account.
+- A user cannot deactivate their own account.
+- A user cannot change their own role.
+- The admin password reset endpoint blocks self-reset.
+- A future self-service password-change flow should require the old password.
+
+### Password reset
+
+- Managers and above may reset passwords for lower-ranked users.
+- Passwords must pass strength validation before hashing.
+- Passwords are hashed with bcrypt.
+- Passwords are never returned in API responses.
+- Password reset is audit-logged without logging password values.
+
+### Audit logging
+
+Audit logging uses structured application logs through `artifacts/api-server/src/lib/audit.ts`.
+
+Covered events:
+
+- `USER_CREATED`
+- `USER_DELETED`
+- `USER_ACTIVATED`
+- `USER_DEACTIVATED`
+- `USER_ROLE_CHANGED`
+- `USER_PASSWORD_RESET`
+
+Audit logs include actor ID, target ID, old/new non-sensitive values where applicable, timestamp, and client IP where available.
+
+Current limitation: audit logs are not persisted to a dedicated database table.
+
+### Security patch integration
+
+The Users module includes the security patch work:
+
+- Authentication middleware performs live database verification on every authenticated request.
+- Deactivated users are blocked immediately on their next request.
+- Role is read from the database in middleware instead of trusting the JWT role claim.
+- Inactive user login returns `403`.
+- Inactive user refresh returns `403`.
+- Invalid credentials and invalid refresh tokens continue to return `401`.
+- Self-reset through the admin password reset endpoint is blocked.
 
 ---
 
-## 2. Completed Modules
+## 4. Authentication and Authorization
 
-| Module | Backend API | Frontend UI | Notes |
-|---|---|---|---|
-| **Authentication** | ✅ | ✅ | Login, logout, JWT refresh, session restore on page refresh |
-| **Categories** | ✅ | ✅ | Full CRUD, search, pagination, soft-delete guard |
-| **Brands** | ✅ | ✅ | Full CRUD, search, pagination, soft-delete guard |
-| **Units** | ✅ | ✅ | Full CRUD, search, pagination, soft-delete guard |
-| **Products** | ✅ | ✅ | Full CRUD, search, filter by category / brand / status, KWD pricing |
+Authentication is complete.
+
+Implemented files:
+
+- `artifacts/api-server/src/modules/auth/auth.routes.ts`
+- `artifacts/api-server/src/modules/auth/auth.controller.ts`
+- `artifacts/api-server/src/modules/auth/auth.service.ts`
+- `artifacts/api-server/src/modules/auth/auth.repository.ts`
+- `artifacts/api-server/src/lib/jwt.ts`
+- `artifacts/api-server/src/middlewares/authenticate.ts`
+- `artifacts/api-server/src/middlewares/authorize.ts`
+
+### JWT
+
+- Access tokens are issued on login and refresh.
+- Refresh tokens are issued on login and refresh.
+- Frontend stores tokens in localStorage:
+  - `erp_access_token`
+  - `erp_refresh_token`
+
+### Refresh tokens
+
+- `/api/auth/refresh` accepts a refresh token and returns a fresh token pair.
+- Frontend `auth-refresh.ts` deduplicates in-flight refresh attempts.
+- `api.ts` retries once after a `401` by attempting token refresh.
+
+### Password hashing
+
+- Passwords are stored as `passwordHash`.
+- bcrypt is used for password comparison and hashing.
+- Plain text passwords are never returned from the API.
+
+### Session hydration
+
+Frontend `AuthHydrator` in `artifacts/erp/src/App.tsx` validates stored tokens on page refresh:
+
+1. Try `/api/auth/me` with the stored access token.
+2. If access token is expired, attempt refresh.
+3. If refresh succeeds, retry `/me`.
+4. If validation fails, clear auth state and redirect to login.
+
+### Authorization
+
+Role guards are centralized in:
+
+- `artifacts/api-server/src/middlewares/authorize.ts`
+
+Patterns used:
+
+- Reads: usually `hasMinRole('WAREHOUSE')`
+- Writes: usually `OWNER`, `ADMIN`, or `MANAGER`
+- Deletes: usually `OWNER` or `ADMIN`
+- Users and Suppliers use `hasMinRole(...)` route guards plus service-level business rules.
+
+### Inactive user protection
+
+The authentication middleware now performs a live user lookup by `id` on every authenticated request:
+
+- If the user no longer exists, request is rejected.
+- If the user is inactive, request is rejected with `403`.
+- The active role is loaded from the database, so role changes take effect immediately.
 
 ---
 
-## 3. Pending Modules
+## 5. Database
 
-| Module | Priority | Depends On | Notes |
-|---|---|---|---|
-| **Users Management** | High | Auth | UI page is a placeholder; API not built |
-| **Customers** | High | — | Schema exists; no API or UI |
-| **Suppliers** | High | — | Schema exists; no API or UI |
-| **Purchases** | High | Suppliers, Products | Schema exists; no API or UI |
-| **Sales / Invoices** | High | Customers, Products | Schema exists; no API or UI |
-| **Delivery Orders** | Medium | Sales | Schema exists; no API or UI |
-| **Payments** | Medium | Sales, Customers, Suppliers | Schema exists; no API or UI |
-| **Dashboard** | Medium | All modules | Currently shows placeholder cards |
-| **Settings** | Low | — | UI page is a placeholder; no backend |
-| **Reports** | Low | All transaction modules | Not started |
+Current Prisma schema:
 
-> **Important:** The database schema for ALL pending modules is already designed and fully
-> migrated. Only the API routes and frontend pages need to be built.
-
----
-
-## 4. Database Schema
-
-Migration file: `artifacts/api-server/prisma/migrations/20260717191426_init/`
+- File: `artifacts/api-server/prisma/schema.prisma`
+- Migration: `artifacts/api-server/prisma/migrations/20260717191426_init/`
+- Provider: PostgreSQL
+- Prisma: v5
 
 ### Enumerations
 
-```sql
-UserRole:       OWNER | ADMIN | MANAGER | SALES | WAREHOUSE
+```text
+UserRole: OWNER | ADMIN | MANAGER | SALES | WAREHOUSE
 PurchaseStatus: DRAFT | CONFIRMED | RECEIVED | CANCELLED
-SaleStatus:     DRAFT | CONFIRMED | INVOICED | CANCELLED
+SaleStatus: DRAFT | CONFIRMED | INVOICED | CANCELLED
 DeliveryStatus: PENDING | IN_TRANSIT | DELIVERED | CANCELLED
-PaymentType:    RECEIPT | PAYMENT
-PaymentMethod:  CASH | BANK_TRANSFER | CHEQUE | CREDIT_CARD
+PaymentType: RECEIPT | PAYMENT
+PaymentMethod: CASH | BANK_TRANSFER | CHEQUE | CREDIT_CARD
 ```
 
-### Tables
+### Current tables/models
 
-```
-roles              — id, name (UserRole), description
-users              — id, email, password_hash, name, name_ar, role_id → roles,
-                     is_active, last_login_at
-categories         — id, name, name_ar, description, is_active
-brands             — id, name, name_ar, logo_url, is_active
-units              — id, name, name_ar, abbreviation, is_active
-products           — id, sku, name, name_ar, description,
-                     category_id → categories, brand_id → brands, unit_id → units,
-                     cost_price DECIMAL(15,3),    ← KWD
-                     selling_price DECIMAL(15,3), ← KWD
-                     stock_quantity DECIMAL(15,3),
-                     reorder_level DECIMAL(15,3), is_active
-customers          — id, code, name, name_ar, phone, email, address,
-                     credit_limit DECIMAL(15,3), balance DECIMAL(15,3), is_active
-suppliers          — id, code, name, name_ar, phone, email, address,
-                     balance DECIMAL(15,3), is_active
-purchases          — id, number (PO-YYYY-NNNN), supplier_id, user_id,
-                     status PurchaseStatus, purchase_date,
-                     total_amount, discount, tax, net_amount (all KWD), notes
-purchase_items     — id, purchase_id → purchases (CASCADE), product_id,
-                     quantity, unit_price, total (all KWD)
-sales              — id, number (INV-YYYY-NNNN), customer_id, user_id,
-                     status SaleStatus, sale_date,
-                     total_amount, discount, tax, net_amount (all KWD), notes
-sale_items         — id, sale_id → sales (CASCADE), product_id,
-                     quantity, unit_price, total (all KWD)
-delivery_orders    — id, number (DO-YYYY-NNNN), sale_id → sales (nullable),
-                     status DeliveryStatus, delivery_date, address, notes
-delivery_order_items — id, delivery_order_id → delivery_orders (CASCADE),
-                       product_id, quantity
-payments           — id, number (PAY-YYYY-NNNN), type PaymentType,
-                     method PaymentMethod, customer_id (nullable), supplier_id (nullable),
-                     sale_id (nullable), user_id, amount KWD,
-                     payment_date, reference, notes
+- `roles`
+- `users`
+- `categories`
+- `brands`
+- `units`
+- `products`
+- `customers`
+- `suppliers`
+- `purchases`
+- `purchase_items`
+- `sales`
+- `sale_items`
+- `delivery_orders`
+- `delivery_order_items`
+- `payments`
+
+### User schema facts
+
+Do not invent direct user fields that do not exist.
+
+Current user model uses:
+
+- `email`
+- `passwordHash` mapped to `password_hash`
+- `name`
+- `nameAr` mapped to `name_ar`
+- `roleId` mapped to `role_id`
+- `role` relation to `Role`
+- `isActive` mapped to `is_active`
+- `lastLoginAt` mapped to `last_login_at`
+- `createdAt`
+- `updatedAt`
+
+Important: users do not have a direct scalar `role` column and do not have a `password` column. Code must use the `Role` relation and `passwordHash`.
+
+### Decimal precision
+
+All monetary and quantity values use:
+
+```text
+Decimal(15,3)
 ```
 
-**Decimal precision rule:** All monetary and quantity values are `Decimal(15,3)` throughout.
-The API serialises them via `.toFixed(3)` — the frontend receives them as strings (never floats).
+The API serializes decimal values as strings using 3 decimal places where implemented.
 
 ---
 
-## 5. Implemented API Endpoints
+## 6. Project Architecture
 
-All routes are mounted under `/api`. The server listens on port **8080**.
+### Backend architecture
+
+The backend follows this pattern:
+
+```text
+Controller → Service → Repository → Prisma → PostgreSQL
+```
+
+Rules:
+
+- Controllers handle HTTP input/output only.
+- Controllers call services.
+- Services contain validation and business logic.
+- Services call repositories.
+- Repositories contain Prisma database calls.
+- Controllers must not call Prisma directly.
+- Services must not depend on Express request/response objects.
+
+### Backend module structure
+
+Each implemented module follows this shape:
+
+```text
+artifacts/api-server/src/modules/<module>/
+  <module>.routes.ts
+  <module>.controller.ts
+  <module>.service.ts
+  <module>.repository.ts
+```
+
+### Frontend architecture
+
+Frontend uses:
+
+- Wouter for routing
+- Zustand for auth state
+- TanStack Query for server state
+- `artifacts/erp/src/lib/api.ts` for manual API calls
+- `@workspace/api-client-react` generated hooks only for auth endpoints
+- shadcn/ui components
+- i18next for English/Arabic translations
+
+### Translation system
+
+Translations live in:
+
+- `artifacts/erp/src/i18n.ts`
+
+Rules:
+
+- Add every user-facing string in both English and Arabic.
+- Preserve RTL support.
+- Do not hardcode labels inside new pages unless there is a technical reason.
+
+### Folder structure
+
+Important paths:
+
+```text
+artifacts/api-server/                 Express API
+artifacts/api-server/prisma/          Prisma schema, migrations, seed
+artifacts/api-server/src/routes/      Central route registry and health route
+artifacts/api-server/src/modules/     Backend feature modules
+artifacts/api-server/src/middlewares/ Auth, authorization, error handling
+artifacts/api-server/src/lib/         JWT, Prisma, logging, audit utilities
+
+artifacts/erp/                        React frontend
+artifacts/erp/src/pages/              Frontend pages
+artifacts/erp/src/components/         Layout and UI components
+artifacts/erp/src/lib/                API helper, auth store, shared types
+artifacts/erp/src/hooks/              React hooks
+
+lib/api-client-react/                 Generated auth hooks
+lib/api-spec/                         OpenAPI spec
+lib/api-zod/                          Generated Zod schemas
+```
+
+---
+
+## 7. Implemented API Modules
+
+All application routes are mounted under `/api`.
 
 ### Health
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/healthz` | Public | Returns `{ status: "ok" }` |
+| GET | `/api/healthz` | Public | Health check |
 
 ### Authentication — `/api/auth`
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/login` | Public | Returns `{ user, tokens: { accessToken, refreshToken } }` |
-| `POST` | `/api/auth/refresh` | Public | Body: `{ refreshToken }` → returns new token pair |
-| `GET` | `/api/auth/me` | Bearer | Returns current user profile |
-| `POST` | `/api/auth/logout` | Bearer | Invalidates server-side session |
+| POST | `/api/auth/login` | Public | Login with email/password |
+| POST | `/api/auth/logout` | Bearer | Logout endpoint |
+| POST | `/api/auth/refresh` | Public | Refresh token pair |
+| GET | `/api/auth/me` | Bearer | Current user profile |
 
 ### Categories — `/api/categories`
 
-| Method | Path | Min Role | Description |
+| Method | Path | Min role | Description |
 |---|---|---|---|
-| `GET` | `/api/categories` | WAREHOUSE | List all; supports `?search=`, `?page=`, `?limit=`, `?isActive=` |
-| `GET` | `/api/categories/:id` | WAREHOUSE | Single category |
-| `POST` | `/api/categories` | MANAGER | Create |
-| `PUT` | `/api/categories/:id` | MANAGER | Update |
-| `DELETE` | `/api/categories/:id` | ADMIN | Delete — blocked if products exist |
+| GET | `/api/categories` | WAREHOUSE | List with search/pagination/status filter |
+| GET | `/api/categories/:id` | WAREHOUSE | Get one |
+| POST | `/api/categories` | MANAGER | Create |
+| PUT | `/api/categories/:id` | MANAGER | Update |
+| DELETE | `/api/categories/:id` | ADMIN | Delete; blocked when products exist |
 
 ### Brands — `/api/brands`
 
-| Method | Path | Min Role | Description |
+| Method | Path | Min role | Description |
 |---|---|---|---|
-| `GET` | `/api/brands` | WAREHOUSE | List all; supports `?search=`, `?page=`, `?limit=`, `?isActive=` |
-| `GET` | `/api/brands/:id` | WAREHOUSE | Single brand |
-| `POST` | `/api/brands` | MANAGER | Create |
-| `PUT` | `/api/brands/:id` | MANAGER | Update |
-| `DELETE` | `/api/brands/:id` | ADMIN | Delete — blocked if products exist |
+| GET | `/api/brands` | WAREHOUSE | List with search/pagination/status filter |
+| GET | `/api/brands/:id` | WAREHOUSE | Get one |
+| POST | `/api/brands` | MANAGER | Create |
+| PUT | `/api/brands/:id` | MANAGER | Update |
+| DELETE | `/api/brands/:id` | ADMIN | Delete; blocked when products exist |
 
 ### Units — `/api/units`
 
-| Method | Path | Min Role | Description |
+| Method | Path | Min role | Description |
 |---|---|---|---|
-| `GET` | `/api/units` | WAREHOUSE | List all; supports `?search=`, `?page=`, `?limit=`, `?isActive=` |
-| `GET` | `/api/units/:id` | WAREHOUSE | Single unit |
-| `POST` | `/api/units` | MANAGER | Create |
-| `PUT` | `/api/units/:id` | MANAGER | Update |
-| `DELETE` | `/api/units/:id` | ADMIN | Delete — blocked if products exist |
+| GET | `/api/units` | WAREHOUSE | List with search/pagination/status filter |
+| GET | `/api/units/:id` | WAREHOUSE | Get one |
+| POST | `/api/units` | MANAGER | Create |
+| PUT | `/api/units/:id` | MANAGER | Update |
+| DELETE | `/api/units/:id` | ADMIN | Delete; blocked when products exist |
 
 ### Products — `/api/products`
 
-| Method | Path | Min Role | Description |
+| Method | Path | Min role | Description |
 |---|---|---|---|
-| `GET` | `/api/products` | WAREHOUSE | List all; supports `?search=`, `?page=`, `?limit=`, `?categoryId=`, `?brandId=`, `?isActive=` |
-| `GET` | `/api/products/:id` | WAREHOUSE | Single product with nested category, brand, unit |
-| `POST` | `/api/products` | MANAGER | Create |
-| `PUT` | `/api/products/:id` | MANAGER | Update |
-| `DELETE` | `/api/products/:id` | ADMIN | Delete — blocked if referenced in purchase/sale items |
+| GET | `/api/products` | WAREHOUSE | List with search, pagination, category/brand/status filters |
+| GET | `/api/products/:id` | WAREHOUSE | Get one with category, brand, unit |
+| POST | `/api/products` | MANAGER | Create |
+| PUT | `/api/products/:id` | MANAGER | Update |
+| DELETE | `/api/products/:id` | ADMIN | Delete; blocked when referenced by purchase/sale items |
+
+### Customers — `/api/customers`
+
+| Method | Path | Min role | Description |
+|---|---|---|---|
+| GET | `/api/customers` | WAREHOUSE | List with search/pagination |
+| GET | `/api/customers/:id` | WAREHOUSE | Get one |
+| POST | `/api/customers` | MANAGER | Create with validation and duplicate prevention |
+| PUT | `/api/customers/:id` | MANAGER | Update with duplicate-safe validation |
+| DELETE | `/api/customers/:id` | ADMIN | Delete; blocked when linked to sales |
+
+### Suppliers — `/api/suppliers`
+
+| Method | Path | Min role | Description |
+|---|---|---|---|
+| GET | `/api/suppliers/statistics` | WAREHOUSE | Supplier statistics |
+| GET | `/api/suppliers` | WAREHOUSE | List with search, status filter, pagination |
+| GET | `/api/suppliers/:id` | WAREHOUSE | Get one |
+| POST | `/api/suppliers` | MANAGER | Create |
+| PUT | `/api/suppliers/:id` | MANAGER | Update |
+| DELETE | `/api/suppliers/:id` | ADMIN | Delete; blocked when linked records exist |
+
+### Users — `/api/users`
+
+| Method | Path | Min role | Description |
+|---|---|---|---|
+| GET | `/api/users/statistics` | MANAGER | User statistics |
+| GET | `/api/users` | WAREHOUSE | List with search, role/status filters, sorting, pagination |
+| GET | `/api/users/:id` | WAREHOUSE | Get one |
+| POST | `/api/users` | MANAGER | Create user; service enforces hierarchy |
+| PUT | `/api/users/:id` | MANAGER | Update profile, role, status |
+| PATCH | `/api/users/:id/status` | MANAGER | Activate/deactivate user |
+| PATCH | `/api/users/:id/password` | MANAGER | Reset another user’s password |
+| DELETE | `/api/users/:id` | ADMIN | Delete user; service enforces owner/self protection |
 
 ### Standard response envelope
 
-```jsonc
-// List
-{ "data": [...], "meta": { "total": 42, "page": 1, "limit": 20, "pages": 3 } }
+List responses:
 
-// Single
-{ "data": { ... } }
-
-// Error
-{ "message": "Human readable error", "errors": [...] }  // 400 includes field errors
+```json
+{ "data": [], "meta": { "total": 0, "page": 1, "limit": 20, "pages": 0 } }
 ```
+
+Single/create/update responses:
+
+```json
+{ "data": {} }
+```
+
+Errors:
+
+```json
+{ "message": "Human readable error", "code": "ERROR_CODE", "details": {} }
+```
+
+Validation errors may include field-level errors under `details.errors`.
 
 ---
 
-## 6. Folder Structure
+## 8. Frontend Pages
 
-```
-/                                       ← Monorepo root (pnpm workspace)
-├── artifact.toml                       ← Replit artifact registry
-├── pnpm-workspace.yaml
-├── package.json
-├── README.md                           ← Local development guide
-├── PROJECT_STATUS.md                   ← This file
-│
-├── artifacts/
-│   ├── api-server/                     ← Express REST API
-│   │   ├── prisma/
-│   │   │   ├── schema.prisma           ← Full 15-table schema
-│   │   │   ├── seed.ts                 ← Idempotent seed (roles + owner user)
-│   │   │   └── migrations/
-│   │   │       └── 20260717191426_init/
-│   │   ├── src/
-│   │   │   ├── app.ts                  ← Express app setup (CORS, logging, routes)
-│   │   │   ├── index.ts                ← Server entry point
-│   │   │   ├── errors/
-│   │   │   │   └── AppError.ts         ← AppError, UnauthorizedError, ForbiddenError,
-│   │   │   │                               NotFoundError, ValidationError, ConflictError
-│   │   │   ├── types/
-│   │   │   │   └── index.ts            ← UserRole, JwtPayload, AuthUser; augments req.user
-│   │   │   ├── lib/
-│   │   │   │   ├── jwt.ts              ← signAccessToken, signRefreshToken, verifyToken
-│   │   │   │   ├── logger.ts           ← Pino logger instance
-│   │   │   │   └── prisma.ts           ← Singleton PrismaClient
-│   │   │   ├── middlewares/
-│   │   │   │   ├── authenticate.ts     ← Bearer JWT → req.user (throws 401 on failure)
-│   │   │   │   ├── authorize.ts        ← hasRole(...roles) | hasMinRole(minRole)
-│   │   │   │   └── errorHandler.ts     ← Centralized error handler (must be last app.use)
-│   │   │   ├── modules/
-│   │   │   │   ├── auth/               ← login | logout | refresh | me
-│   │   │   │   │   ├── auth.controller.ts
-│   │   │   │   │   ├── auth.service.ts
-│   │   │   │   │   ├── auth.repository.ts
-│   │   │   │   │   └── auth.routes.ts
-│   │   │   │   ├── categories/         ← Full CRUD — same 4-file pattern
-│   │   │   │   ├── brands/             ← Full CRUD — same 4-file pattern
-│   │   │   │   ├── units/              ← Full CRUD — same 4-file pattern
-│   │   │   │   └── products/           ← Full CRUD — same 4-file pattern
-│   │   │   └── routes/
-│   │   │       ├── index.ts            ← Mounts all routers under /api
-│   │   │       └── health.ts           ← GET /api/healthz
-│   │   ├── .env.example
-│   │   ├── build.mjs                   ← esbuild script
-│   │   └── package.json
-│   │
-│   └── erp/                            ← React + Vite frontend
-│       ├── src/
-│       │   ├── main.tsx                ← React root
-│       │   ├── App.tsx                 ← Router, AuthHydrator, ProtectedRoute, QueryClient
-│       │   ├── i18n.ts                 ← i18next setup — EN + AR translation keys
-│       │   ├── index.css               ← Tailwind v4 theme + .form-input / .btn-primary etc.
-│       │   ├── lib/
-│       │   │   ├── api.ts              ← fetch wrapper (auto-refresh on 401, retry once)
-│       │   │   ├── auth-refresh.ts     ← Singleton refresh with in-flight deduplication
-│       │   │   ├── store.ts            ← Zustand auth store (isAuthenticated, isHydrating)
-│       │   │   ├── types.ts            ← TS interfaces: Category, Brand, Unit, Product,
-│       │   │   │                           PaginatedResponse
-│       │   │   └── utils.ts            ← shadcn/ui cn() helper
-│       │   ├── components/
-│       │   │   ├── layout/
-│       │   │   │   └── app-layout.tsx  ← Sidebar, breadcrumbs, RTL toggle
-│       │   │   └── ui/                 ← Full shadcn/ui component library + custom:
-│       │   │       ├── confirm-dialog.tsx  ← Reusable destructive-action confirm dialog
-│       │   │       └── ...             ← All other shadcn/ui components
-│       │   ├── hooks/
-│       │   │   ├── use-mobile.tsx
-│       │   │   └── use-toast.ts
-│       │   └── pages/
-│       │       ├── login.tsx           ← Login form
-│       │       ├── dashboard.tsx       ← Placeholder summary cards
-│       │       ├── categories.tsx      ← Full CRUD page
-│       │       ├── brands.tsx          ← Full CRUD page
-│       │       ├── units.tsx           ← Full CRUD page
-│       │       ├── products.tsx        ← Full CRUD page
-│       │       ├── users.tsx           ← Placeholder (not implemented)
-│       │       ├── settings.tsx        ← Placeholder (not implemented)
-│       │       └── not-found.tsx       ← 404 page
-│       ├── .env.example
-│       └── package.json
-│
-└── lib/                                ← Shared workspace packages
-    ├── api-client-react/               ← Orval-generated React Query hooks (auth only)
-    ├── api-spec/                       ← OpenAPI spec
-    └── api-zod/                        ← Shared Zod schemas
-```
+### Completed pages
+
+- `/login` — login form
+- `/` — dashboard placeholder
+- `/categories` — complete category management
+- `/brands` — complete brand management
+- `/units` — complete unit management
+- `/products` — complete product management
+- `/customers` — complete customer management
+- `/suppliers` — complete supplier management
+- `/users` — complete user management
+
+### Placeholder / incomplete pages
+
+- `/settings` — placeholder only
+
+### Not implemented pages
+
+These modules do not currently have active routes/pages:
+
+- Purchases
+- Sales
+- Delivery Orders
+- Payments
+- Reports
+
+Sidebar links for not-started transaction/finance/report modules remain disabled.
 
 ---
 
-## 7. Authentication Flow
+## 9. Business Rules Implemented
 
-### Login
+### Global rules
 
-```
-User submits credentials
-  → POST /api/auth/login
-  → Server validates email/password, checks isActive flag
-  → Returns { user, tokens: { accessToken (15 min), refreshToken (7 days) } }
-  → Frontend stores both tokens in localStorage under keys:
-      erp_access_token
-      erp_refresh_token
-  → Zustand store: isAuthenticated = true, isHydrating = false
-  → Navigate to /
-```
+- Completed modules use role-based access control.
+- Read endpoints generally require at least WAREHOUSE.
+- Create/update endpoints generally require MANAGER or above.
+- Delete endpoints generally require ADMIN or above.
+- Delete operations are blocked when dependent records exist.
+- User-facing named entities support English and Arabic fields where applicable.
+- Monetary and quantity values use KWD 3-decimal precision.
 
-### Page refresh / startup hydration
+### Product catalogue
 
-```
-App mounts → AuthHydrator runs
-  → Tokens in localStorage? → isHydrating = true → show loading spinner
-  → GET /api/auth/me with stored access token
-  → 200 OK → tokens valid → login() → isAuthenticated = true → render app
-  → 401 → call attemptTokenRefresh()
-      → POST /api/auth/refresh with stored refresh token
-      → Success → new token pair stored → retry GET /api/auth/me → login()
-      → Failure → triggerLogout() → clear localStorage → navigate to /login
-```
+- Categories, brands, and units cannot be deleted when linked to products.
+- Products cannot be deleted when referenced by purchase or sale items.
+- Product prices and stock quantities use 3-decimal decimal precision.
 
-### Automatic token refresh during use
+### Customers
 
-```
-api.ts fetch wrapper:
-  → Attach Bearer token to every request
-  → 401 response received
-      → attemptTokenRefresh() (singleton — deduplicates concurrent calls)
-      → Retry original request once with fresh token
-      → Second 401 → triggerLogout() → /login
-```
+- Customer code is unique.
+- Customer code can be generated automatically.
+- Duplicate phone/email records are prevented.
+- Customer delete is blocked when linked sales exist.
 
-### Logout
+### Suppliers
 
-```
-User clicks logout
-  → POST /api/auth/logout (invalidates server session)
-  → localStorage cleared
-  → Zustand store reset: isAuthenticated = false
-  → Navigate to /login
-```
+- Supplier code is unique.
+- Supplier code can be generated automatically.
+- Duplicate phone/email records are prevented.
+- Supplier delete is blocked when linked purchase/payment records exist.
+- Supplier balance is serialized as a 3-decimal string.
 
-### Key implementation files
+### Users
 
-| File | Purpose |
-|---|---|
-| `artifacts/erp/src/lib/store.ts` | Zustand auth state — `isAuthenticated`, `isHydrating` |
-| `artifacts/erp/src/lib/auth-refresh.ts` | Singleton refresh with in-flight deduplication |
-| `artifacts/erp/src/lib/api.ts` | fetch wrapper with automatic retry on 401 |
-| `artifacts/erp/src/App.tsx` | `AuthHydrator` + `ProtectedRoute` components |
-| `artifacts/api-server/src/lib/jwt.ts` | Token signing and verification |
-| `artifacts/api-server/src/middlewares/authenticate.ts` | Bearer → `req.user` |
+- Role hierarchy is enforced in the service layer.
+- OWNER accounts cannot be deleted.
+- The last active OWNER cannot be deactivated.
+- Users cannot delete themselves.
+- Users cannot deactivate themselves.
+- Users cannot change their own role.
+- Admin password reset cannot be used for self-reset.
+- Passwords must be strong before hashing:
+  - at least 8 characters
+  - uppercase letter
+  - lowercase letter
+  - number
+  - special character
+- Passwords are hashed with bcrypt.
+- Passwords are not returned in API responses.
+- Sensitive user-management actions are audit-logged.
 
----
+### Authentication
 
-## 8. User Roles and Permissions
-
-### Hierarchy (lowest → highest)
-
-```
-WAREHOUSE < SALES < MANAGER < ADMIN < OWNER
-```
-
-### Permission matrix
-
-| Action | WAREHOUSE | SALES | MANAGER | ADMIN | OWNER |
-|---|:---:|:---:|:---:|:---:|:---:|
-| Read catalogue (categories, brands, units, products) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Create / edit catalogue | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Delete catalogue records | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Create / edit sales orders | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Manage inventory / delivery | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Approve transactions / reports | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Manage users & settings | ❌ | ❌ | ❌ | ✅ | ✅ |
-
-### Middleware helpers (backend)
-
-```typescript
-// Exact role match (whitelist)
-hasRole('OWNER', 'ADMIN', 'MANAGER')   // any of these specific roles
-
-// Hierarchical — the role or anything above it
-hasMinRole('WAREHOUSE')                // everyone
-hasMinRole('MANAGER')                  // MANAGER, ADMIN, OWNER
-```
-
-Both helpers are Express middleware factory functions in
-`artifacts/api-server/src/middlewares/authorize.ts`.
-
-### Delete guards
-
-Catalogue records cannot be deleted while they are referenced by products or transactions.
-The service layer checks for related records and throws a `ConflictError` (409) if any exist.
+- Incorrect credentials return `401`.
+- Correct credentials for inactive users return `403`.
+- Refresh token for inactive users returns `403`.
+- Authenticated requests verify live database user status.
+- Role changes take effect immediately because middleware reads role from the database.
 
 ---
 
-## 9. Frontend Routes
+## 10. Known Limitations
 
-Managed by **Wouter**. All routes except `/login` are wrapped in `ProtectedRoute`.
+Only current, confirmed limitations are listed here.
 
-| Path | Component | Status |
-|---|---|---|
-| `/login` | `Login` | ✅ Fully implemented |
-| `/` | `Dashboard` | ⚠️ Placeholder cards |
-| `/categories` | `Categories` | ✅ Fully implemented |
-| `/brands` | `Brands` | ✅ Fully implemented |
-| `/units` | `Units` | ✅ Fully implemented |
-| `/products` | `Products` | ✅ Fully implemented |
-| `/users` | `Users` | ⚠️ Placeholder — no real content |
-| `/settings` | `Settings` | ⚠️ Placeholder — no real content |
-| `*` | `NotFound` | ✅ 404 page |
-
-The router base is `import.meta.env.BASE_URL` (set at build time via `BASE_PATH` env var).
-On Replit the base is `/`; for reverse-proxy sub-path deployments set `BASE_PATH=/erp/` etc.
-
----
-
-## 10. Known Bugs
-
-### Minor
-
-1. **`products.tsx` form submission sends raw string values.**  
-   The form's `onSubmit` handler passes the raw `FormData`-style object (where number fields
-   are still strings) to the `POST /api/products` body. The backend service coerces these
-   strings to `Decimal` before writing to the database, so the behaviour is correct — but it
-   is a code smell. The fix is to parse `costPrice`, `sellingPrice`, `stockQuantity`, and
-   `reorderLevel` to `Number` in the submit handler before calling `api.post()`.
-
-2. **Dashboard stat cards are hardcoded.**  
-   The four summary cards on the dashboard show static dummy numbers. They have no real API
-   calls behind them.
-
-3. **Users page is a placeholder.**  
-   Navigating to `/users` renders a "Coming Soon" shell. No user listing, creation, or role
-   management is implemented.
-
-4. **Settings page is a placeholder.**  
-   Navigating to `/settings` renders a "Coming Soon" shell.
-
-### Environment-specific (Replit only)
-
-5. **JWT secrets not set.**  
-   `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` are not configured as Replit secrets.
-   The server currently falls back to weak hardcoded default strings defined in
-   `artifacts/api-server/src/lib/jwt.ts`. These **must** be set before any real use.
-
-6. **Database not migrated in the Replit environment.**  
-   The migration file exists but `prisma migrate deploy` and `pnpm run seed` have not been
-   run in the hosted Replit instance. The API server will crash on any database request until
-   this is done.
+- Dashboard is still a placeholder; real KPIs are not implemented.
+- Purchases API and UI are not implemented.
+- Sales API and UI are not implemented.
+- Delivery Orders API and UI are not implemented.
+- Payments API and UI are not implemented.
+- Reports are not implemented.
+- Settings page is a placeholder; no settings backend exists.
+- Audit logs are emitted to structured logs but are not persisted in an audit table.
+- Self-service “change my password” flow is not implemented.
+- Token-version invalidation is not implemented.
+- Login/refresh rate limiting is not implemented.
+- Refresh token rotation/storage is not implemented.
+- Generated OpenAPI client is currently used for auth only; implemented business modules use manual API calls.
 
 ---
 
-## 11. Technical Debt
+## 11. Next Implementation Priority
 
-| Item | Severity | Notes |
-|---|---|---|
-| No input validation on API bodies | High | The backend reads request bodies directly without Zod or class-validator. Add validation middleware to each module's `POST` / `PUT` routes. |
-| No rate limiting | High | The `/api/auth/login` and `/api/auth/refresh` endpoints have no brute-force protection. Add `express-rate-limit`. |
-| No refresh token rotation blacklist | Medium | After a token is used for refresh, the old refresh token remains valid until it expires (7 days). A Redis or DB-backed denylist should be added for production. |
-| Orval codegen only covers auth | Medium | `lib/api-client-react/` has generated hooks for auth endpoints only. New modules use the manual `api.ts` wrapper. Either extend the OpenAPI spec to cover all modules and regenerate, or remove Orval and standardise on the manual wrapper. |
-| Stock quantity not updated on purchase/sale | Medium | The `products.stockQuantity` field exists but nothing increments or decrements it when a Purchase is received or a Sale is confirmed. This logic must be added to the purchase and sale services. |
-| `products.tsx` sends string prices | Low | See Known Bugs §1. A one-line fix in the submit handler. |
-| No pagination on sidebar nav | Low | The sidebar has all future modules listed as disabled items. When a new module is activated it must be enabled in `app-layout.tsx`. |
-| No error boundary | Low | A React `ErrorBoundary` around the router would prevent the entire app from crashing on an unhandled render error. |
-| Pino logger writes to stdout only | Low | In production, consider adding a pino transport for a log aggregation service. |
+Recommended roadmap from the current project state:
+
+1. Purchases
+   - Purchase orders
+   - Draft → confirmed → received workflow
+   - Supplier linkage
+   - Product line items
+   - On RECEIVED: increment product stock in a Prisma transaction
+
+2. Sales
+   - Sales invoices/orders
+   - Draft → confirmed → invoiced workflow
+   - Customer linkage
+   - Product line items
+   - Stock validation
+   - On CONFIRMED: decrement product stock in a Prisma transaction
+   - Credit limit enforcement
+
+3. Delivery Orders
+   - Link to sales where applicable
+   - PENDING → IN_TRANSIT → DELIVERED workflow
+
+4. Payments
+   - Receipts from customers
+   - Payments to suppliers
+   - Customer/supplier balance updates
+
+5. Reports
+   - Sales by period
+   - Inventory valuation
+   - Supplier payables
+   - Customer receivables
+   - Product profitability
+
+6. Settings
+   - Company profile
+   - Logo
+   - VAT/tax registration
+   - Numbering sequence configuration
+
+7. Dashboard
+   - Replace placeholder cards with real operational KPIs
 
 ---
 
-## 12. Environment Variables
+## 12. AI Implementation Guidelines
 
-### API Server (`artifacts/api-server/.env`)
+Future AI agents must follow these rules:
 
-| Variable | Required | Default / Example | Notes |
-|---|---|---|---|
-| `PORT` | ✅ | `8080` | |
-| `NODE_ENV` | ✅ | `development` | Set to `production` in deployment |
-| `DATABASE_URL` | ✅ | `postgresql://user:pass@host:5432/albunyan_erp` | Prisma connection string |
-| `JWT_ACCESS_SECRET` | ✅ | *(none — must be set)* | 64+ random chars; generate with `crypto.randomBytes(64).toString('hex')` |
-| `JWT_REFRESH_SECRET` | ✅ | *(none — must be set)* | Different value from ACCESS_SECRET |
-| `CORS_ORIGIN` | Optional | `http://localhost:3000` | Frontend origin; omit to allow all (dev only) |
-| `SEED_OWNER_EMAIL` | Optional | `admin@albunyan.com` | Override before first seed |
-| `SEED_OWNER_PASSWORD` | Optional | `Admin@1234` | Override before first seed |
-| `SEED_OWNER_NAME` | Optional | `System Owner` | Override before first seed |
-
-### Frontend (`artifacts/erp`) — shell environment only, not a `.env` file
-
-| Variable | Local value | Replit value | Notes |
-|---|---|---|---|
-| `PORT` | `3000` | Set by Replit | Vite dev server port |
-| `BASE_PATH` | `/` | `/` | URL base path; set in `vite.config.ts` |
-
-> The frontend `dev:local` / `build:local` / `serve:local` scripts inject `PORT` and
-> `BASE_PATH` automatically via `cross-env`. No manual export is needed when using those scripts.
+1. Read the current project before coding.
+2. Treat this `PROJECT_STATUS.md` as the project state guide, but verify against code before making changes.
+3. Never rewrite completed modules unless explicitly instructed.
+4. Never modify unrelated modules.
+5. Preserve the Controller → Service → Repository → Prisma architecture.
+6. Always adapt to the current Prisma schema.
+7. Do not invent fields such as `User.role` or `User.password`; use `Role` relation and `passwordHash`.
+8. Register new API routes only through `artifacts/api-server/src/routes/index.ts`.
+9. Add frontend routes in `artifacts/erp/src/App.tsx`.
+10. Add sidebar links only when the module is actually usable.
+11. Add every user-facing frontend string to `artifacts/erp/src/i18n.ts` in English and Arabic.
+12. Use `artifacts/erp/src/lib/api.ts` for manual business-module API calls.
+13. Use TanStack Query for list/detail/mutation server state.
+14. Preserve auth token key names:
+    - `erp_access_token`
+    - `erp_refresh_token`
+15. Keep decimal values as strings on the frontend where the API returns serialized decimals.
+16. Use Prisma transactions for workflows that update stock or financial balances.
+17. Run typecheck/build verification after implementation when possible.
 
 ---
 
-## 13. Commands to Run Locally
+## 13. Changelog
 
-### Prerequisites
+### July 21, 2026
+
+- Users module completed and integrated.
+- `/api/users` route registered.
+- Users frontend page completed.
+- Users statistics added.
+- Role hierarchy and user-management permissions documented.
+- Security patch integrated:
+  - live DB check in authentication middleware
+  - inactive users blocked after deactivation
+  - inactive login/refresh returns `403`
+  - role sourced from database during authenticated requests
+  - self-reset through admin password endpoint blocked
+- Audit logging added for sensitive user-management actions.
+- Frontend API helper supports PATCH and validation error forwarding.
+- Project status updated to reflect current modules, architecture, database schema, APIs, frontend pages, limitations, and next roadmap.
+
+### July 20, 2026 and earlier
+
+- Authentication implemented.
+- Product catalogue foundation implemented:
+  - Categories
+  - Brands
+  - Units
+  - Products
+- Customers implemented.
+- Suppliers implemented.
+- Bilingual frontend foundation implemented.
+- Session hydration and token refresh implemented.
+
+---
+
+## 14. Verification Commands
+
+Most recent verification after Users integration:
 
 ```bash
-node --version   # 20+
-pnpm --version   # 9+
-psql --version   # 14+
+pnpm --filter @workspace/api-server typecheck
+pnpm --filter @workspace/erp typecheck
+pnpm --filter @workspace/api-server build
+pnpm --filter @workspace/erp build
 ```
 
-### First-time setup
+Results:
 
-```bash
-# 1. Install all workspace dependencies
-pnpm install
+- API typecheck passed.
+- Frontend typecheck passed.
+- API build passed.
+- Frontend build passed.
 
-# 2. Configure the API server
-cp artifacts/api-server/.env.example artifacts/api-server/.env
-# → Edit DATABASE_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET
+Observed frontend build warnings:
 
-# 3. Create the PostgreSQL database
-psql -U postgres -c "CREATE DATABASE albunyan_erp;"
+- Vite sourcemap warnings in some UI components.
+- Bundle chunk-size warning above 500 kB.
 
-# 4. Apply the migration
-cd artifacts/api-server
-npx prisma migrate deploy --schema=./prisma/schema.prisma
-
-# 5. Seed roles and the owner user
-pnpm run seed
-
-# 6. Return to project root
-cd ../..
-```
-
-### Daily development
-
-```bash
-# Terminal 1 — API server (http://localhost:8080)
-cd artifacts/api-server
-pnpm run dev:local
-
-# Terminal 2 — Frontend (http://localhost:3000)
-pnpm --filter @workspace/erp run dev:local
-```
-
-### Other useful commands
-
-```bash
-# Type-check everything
-pnpm run typecheck
-
-# Build API server
-cd artifacts/api-server && pnpm run build
-
-# Build frontend
-pnpm --filter @workspace/erp run build:local
-
-# Preview production frontend build
-pnpm --filter @workspace/erp run serve:local
-
-# Open Prisma Studio (database GUI)
-cd artifacts/api-server
-npx prisma studio --schema=./prisma/schema.prisma
-
-# Create a new migration after schema changes
-cd artifacts/api-server
-npx prisma migrate dev --name <descriptive-name> --schema=./prisma/schema.prisma
-
-# Regenerate Prisma client after schema changes (usually automatic)
-cd artifacts/api-server
-npx prisma generate --schema=./prisma/schema.prisma
-
-# Reset the database (drops all data — development only)
-cd artifacts/api-server
-npx prisma migrate reset --schema=./prisma/schema.prisma
-```
+These warnings were not build-blocking.
 
 ---
 
-## 14. Future Roadmap — Recommended Implementation Order
+## 15. Current Local Login Credentials
 
-Each module follows the same 4-file Clean Architecture pattern already established:
-`module.controller.ts` → `module.service.ts` → `module.repository.ts` → `module.routes.ts`
-plus a frontend page in `artifacts/erp/src/pages/`.
-
-```
-Phase 1 — Core Contacts (no dependencies on transactions)
-  1. Customers module   — API + UI (list, detail, create, edit, balance display)
-  2. Suppliers module   — API + UI (list, detail, create, edit, balance display)
-  3. Users module       — API + UI (list, create, edit, assign role, activate/deactivate)
-
-Phase 2 — Purchasing
-  4. Purchases module   — API + UI (draft → confirmed → received workflow)
-                          On RECEIVED: increment product.stockQuantity
-
-Phase 3 — Sales
-  5. Sales module       — API + UI (draft → confirmed → invoiced workflow)
-                          On CONFIRMED: decrement product.stockQuantity
-                          Enforce customer.creditLimit
-  6. Delivery Orders    — API + UI (linked to sales, PENDING → IN_TRANSIT → DELIVERED)
-
-Phase 4 — Finance
-  7. Payments module    — API + UI (RECEIPT from customers, PAYMENT to suppliers)
-                          Update customer.balance / supplier.balance on save
-
-Phase 5 — Intelligence
-  8. Dashboard          — Replace placeholder cards with real KPIs:
-                          revenue this month, open POs, outstanding receivables, low stock
-  9. Reports            — Sales by period, inventory valuation, supplier payables,
-                          customer receivables, profit margin per product
-
-Phase 6 — Operations
-  10. Settings module   — Company profile, logo, VAT number, numbering sequences
-                          (PO-YYYY-NNNN auto-increment configuration)
-```
-
-### Cross-cutting concerns to address before Phase 2
-
-- **Input validation:** Add Zod validation middleware to every `POST`/`PUT` route.
-- **Rate limiting:** `express-rate-limit` on auth endpoints.
-- **Stock locking:** Use Prisma transactions (`prisma.$transaction`) when updating
-  `stockQuantity` to prevent race conditions under concurrent writes.
-
----
-
-## 15. Current Login Credentials
+Seed defaults:
 
 | Field | Value |
 |---|---|
-| URL (local) | `http://localhost:3000` |
+| URL | `http://localhost:3000` |
 | Email | `admin@albunyan.com` |
 | Password | `Admin@1234` |
-| Role | `OWNER` (full access) |
+| Role | `OWNER` |
 
-> ⚠️ These are the seed defaults. Change the password immediately after first login in
-> any non-local environment. To override before seeding, set the `SEED_OWNER_*` env vars
-> (see §12) before running `pnpm run seed`.
+Change the default password before any non-local deployment.
 
----
+ERP Numbering Rules section
 
-## 16. Deployment Checklist
+Customer
+CUS-000001
 
-### Before going live
+Supplier
+SUP-000001
 
-- [ ] Generate strong `JWT_ACCESS_SECRET` (64+ random hex chars) and set as secret
-- [ ] Generate strong `JWT_REFRESH_SECRET` (different value) and set as secret
-- [ ] Set `DATABASE_URL` to production PostgreSQL connection string
-- [ ] Set `NODE_ENV=production`
-- [ ] Set `CORS_ORIGIN` to the exact production frontend URL (no trailing slash)
-- [ ] Run `npx prisma migrate deploy` against the production database
-- [ ] Run `pnpm run seed` once to create roles and owner account
-- [ ] Change the default owner password immediately after first login
-- [ ] Set `SEED_OWNER_EMAIL`, `SEED_OWNER_PASSWORD`, `SEED_OWNER_NAME` to real values
-      before seeding (do not leave the default `Admin@1234` in production)
-- [ ] Confirm `GET /api/healthz` returns `{ "status": "ok" }` on the production server
-- [ ] Confirm login works end-to-end in the production environment
-- [ ] Confirm page refresh preserves authentication (tests the hydration flow)
+Purchase
+PUR-000001
 
-### Replit-specific (current hosting)
+Sale
+SAL-000001
 
-- [ ] Add `JWT_ACCESS_SECRET` as a Replit Secret
-- [ ] Add `JWT_REFRESH_SECRET` as a Replit Secret
-- [ ] Run `npx prisma migrate deploy` in the Replit shell from `artifacts/api-server/`
-- [ ] Run `pnpm run seed` in the Replit shell from `artifacts/api-server/`
-- [ ] Restart the API Server workflow after setting secrets
+Delivery Order
+DO-000001
 
----
+Payment
+PAY-000001
 
-## 17. Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  Browser                                                │
-│  React 19 + Vite 7                                      │
-│  ┌───────────┐  ┌──────────┐  ┌────────────────────┐   │
-│  │  Wouter   │  │ Zustand  │  │  TanStack Query    │   │
-│  │  Router   │  │ AuthStore│  │  (server state)    │   │
-│  └───────────┘  └──────────┘  └────────────────────┘   │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │  api.ts — fetch wrapper                          │   │
-│  │  • Attaches Bearer token                         │   │
-│  │  • 401 → refresh → retry (via auth-refresh.ts)   │   │
-│  └──────────────────┬───────────────────────────────┘   │
-└─────────────────────│───────────────────────────────────┘
-                      │  HTTP /api/*  (relative paths)
-                      │  (Replit proxy routes to port 8080)
-┌─────────────────────▼───────────────────────────────────┐
-│  Express 5 API Server  (port 8080)                      │
-│  ┌────────────────────────────────────────────────┐     │
-│  │  Middlewares (applied in order)                │     │
-│  │  pino-http → cors → json → authenticate →      │     │
-│  │  authorize → controller → errorHandler         │     │
-│  └────────────────────────────────────────────────┘     │
-│  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐   │
-│  │  Controller  │→ │   Service    │→ │ Repository  │   │
-│  │  (HTTP I/O)  │  │ (business    │  │ (Prisma     │   │
-│  │              │  │  logic)      │  │  queries)   │   │
-│  └──────────────┘  └──────────────┘  └──────┬──────┘   │
-└─────────────────────────────────────────────│───────────┘
-                                              │  Prisma v5
-┌─────────────────────────────────────────────▼───────────┐
-│  PostgreSQL 14+                                         │
-│  15 tables — all monetary values Decimal(15,3) KWD      │
-└─────────────────────────────────────────────────────────┘
-```
+Inventory Rules
 
-### Clean Architecture layer contract
+Draft Purchase
+↓
 
-| Layer | Responsibility | May import |
-|---|---|---|
-| **Controller** | Parse HTTP request, call service, return HTTP response | Service only |
-| **Service** | Business logic, validation, orchestration | Repository only |
-| **Repository** | All Prisma database calls | `lib/prisma.ts` only |
-| **Middleware** | Cross-cutting concerns (auth, logging, errors) | `lib/`, `errors/`, `types/` |
+No stock movement
 
-Controllers **never** call repositories directly. Services **never** touch `req` / `res`.
+Confirmed Purchase
+↓
 
-### Frontend data-fetching pattern
+No stock movement (if that's your design)
 
-New modules (categories, brands, units, products) use **manual TanStack Query hooks** wrapping
-the `api.ts` fetch helper — not Orval-generated hooks. The pattern is:
+Received Purchase
+↓
 
-```typescript
-// Read
-const { data } = useQuery({
-  queryKey: ['categories', params],
-  queryFn: () => api.get<PaginatedResponse<Category>>(`/categories?page=${page}`),
-});
+Increase inventory
 
-// Write
-const mutation = useMutation({
-  mutationFn: (body) => api.post<Category>('/categories', body),
-  onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); toast(...) },
-  onError: (err) => toast({ variant: 'destructive', ... }),
-});
-```
+Cancelled Purchase
+↓
 
----
+No stock movement
 
-## 18. Notes for the Next Developer
+Editing Received Purchase
+↓
 
-Read this section before writing a single line of code.
+Adjust inventory difference
 
-### Before you start
+Deleting Received Purchase
+↓
 
-1. **Run the app end-to-end first.** Follow §13 (local setup). Confirm login, navigate to
-   Products, create a test product. If anything is broken, fix the environment before adding
-   features.
+Blocked or requires reversal
 
-2. **Skim the existing module code** — `categories.controller.ts` through `categories.routes.ts`
-   and `artifacts/erp/src/pages/categories.tsx`. Every new module follows this exact pattern.
-   Copy it; do not invent a new one.
 
-3. **The database schema is already complete.** Every table for every planned module is in
-   `prisma/schema.prisma` and the migration has been run. Do not create new migrations unless
-   you are adding a genuinely new field or table.
+Financial Rules
 
-### Conventions that must be preserved
 
-| Convention | Why |
-|---|---|
-| All monetary and quantity values use `Decimal(15,3)` | KWD requires 3 decimal places; floats are lossy. Never use `Float` in the schema. |
-| Decimal values serialised with `.toFixed(3)` in the API response | The frontend receives them as strings to avoid JS float precision loss. |
-| Frontend treats all price/quantity fields as `string` in TypeScript interfaces | Follows from the above. Parse with `parseFloat()` only when doing arithmetic. |
-| API returns paginated lists in `{ data: [], meta: { total, page, limit, pages } }` | All list endpoints follow this envelope. |
-| All new API routes mounted in `artifacts/api-server/src/routes/index.ts` | There is one central route registry. |
-| Delete blocked when child records exist | Check for related records in the service layer; throw `ConflictError` with a human-readable message. |
-| Dual-language fields: `name` (English) + `nameAr` (Arabic, nullable) | Every entity that users see by name gets both fields. |
-| i18n keys added to `artifacts/erp/src/i18n.ts` for every new string | No hardcoded English strings in UI components. |
-| RTL is toggled via `document.dir` in `app-layout.tsx`'s `useEffect` on `i18n.language` | Not at the HTML root; not with a CSS class; only via `document.dir = 'rtl' | 'ltr'`. |
-| `hasMinRole('WAREHOUSE')` for reads, `hasRole('OWNER','ADMIN','MANAGER')` for writes, `hasRole('OWNER','ADMIN')` for deletes | Consistent across all implemented modules. Apply the same pattern to new ones. |
+Currency:
+KWD
 
-### Where things are wired together
+Precision:
+3 decimals
 
-- **Frontend API calls** use relative paths (`/api/...`). The Replit proxy routes them to port
-  8080. Locally, `CORS_ORIGIN=http://localhost:3000` in the API `.env` is required because the
-  two servers run on different ports.
+Tax calculation:
+Per line
 
-- **The Orval-generated hooks** (`lib/api-client-react/`) are used **only for auth endpoints**.
-  All other API calls go through `artifacts/erp/src/lib/api.ts`. Do not mix the two within
-  the same module.
+Discount:
+Per line
 
-- **Tokens** are stored in `localStorage` under keys `erp_access_token` and
-  `erp_refresh_token`. Do not change these key names — they are referenced in
-  `store.ts`, `auth-refresh.ts`, `api.ts`, and `App.tsx`.
+Grand Total:
 
-- **`setAuthTokenGetter`** in `App.tsx` keeps the Orval-generated hooks in sync with the
-  same access token. If you change the localStorage key, update this call too.
+Subtotal
 
-### Adding a new backend module (step-by-step)
+↓
 
-```
-1. Create artifacts/api-server/src/modules/<name>/
-   ├── <name>.repository.ts   — Prisma calls only
-   ├── <name>.service.ts      — business logic, calls repository
-   ├── <name>.controller.ts   — HTTP I/O, calls service
-   └── <name>.routes.ts       — Router with authenticate + hasRole/hasMinRole guards
+Discount
 
-2. Register the router in artifacts/api-server/src/routes/index.ts:
-   router.use('/<name>', <name>Router);
+↓
 
-3. Restart the API Server workflow.
-```
+Tax
 
-### Adding a new frontend page (step-by-step)
+↓
 
-```
-1. Add TypeScript interfaces to artifacts/erp/src/lib/types.ts.
+Grand Total
 
-2. Add translation keys to artifacts/erp/src/i18n.ts (both 'en' and 'ar' sections).
 
-3. Create artifacts/erp/src/pages/<name>.tsx.
-   Use categories.tsx as the reference — it has the complete pattern:
-   useQuery for list, useMutation for create/update/delete, Dialog for form,
-   ConfirmDialog for destructive actions, Pagination, Search.
 
-4. Register the route in artifacts/erp/src/App.tsx:
-   <Route path="/<name>"><ProtectedRoute component={Name} /></Route>
-
-5. Enable the sidebar link in artifacts/erp/src/components/layout/app-layout.tsx:
-   Change disabled: true → disabled: false for the relevant nav item.
-   Add the path to the breadcrumb map if needed.
-```
-
-### Prisma v5 — do not upgrade
-
-Prisma is pinned to v5 in `artifacts/api-server/package.json`. Prisma v7 broke the
-`url = env("DATABASE_URL")` datasource syntax and caused the server to fail at startup.
-Do not upgrade without thorough testing.
-
-### Transactions that touch stockQuantity
-
-When implementing Purchases (received) and Sales (confirmed), use `prisma.$transaction([])`
-to atomically update `product.stockQuantity` alongside the status change. Never update stock
-quantity outside of a transaction — concurrent requests can cause phantom reads.
-
-```typescript
-// Pattern
-await prisma.$transaction([
-  prisma.purchase.update({ where: { id }, data: { status: 'RECEIVED' } }),
-  ...items.map(item =>
-    prisma.product.update({
-      where: { id: item.productId },
-      data: { stockQuantity: { increment: item.quantity } },
-    })
-  ),
-]);
-```
-
-### Key files at a glance
-
-| What you need | Where it is |
-|---|---|
-| Add a new API route | `artifacts/api-server/src/routes/index.ts` |
-| Add a new DB table | `artifacts/api-server/prisma/schema.prisma` → `prisma migrate dev` |
-| Add a new frontend page | `artifacts/erp/src/pages/` → register in `App.tsx` |
-| Enable a sidebar link | `artifacts/erp/src/components/layout/app-layout.tsx` |
-| Add a translation string | `artifacts/erp/src/i18n.ts` (both `en` and `ar`) |
-| Add a TypeScript interface | `artifacts/erp/src/lib/types.ts` |
-| Auth store state | `artifacts/erp/src/lib/store.ts` |
-| Token refresh logic | `artifacts/erp/src/lib/auth-refresh.ts` |
-| Role-based guards | `artifacts/api-server/src/middlewares/authorize.ts` |
-| Error classes | `artifacts/api-server/src/errors/AppError.ts` |

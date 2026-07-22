@@ -13,7 +13,8 @@ export class ProductsController {
 
   async getOne(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await productsService.getOne(req.params.id);
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const result = await productsService.getOne(id);
       res.json(result);
     } catch (err) {
       next(err);
@@ -31,8 +32,9 @@ export class ProductsController {
 
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
       const result = await productsService.update(
-        req.params.id,
+        id,
         req.body as Record<string, unknown>,
       );
       res.json(result);
@@ -43,7 +45,8 @@ export class ProductsController {
 
   async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await productsService.delete(req.params.id);
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      await productsService.delete(id);
       res.json({ message: 'Product deleted successfully' });
     } catch (err) {
       next(err);

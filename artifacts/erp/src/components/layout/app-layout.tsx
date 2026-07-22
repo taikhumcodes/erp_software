@@ -85,7 +85,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     {
       label: t('transactions'),
       items: [
-        { name: t('purchases'), path: '/purchases', icon: ShoppingCart, disabled: true },
+        { name: t('purchases'), path: '/purchases', icon: ShoppingCart, disabled: false },
         { name: t('sales'), path: '/sales', icon: Banknote, disabled: true },
         { name: t('delivery_orders'), path: '/delivery-orders', icon: Truck, disabled: true }
       ]
@@ -93,8 +93,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     {
       label: t('contacts'),
       items: [
-        { name: t('customers'), path: '/customers', icon: Users, disabled: true },
-        { name: t('suppliers'), path: '/suppliers', icon: Contact, disabled: true }
+        { name: t('customers'), path: '/customers', icon: Users, disabled: false },
+        { name: t('suppliers'), path: '/suppliers', icon: Contact, disabled: false }
       ]
     },
     {
@@ -123,6 +123,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       '/categories': t('categories'),
       '/brands': t('brands'),
       '/units': t('units'),
+      '/suppliers': t('suppliers'),
+      '/purchases': t('purchases'),
     };
     return map[location] ?? '';
   };

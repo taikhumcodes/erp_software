@@ -19,6 +19,9 @@ import Categories from '@/pages/categories';
 import Brands from '@/pages/brands';
 import Units from '@/pages/units';
 import Products from '@/pages/products';
+import Customers from '@/pages/customers';
+import Suppliers from '@/pages/suppliers';
+import Purchases from '@/pages/purchases';
 
 // Import Layout
 import AppLayout from '@/components/layout/app-layout';
@@ -173,6 +176,15 @@ function Router() {
         </Route>
         <Route path="/products">
           <ProtectedRoute component={Products} />
+        </Route>
+        <Route path="/customers">
+          <ProtectedRoute component={Customers} />
+        </Route>
+        <Route path="/suppliers">
+          <ProtectedRoute component={Suppliers} />
+        </Route>
+        <Route path="/purchases">
+          <ProtectedRoute component={Purchases} />
         </Route>
         <Route component={NotFound} />
       </Switch>
