@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); async function main() { console.log(await prisma.payment.findFirst({ where: { number: 'PAY-2026-000012' }, include: { allocations: true } })); console.log(await prisma.purchase.findFirst({ where: { number: 'PUR-000001' } })); } main().finally(() => prisma.$disconnect());

@@ -19,16 +19,17 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   // ── Known application error ──────────────────────────────────────────────
-  if (err instanceof AppError) {
+  if (err instanceof AppError || (err && typeof err === 'object' && 'statusCode' in err)) {
+    const appErr = err as AppError;
     // Only log 5xx errors — 4xx are expected and noisy at INFO level
-    if (err.statusCode >= 500) {
-      req.log?.error({ err }, err.message);
+    if (appErr.statusCode >= 500) {
+      req.log?.error({ err: appErr }, appErr.message);
     }
 
-    res.status(err.statusCode).json({
-      message: err.message,
-      code: err.code,
-      ...(err.details !== undefined ? { details: err.details } : {}),
+    res.status(appErr.statusCode).json({
+      message: appErr.message,
+      code: appErr.code,
+      ...(appErr.details !== undefined ? { details: appErr.details } : {}),
     });
     return;
   }
@@ -47,5 +48,14 @@ export function errorHandler(
 
   // ── Unexpected error ─────────────────────────────────────────────────────
   logger.error({ err }, 'Unhandled error');
+  if (err instanceof Error) {
+    res.status(500).json({
+      message: 'Internal server error',
+      code: 'INTERNAL_ERROR',
+      stack: err.stack,
+      error_message: err.message
+    });
+    return;
+  }
   res.status(500).json({ message: 'Internal server error', code: 'INTERNAL_ERROR' });
 }

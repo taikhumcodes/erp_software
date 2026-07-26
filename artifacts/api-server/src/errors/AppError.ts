@@ -11,7 +11,7 @@ export class AppError extends Error {
   constructor(
     message: string,
     statusCode: number,
-    code: string,
+    code: string = 'ERROR',
     details?: Record<string, unknown>,
   ) {
     super(message);

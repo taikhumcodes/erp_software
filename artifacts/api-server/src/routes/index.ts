@@ -9,6 +9,10 @@ import customersRouter from "../modules/customers/customers.routes.js";
 import suppliersRouter from "../modules/suppliers/suppliers.routes.js";
 import usersRouter from "../modules/users/users.routes.js";
 import purchasesRouter from "../modules/purchases/purchases.routes.js";
+import salesRouter from "../modules/sales/sales.routes.js";
+import paymentsRouter from "../modules/payments/payments.routes.js";
+import deliveryOrdersRouter from "../modules/delivery-orders/delivery-orders.routes.js";
+import settingsRouter from "../modules/settings/settings.routes.js";
 
 const router: IRouter = Router();
 
@@ -34,4 +38,17 @@ router.use("/users", usersRouter);
 // Purchases — /api/purchases
 router.use("/purchases", purchasesRouter);
 
+// Sales — /api/sales
+router.use("/sales", salesRouter);
+
+// Delivery Orders — /api/delivery-orders
+router.use("/delivery-orders", deliveryOrdersRouter);
+
+// Payments — /api/payments
+router.use("/payments", paymentsRouter);
+
+// Settings — /api/settings
+router.use("/settings", settingsRouter);
+
 export default router;
+

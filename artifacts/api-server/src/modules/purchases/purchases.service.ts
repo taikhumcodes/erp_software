@@ -1,9 +1,10 @@
-import { Prisma, PurchaseStatus } from '@prisma/client';
+import { PurchaseStatus } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { PurchasesRepository, type PurchaseFilters } from './purchases.repository.js';
 import { PurchaseFinancialService } from './purchase-financial.service.js';
 import { InventoryService } from '../inventory/inventory.service.js';
 import { NotFoundError, ValidationError, ConflictError } from '../../errors/AppError.js';
+import { DocumentNumberService } from '../../lib/document-number.service.js';
 
 // ─── Valid status transitions ─────────────────────────────────────────────────
 
@@ -91,18 +92,12 @@ export const PurchasesService = {
       fieldErrors.push({ field: 'items', message: 'At least one item is required' });
     }
 
-    // ── Header discount / tax ─────────────────────────────────────────────
+    // ── Header discount ───────────────────────────────────────────────────
     let headerDiscount = '0.000';
-    let headerTax = '0.000';
     try {
       headerDiscount = parsePositiveDecimal(body['discount'], 'Discount');
     } catch {
       fieldErrors.push({ field: 'discount', message: 'Discount must be a non-negative number' });
-    }
-    try {
-      headerTax = parsePositiveDecimal(body['tax'], 'Tax');
-    } catch {
-      fieldErrors.push({ field: 'tax', message: 'Tax must be a non-negative number' });
     }
 
     const notes = normalise(body['notes']);
@@ -159,8 +154,14 @@ export const PurchasesService = {
     // ── Server-side total calculation ─────────────────────────────────────
     const subtotal = validatedItems.reduce((sum, item) => sum + parseFloat(item.total), 0);
     const discount = parseFloat(headerDiscount);
-    const tax = parseFloat(headerTax);
-    const grandTotal = subtotal - discount + tax;
+
+    if (discount > subtotal) {
+      throw new ValidationError('Validation failed', {
+        errors: [{ field: 'discount', message: 'Discount cannot exceed subtotal' }],
+      });
+    }
+
+    const grandTotal = subtotal - discount;
 
     return prisma.$transaction(async (tx) => {
       // Verify supplier exists
@@ -184,7 +185,10 @@ export const PurchasesService = {
       }
 
       // Generate purchase number
-      const number = await PurchasesRepository.generateNumber(tx);
+      const number = await DocumentNumberService.generateNextNumber(
+        { model: 'purchase', prefix: 'PO', sequenceLength: 4 },
+        tx,
+      );
 
       // Create purchase with items
       const purchase = await PurchasesRepository.create(tx, {
@@ -195,7 +199,6 @@ export const PurchasesService = {
         purchaseDate,
         totalAmount: subtotal.toFixed(3),
         discount: discount.toFixed(3),
-        tax: tax.toFixed(3),
         netAmount: grandTotal.toFixed(3),
         notes,
         items: validatedItems,
@@ -247,21 +250,13 @@ export const PurchasesService = {
         }
       }
 
-      // ── Header discount / tax ─────────────────────────────────────────
+      // ── Header discount ─────────────────────────────────────────────────
       let headerDiscount: string | undefined;
-      let headerTax: string | undefined;
       if ('discount' in body) {
         try {
           headerDiscount = parsePositiveDecimal(body['discount'], 'Discount');
         } catch {
           fieldErrors.push({ field: 'discount', message: 'Discount must be a non-negative number' });
-        }
-      }
-      if ('tax' in body) {
-        try {
-          headerTax = parsePositiveDecimal(body['tax'], 'Tax');
-        } catch {
-          fieldErrors.push({ field: 'tax', message: 'Tax must be a non-negative number' });
         }
       }
 
@@ -336,18 +331,27 @@ export const PurchasesService = {
       if (validatedItems) {
         const subtotal = validatedItems.reduce((sum, item) => sum + parseFloat(item.total), 0);
         const discount = parseFloat(headerDiscount ?? existing.discount.toFixed(3));
-        const tax = parseFloat(headerTax ?? existing.tax.toFixed(3));
-        const grand = subtotal - discount + tax;
+
+        if (discount > subtotal) {
+          throw new ValidationError('Validation failed', {
+            errors: [{ field: 'discount', message: 'Discount cannot exceed subtotal' }],
+          });
+        }
 
         totalAmount = subtotal.toFixed(3);
-        netAmount = grand.toFixed(3);
-      } else if (headerDiscount !== undefined || headerTax !== undefined) {
-        // Items not changed, but discount/tax changed — recalculate net
+        netAmount = (subtotal - discount).toFixed(3);
+      } else if (headerDiscount !== undefined) {
+        // Items not changed, but discount changed — recalculate net
         const subtotal = parseFloat(existing.totalAmount.toFixed(3));
-        const discount = parseFloat(headerDiscount ?? existing.discount.toFixed(3));
-        const tax = parseFloat(headerTax ?? existing.tax.toFixed(3));
-        const grand = subtotal - discount + tax;
-        netAmount = grand.toFixed(3);
+        const discount = parseFloat(headerDiscount);
+
+        if (discount > subtotal) {
+          throw new ValidationError('Validation failed', {
+            errors: [{ field: 'discount', message: 'Discount cannot exceed subtotal' }],
+          });
+        }
+
+        netAmount = (subtotal - discount).toFixed(3);
       }
 
       // ── If purchase is RECEIVED and items changed, adjust inventory ───
@@ -389,7 +393,6 @@ export const PurchasesService = {
         purchaseDate,
         totalAmount,
         discount: headerDiscount,
-        tax: headerTax,
         netAmount,
         notes,
         items: validatedItems,

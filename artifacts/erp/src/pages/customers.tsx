@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import type { Customer, PaginatedResponse } from '@/lib/types';
+import { formatKWD } from '@/lib/utils';
 
 const LIMIT = 20;
 
@@ -149,7 +150,7 @@ export default function Customers() {
                 <th className="px-6 py-3 text-start font-medium">{t('customer_code')}</th>
                 <th className="px-6 py-3 text-start font-medium">{t('name_en')}</th>
                 <th className="px-6 py-3 text-start font-medium">{t('phone')}</th>
-                <th className="px-6 py-3 text-start font-medium">{t('credit_limit')}</th>
+                <th className="px-6 py-3 text-start font-medium">{t('receivables', 'Receivables')}</th>
                 <th className="px-6 py-3 text-start font-medium">{t('status')}</th>
                 <th className="px-6 py-3 text-end font-medium">{t('actions')}</th>
               </tr>
@@ -172,7 +173,7 @@ export default function Customers() {
                     {customer.nameAr && <div className="text-muted-foreground text-xs" dir="rtl">{customer.nameAr}</div>}
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">{formatPhoneDisplay(customer.phone)}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{formatCreditLimit(customer.creditLimit)}</td>
+                  <td className="px-6 py-4 text-foreground font-medium">{formatKWD(customer.balance)}</td>
                   <td className="px-6 py-4"><StatusBadge active={customer.isActive} t={t} /></td>
                   <td className="px-6 py-4"><div className="flex items-center justify-end gap-1"><button onClick={() => openEdit(customer)} title={t('edit')} className="p-1.5 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"><Pencil className="w-4 h-4" /></button><button onClick={() => setDeleteTarget(customer)} title={t('delete')} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="w-4 h-4" /></button></div></td>
                 </tr>

@@ -1,4 +1,5 @@
 import { Prisma, PurchaseStatus, PaymentStatus } from '@prisma/client';
+import { ValidationError } from '../../errors/AppError.js';
 import { prisma } from '../../lib/prisma.js';
 import { PurchasesRepository } from './purchases.repository.js';
 
@@ -47,7 +48,7 @@ export const PurchaseFinancialService = {
       select: { outstandingAmount: true, supplierId: true },
     });
 
-    if (!purchase) throw new Error('Purchase not found during reversal');
+    if (!purchase) throw new ValidationError('Purchase not found during reversal');
 
     // 1. Decrease supplier balance by outstanding amount
     await tx.supplier.update({
@@ -84,7 +85,7 @@ export const PurchaseFinancialService = {
       select: { supplierId: true, paidAmount: true },
     });
 
-    if (!purchase) throw new Error('Purchase not found during recalculation');
+    if (!purchase) throw new ValidationError('Purchase not found during recalculation');
 
     const oldTotal = new Prisma.Decimal(oldNetAmount);
     const newTotal = new Prisma.Decimal(newNetAmount);
@@ -115,6 +116,106 @@ export const PurchaseFinancialService = {
       data: {
         outstandingAmount: newOutstanding,
         paymentStatus: newPaymentStatus,
+      },
+    });
+  },
+
+  /**
+   * Register a payment allocation against a specific purchase.
+   */
+  async registerPayment(
+    tx: Prisma.TransactionClient,
+    purchaseId: string,
+    paymentAmount: string | Prisma.Decimal
+  ): Promise<void> {
+    const purchase = await tx.purchase.findUnique({
+      where: { id: purchaseId },
+      select: { supplierId: true, paidAmount: true, outstandingAmount: true, netAmount: true },
+    });
+
+    if (!purchase) throw new ValidationError('Purchase not found');
+
+    const amount = new Prisma.Decimal(paymentAmount);
+    
+    if (amount.gt(purchase.outstandingAmount)) {
+      throw new ValidationError('Payment amount cannot exceed outstanding amount');
+    }
+
+    const newPaidAmount = purchase.paidAmount.add(amount);
+    const newOutstanding = purchase.outstandingAmount.minus(amount);
+    
+    let newPaymentStatus: PaymentStatus = 'PARTIALLY_PAID';
+    if (newOutstanding.lte(0)) {
+      newPaymentStatus = 'PAID';
+    }
+
+    // Update the purchase
+    await tx.purchase.update({
+      where: { id: purchaseId },
+      data: {
+        paidAmount: newPaidAmount,
+        outstandingAmount: newOutstanding,
+        paymentStatus: newPaymentStatus
+      }
+    });
+
+    // Decrease the supplier's balance since we paid them
+    await tx.supplier.update({
+      where: { id: purchase.supplierId },
+      data: {
+        balance: {
+          decrement: amount,
+        },
+      },
+    });
+  },
+
+  /**
+   * Reverse a payment allocation against a specific purchase.
+   */
+  async reversePayment(
+    tx: Prisma.TransactionClient,
+    purchaseId: string,
+    paymentAmount: string | Prisma.Decimal
+  ): Promise<void> {
+    const purchase = await tx.purchase.findUnique({
+      where: { id: purchaseId },
+      select: { supplierId: true, paidAmount: true, outstandingAmount: true, netAmount: true },
+    });
+
+    if (!purchase) throw new ValidationError('Purchase not found');
+
+    const amount = new Prisma.Decimal(paymentAmount);
+    
+    if (amount.gt(purchase.paidAmount)) {
+      throw new ValidationError('Reversal amount cannot exceed paid amount');
+    }
+
+    const newPaidAmount = purchase.paidAmount.minus(amount);
+    const newOutstanding = purchase.outstandingAmount.add(amount);
+    
+    let newPaymentStatus: PaymentStatus = 'PARTIALLY_PAID';
+    if (newPaidAmount.lte(0)) {
+      newPaymentStatus = 'UNPAID';
+    }
+
+    // Update the purchase
+    await tx.purchase.update({
+      where: { id: purchaseId },
+      data: {
+        paidAmount: newPaidAmount,
+        outstandingAmount: newOutstanding,
+        paymentStatus: newPaymentStatus
+      }
+    });
+
+    // Increase the supplier's balance back since the payment was cancelled
+    await tx.supplier.update({
+      where: { id: purchase.supplierId },
+      data: {
+        balance: {
+          increment: amount,
+        },
       },
     });
   }

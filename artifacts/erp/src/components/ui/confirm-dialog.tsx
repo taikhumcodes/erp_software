@@ -14,9 +14,12 @@ interface ConfirmDialogProps {
   title: string;
   description: string;
   confirmLabel?: string;
+  confirmText?: string;
+  variant?: 'default' | 'destructive';
   loading?: boolean;
   onConfirm: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function ConfirmDialog({
@@ -24,14 +27,17 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  confirmText,
+  variant = 'default',
   loading,
   onConfirm,
   onCancel,
+  onOpenChange,
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
+    <Dialog open={open} onOpenChange={(v) => !v && (onCancel ? onCancel() : onOpenChange && onOpenChange(false))}>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -47,7 +53,7 @@ export function ConfirmDialog({
         <DialogFooter className="gap-2">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={() => onCancel ? onCancel() : onOpenChange && onOpenChange(false)}
             disabled={loading}
             className="px-4 py-2 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent transition-colors disabled:opacity-50"
           >
@@ -57,10 +63,14 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2 disabled:opacity-50 ${
+              variant === 'destructive' 
+                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+            }`}
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {confirmLabel ?? t('delete')}
+            {confirmText ?? confirmLabel ?? t('delete')}
           </button>
         </DialogFooter>
       </DialogContent>

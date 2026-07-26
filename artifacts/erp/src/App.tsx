@@ -22,6 +22,15 @@ import Products from '@/pages/products';
 import Customers from '@/pages/customers';
 import Suppliers from '@/pages/suppliers';
 import Purchases from '@/pages/purchases';
+import Sales from '@/pages/sales';
+import Payments from '@/pages/payments';
+import DeliveryOrdersPage from '@/pages/delivery-orders';
+import DocumentViewer from '@/pages/document-viewer';
+
+import { registerDocuments } from '@/modules/documents';
+
+// Register all documents for the Document Engine
+registerDocuments();
 
 // Import Layout
 import AppLayout from '@/components/layout/app-layout';
@@ -156,6 +165,8 @@ function Router() {
       <AuthHydrator />
       <Switch>
         <Route path="/login" component={Login} />
+        {/* Document Engine Routes (Standalone - No UI wrapper) */}
+        <Route path="/documents/:type/:id" component={DocumentViewer} />
         <Route path="/">
           <ProtectedRoute component={Dashboard} />
         </Route>
@@ -185,6 +196,15 @@ function Router() {
         </Route>
         <Route path="/purchases">
           <ProtectedRoute component={Purchases} />
+        </Route>
+        <Route path="/sales">
+          <ProtectedRoute component={Sales} />
+        </Route>
+        <Route path="/payments">
+          <ProtectedRoute component={Payments} />
+        </Route>
+        <Route path="/delivery-orders">
+          <ProtectedRoute component={DeliveryOrdersPage} />
         </Route>
         <Route component={NotFound} />
       </Switch>

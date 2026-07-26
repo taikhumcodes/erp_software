@@ -39,6 +39,9 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ── Static file serving for uploads (company logos, etc.) ────────────────────
+app.use("/uploads", express.static("uploads"));
+
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/api", router);
 

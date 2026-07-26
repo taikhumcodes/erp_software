@@ -9,16 +9,17 @@
  *   state and redirect to the login page.
  */
 
+
 import { attemptTokenRefresh, triggerLogout } from './auth-refresh';
 
 function getToken(): string | null {
   return localStorage.getItem('erp_access_token');
 }
 
-function buildHeaders(token: string | null, hasBody: boolean): Record<string, string> {
+function buildHeaders(token: string | null, hasBody: boolean, isFormData: boolean = false): Record<string, string> {
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  if (hasBody) headers['Content-Type'] = 'application/json';
+  if (hasBody && !isFormData) headers['Content-Type'] = 'application/json';
   return headers;
 }
 
@@ -27,13 +28,14 @@ async function doFetch(
   path: string,
   body: unknown | undefined,
   token: string | null,
+  isFormData: boolean = false
 ): Promise<Response> {
   const normalizedPath = path.startsWith('/api') ? path : `/api${path}`;
 
   return fetch(normalizedPath, {
     method,
-    headers: buildHeaders(token, body !== undefined),
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    headers: buildHeaders(token, body !== undefined, isFormData),
+    body: body !== undefined ? (isFormData ? (body as FormData) : JSON.stringify(body)) : undefined,
   });
 }
 
@@ -61,9 +63,10 @@ async function request<T>(
   method: string,
   path: string,
   body?: unknown,
+  isFormData: boolean = false
 ): Promise<T> {
   // ── First attempt ────────────────────────────────────────────────────────
-  const firstRes = await doFetch(method, path, body, getToken());
+  const firstRes = await doFetch(method, path, body, getToken(), isFormData);
 
   if (firstRes.status !== 401) {
     return parseResponse<T>(firstRes);
@@ -79,7 +82,7 @@ async function request<T>(
   }
 
   // ── Retry with the fresh access token ────────────────────────────────────
-  const retryRes = await doFetch(method, path, body, newToken);
+  const retryRes = await doFetch(method, path, body, newToken, isFormData);
 
   if (retryRes.status === 401) {
     // Still unauthorized after a fresh token — something is wrong.
@@ -93,6 +96,7 @@ async function request<T>(
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body: unknown) => request<T>('POST', path, body),
+  postFormData: <T>(path: string, body: FormData) => request<T>('POST', path, body, true),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   del: <T>(path: string) => request<T>('DELETE', path),

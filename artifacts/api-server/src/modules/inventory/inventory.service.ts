@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { ValidationError } from '../../errors/AppError.js';
 
 // ─── Inventory Service ────────────────────────────────────────────────────────
 //
@@ -37,13 +38,13 @@ export const InventoryService = {
     });
 
     if (!product) {
-      throw new Error(`Product ${productId} not found`);
+      throw new ValidationError(`Product ${productId} not found`);
     }
 
     const newStock = product.stockQuantity.add(deltaDecimal);
 
     if (newStock.lessThan(new Prisma.Decimal('0'))) {
-      throw new Error(
+      throw new ValidationError(
         `Insufficient stock for product "${product.name}". ` +
         `Current: ${product.stockQuantity.toFixed(3)}, ` +
         `Requested change: ${deltaDecimal.toFixed(3)}, ` +
@@ -67,7 +68,7 @@ export const InventoryService = {
   ): Promise<void> {
     const qty = new Prisma.Decimal(quantity);
     if (qty.lessThanOrEqualTo(new Prisma.Decimal('0'))) {
-      throw new Error('Increase quantity must be positive');
+      throw new ValidationError('Increase quantity must be positive');
     }
     return this.adjustStock(tx, productId, quantity);
   },
@@ -83,7 +84,7 @@ export const InventoryService = {
   ): Promise<void> {
     const qty = new Prisma.Decimal(quantity);
     if (qty.lessThanOrEqualTo(new Prisma.Decimal('0'))) {
-      throw new Error('Decrease quantity must be positive');
+      throw new ValidationError('Decrease quantity must be positive');
     }
     return this.adjustStock(tx, productId, qty.negated().toFixed(3));
   },

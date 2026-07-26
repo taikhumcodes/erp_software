@@ -86,8 +86,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       label: t('transactions'),
       items: [
         { name: t('purchases'), path: '/purchases', icon: ShoppingCart, disabled: false },
-        { name: t('sales'), path: '/sales', icon: Banknote, disabled: true },
-        { name: t('delivery_orders'), path: '/delivery-orders', icon: Truck, disabled: true }
+        { name: t('sales'), path: '/sales', icon: Banknote, disabled: false },
+        { name: t('delivery_orders'), path: '/delivery-orders', icon: Truck, disabled: false }
       ]
     },
     {
@@ -100,7 +100,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     {
       label: t('finance'),
       items: [
-        { name: t('payments'), path: '/payments', icon: CreditCard, disabled: true },
+        { name: t('payments'), path: '/payments', icon: CreditCard },
         { name: t('reports'), path: '/reports', icon: FileText, disabled: true }
       ]
     },

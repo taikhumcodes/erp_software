@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma.js';
-import { Prisma, PurchaseStatus } from '@prisma/client';
+import { Prisma, PurchaseStatus, PaymentMethod } from '@prisma/client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,9 +28,9 @@ export interface CreatePurchaseData {
   purchaseDate: Date;
   totalAmount: string;
   discount: string;
-  tax: string;
   netAmount: string;
   notes?: string | null;
+  paymentMethod?: PaymentMethod | null;
   items: CreatePurchaseItemData[];
 }
 
@@ -39,9 +39,9 @@ export interface UpdatePurchaseData {
   purchaseDate?: Date;
   totalAmount?: string;
   discount?: string;
-  tax?: string;
   netAmount?: string;
   notes?: string | null;
+  paymentMethod?: PaymentMethod | null;
   items?: CreatePurchaseItemData[];
 }
 
@@ -62,12 +62,12 @@ const purchaseSelect = {
   purchaseDate: true,
   totalAmount: true,
   discount: true,
-  tax: true,
   netAmount: true,
   notes: true,
   paidAmount: true,
   outstandingAmount: true,
   paymentStatus: true,
+  paymentMethod: true,
   createdAt: true,
   updatedAt: true,
   items: {
@@ -108,12 +108,12 @@ const purchaseListSelect = {
   purchaseDate: true,
   totalAmount: true,
   discount: true,
-  tax: true,
   netAmount: true,
   notes: true,
   paidAmount: true,
   outstandingAmount: true,
   paymentStatus: true,
+  paymentMethod: true,
   createdAt: true,
   updatedAt: true,
   _count: { select: { items: true } },
@@ -200,9 +200,9 @@ export const PurchasesRepository = {
         purchaseDate: data.purchaseDate,
         totalAmount:  new Prisma.Decimal(data.totalAmount),
         discount:     new Prisma.Decimal(data.discount),
-        tax:          new Prisma.Decimal(data.tax),
         netAmount:    new Prisma.Decimal(data.netAmount),
         notes:        data.notes ?? null,
+        paymentMethod: data.paymentMethod ?? null,
         items: {
           create: data.items.map(item => ({
             productId: item.productId,
@@ -231,9 +231,9 @@ export const PurchasesRepository = {
         ...(data.purchaseDate !== undefined && { purchaseDate: data.purchaseDate }),
         ...(data.totalAmount  !== undefined && { totalAmount:  new Prisma.Decimal(data.totalAmount) }),
         ...(data.discount     !== undefined && { discount:     new Prisma.Decimal(data.discount) }),
-        ...(data.tax          !== undefined && { tax:          new Prisma.Decimal(data.tax) }),
         ...(data.netAmount    !== undefined && { netAmount:    new Prisma.Decimal(data.netAmount) }),
         ...(data.notes        !== undefined && { notes:        data.notes }),
+        ...(data.paymentMethod !== undefined && { paymentMethod: data.paymentMethod }),
         ...(data.items && {
           items: {
             create: data.items.map(item => ({
@@ -271,23 +271,6 @@ export const PurchasesRepository = {
       where: { id },
       include: { items: true },
     });
-  },
-
-  // ── Auto-generate purchase number ────────────────────────────────────────
-  async generateNumber(tx: Prisma.TransactionClient): Promise<string> {
-    const last = await tx.purchase.findFirst({
-      where: { number: { startsWith: 'PUR-' } },
-      orderBy: { number: 'desc' },
-      select: { number: true },
-    });
-
-    let next = 1;
-    if (last) {
-      const num = parseInt(last.number.replace('PUR-', ''), 10);
-      if (!isNaN(num)) next = num + 1;
-    }
-
-    return `PUR-${String(next).padStart(6, '0')}`;
   },
 
   // ── Statistics ───────────────────────────────────────────────────────────
@@ -331,12 +314,12 @@ function serializePurchaseList(row: PurchaseListRow) {
     purchaseDate: row.purchaseDate.toISOString(),
     totalAmount:  row.totalAmount.toFixed(3),
     discount:     row.discount.toFixed(3),
-    tax:          row.tax.toFixed(3),
     netAmount:    row.netAmount.toFixed(3),
     notes:        row.notes,
     paidAmount:   row.paidAmount.toFixed(3),
     outstandingAmount: row.outstandingAmount.toFixed(3),
     paymentStatus: row.paymentStatus,
+    paymentMethod: row.paymentMethod,
     itemCount:    row._count.items,
     createdAt:    row.createdAt.toISOString(),
     updatedAt:    row.updatedAt.toISOString(),
@@ -357,12 +340,12 @@ function serializePurchase(row: NonNullable<PurchaseRow>) {
     purchaseDate: row.purchaseDate.toISOString(),
     totalAmount:  row.totalAmount.toFixed(3),
     discount:     row.discount.toFixed(3),
-    tax:          row.tax.toFixed(3),
     netAmount:    row.netAmount.toFixed(3),
     notes:        row.notes,
     paidAmount:   row.paidAmount.toFixed(3),
     outstandingAmount: row.outstandingAmount.toFixed(3),
     paymentStatus: row.paymentStatus,
+    paymentMethod: row.paymentMethod,
     items: row.items.map(item => ({
       id:        item.id,
       productId: item.productId,

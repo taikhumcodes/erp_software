@@ -61,6 +61,10 @@ export default defineConfig(async ({ mode }) => {
       target: 'http://localhost:8081',
       changeOrigin: true,
     },
+    '/uploads': {
+      target: 'http://localhost:8081',
+      changeOrigin: true,
+    },
   },
 },
   preview: {

@@ -58,8 +58,8 @@ interface PurchaseForm {
   purchaseDate: string;
   status: 'DRAFT' | 'CONFIRMED';
   discount: string;
-  tax: string;
   notes: string;
+  paymentMethod: string;
   items: PurchaseItemForm[];
 }
 
@@ -80,8 +80,8 @@ const emptyForm = (): PurchaseForm => ({
   purchaseDate: new Date().toISOString().slice(0, 10),
   status: 'DRAFT',
   discount: '0.000',
-  tax: '0.000',
   notes: '',
+  paymentMethod: '',
   items: [emptyItem()],
 });
 
@@ -338,8 +338,8 @@ function PurchaseFormDialog({
         purchaseDate: p.purchaseDate.slice(0, 10),
         status: p.status === 'DRAFT' ? 'DRAFT' : 'CONFIRMED',
         discount: p.discount,
-        tax: p.tax,
         notes: p.notes ?? '',
+        paymentMethod: p.paymentMethod ?? '',
         items: p.items.map(item => ({
           key: nextKey(),
           productId: item.productId,
@@ -472,8 +472,8 @@ function PurchaseFormDialog({
       purchaseDate: form.purchaseDate,
       status:       form.status,
       discount:     form.discount,
-      tax:          form.tax,
       notes:        form.notes || undefined,
+      paymentMethod: form.paymentMethod || undefined,
       items:        form.items
         .filter(it => it.productId)
         .map(it => ({
@@ -508,8 +508,8 @@ function PurchaseFormDialog({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Supplier + Date + Status row */}
-            <div className="grid grid-cols-3 gap-3">
+            {/* Supplier + Date + Status + Payment Method row */}
+            <div className="grid grid-cols-4 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="p-supplier">
                   {t('purchase_supplier')} <span className="text-destructive">*</span>
@@ -980,7 +980,7 @@ export default function PurchasesPage() {
                             <DropdownMenuSeparator />
 
                             <DropdownMenuItem onClick={() => {
-                              toast({ title: t('purchase_export_pdf'), description: t('coming_soon') });
+                              window.open(`/documents/purchase-order/${purchase.id}`, '_blank');
                             }}>
                               <FileText className="mr-2 h-4 w-4" />
                               {t('purchase_export_pdf')}
@@ -993,7 +993,9 @@ export default function PurchasesPage() {
                               {t('purchase_export_xls')}
                             </DropdownMenuItem>
 
-                            <DropdownMenuItem onClick={() => window.print()}>
+                            <DropdownMenuItem onClick={() => {
+                              window.open(`/documents/purchase-order/${purchase.id}?print=true`, '_blank');
+                            }}>
                               <Printer className="mr-2 h-4 w-4" />
                               {t('print')}
                             </DropdownMenuItem>
