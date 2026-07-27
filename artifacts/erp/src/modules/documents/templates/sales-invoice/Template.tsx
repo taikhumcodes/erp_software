@@ -59,7 +59,7 @@ export const SalesInvoiceTemplate: React.FC<{ data: DocumentData }> = ({ data })
       />
 
       {/* Custom Terms & Signatures + QR Code */}
-      <CustomFooter qrData={data.qrData} />
+      <CustomFooter qrData={data.qrData} termsEn={company.termsEn} termsAr={company.termsAr} />
 
       {/* Footer */}
       <CompanyFooter company={company} color={color} />

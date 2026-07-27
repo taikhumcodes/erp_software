@@ -179,8 +179,33 @@ export const DocumentSettingsPage: React.FC = () => {
               </div>
             )}
 
-            {/* Note: In a complete implementation, we would add the form fields for Typography, Header, Footer, Tables, etc. here. */}
-            {activeTab !== 'layout' && (
+            {activeTab === 'footer' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Terms & Conditions (English)</label>
+                  <textarea
+                    value={formData.footer.termsEn}
+                    onChange={e => handleChange('footer', 'termsEn', e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Shown in the terms box on Sales Invoice, Purchase Order, and Delivery Order footers.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">الشروط والأحكام (Arabic)</label>
+                  <textarea
+                    value={formData.footer.termsAr}
+                    onChange={e => handleChange('footer', 'termsAr', e.target.value)}
+                    rows={3}
+                    dir="rtl"
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Note: In a complete implementation, we would add the remaining form fields for Typography, Header, Tables, etc. here. */}
+            {activeTab !== 'layout' && activeTab !== 'footer' && (
               <div className="text-muted-foreground text-center py-12">
                 Configure {activeTab} settings here.
                 <p className="text-sm mt-2">These fields map directly to the interfaces in `types/index.ts`.</p>

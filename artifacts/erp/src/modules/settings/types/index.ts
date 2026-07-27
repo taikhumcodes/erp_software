@@ -14,7 +14,6 @@ export interface CompanyProfileSettings {
   tagline: string;
   commercialRegistration: string;
   companyRegistration: string;
-  vatNumber: string;
   licenseNumber: string;
   phone: string;
   mobile: string;
@@ -123,6 +122,8 @@ export interface DocumentFooterSettings {
   footerHeight: string;
   footerPadding: string;
   customText: string;
+  termsEn: string;
+  termsAr: string;
 }
 
 // ─── Document Tables ──────────────────────────────────────────────────────────
@@ -150,7 +151,6 @@ export interface DocumentTotalsSettings {
   decimalPrecision: number;
   showSubtotal: boolean;
   showDiscount: boolean;
-  showVAT: boolean;
   grandTotalStyle: 'bold' | 'highlighted' | 'bordered';
   amountInWordsPosition: 'above-totals' | 'below-totals' | 'hidden';
   amountInWordsBackground: string;

@@ -28,7 +28,6 @@ export const DEFAULT_COMPANY_PROFILE: CompanyProfileSettings = {
   tagline: '',
   commercialRegistration: '',
   companyRegistration: '',
-  vatNumber: '',
   licenseNumber: '',
   phone: '',
   mobile: '',
@@ -126,6 +125,8 @@ export const DEFAULT_DOCUMENT_FOOTER: DocumentFooterSettings = {
   footerHeight: '80px',
   footerPadding: '16px',
   customText: '',
+  termsEn: 'Goods sold can be exchanged or returned within 15 days from the date of purchase if the goods are in same condition as the time of purchase',
+  termsAr: 'يمكن استبدال أو إرجاع السلع المباعة خلال 15 يوما من تاريخ الشراء، شريطة أن تكون السلع بحالتها الأصلية وقت الشراء',
 };
 
 export const DEFAULT_DOCUMENT_TABLE: DocumentTableSettings = {
@@ -149,7 +150,6 @@ export const DEFAULT_DOCUMENT_TOTALS: DocumentTotalsSettings = {
   decimalPrecision: 3,
   showSubtotal: true,
   showDiscount: true,
-  showVAT: true,
   grandTotalStyle: 'bold',
   amountInWordsPosition: 'below-totals',
   amountInWordsBackground: '#f8f9fa',

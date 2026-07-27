@@ -13,6 +13,7 @@ import salesRouter from "../modules/sales/sales.routes.js";
 import paymentsRouter from "../modules/payments/payments.routes.js";
 import deliveryOrdersRouter from "../modules/delivery-orders/delivery-orders.routes.js";
 import settingsRouter from "../modules/settings/settings.routes.js";
+import dashboardRouter from "../modules/dashboard/dashboard.routes.js";
 
 const router: IRouter = Router();
 
@@ -49,6 +50,9 @@ router.use("/payments", paymentsRouter);
 
 // Settings — /api/settings
 router.use("/settings", settingsRouter);
+
+// Dashboard — /api/dashboard
+router.use("/dashboard", dashboardRouter);
 
 export default router;
 

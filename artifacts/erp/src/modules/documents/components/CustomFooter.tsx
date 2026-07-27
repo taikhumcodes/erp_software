@@ -1,7 +1,10 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
-export const CustomFooter: React.FC<{ qrData?: string }> = ({ qrData }) => {
+const DEFAULT_TERMS_EN = 'Goods sold can be exchanged or returned within 15 days from the date of purchase if the goods are in same condition as the time of purchase';
+const DEFAULT_TERMS_AR = 'يمكن استبدال أو إرجاع السلع المباعة خلال 15 يوما من تاريخ الشراء، شريطة أن تكون السلع بحالتها الأصلية وقت الشراء';
+
+export const CustomFooter: React.FC<{ qrData?: string; termsEn?: string; termsAr?: string }> = ({ qrData, termsEn, termsAr }) => {
   return (
     <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', marginTop: '20px', pageBreakInside: 'avoid' }}>
       {/* Terms and Signatures Box */}
@@ -24,7 +27,7 @@ export const CustomFooter: React.FC<{ qrData?: string }> = ({ qrData }) => {
           direction: 'rtl',
           textAlign: 'center' 
         }}>
-          يمكن استبدال أو إرجاع السلع المباعة خلال 15 يوما من تاريخ الشراء، شريطة أن تكون السلع بحالتها الأصلية وقت الشراء
+          {termsAr || DEFAULT_TERMS_AR}
         </div>
         
         {/* English Terms */}
@@ -34,7 +37,7 @@ export const CustomFooter: React.FC<{ qrData?: string }> = ({ qrData }) => {
           color: '#111',
           textAlign: 'center'
         }}>
-          Goods sold can be exchanged or returned within 15 days from the date of purchase if the goods are in same condition as the time of purchase
+          {termsEn || DEFAULT_TERMS_EN}
         </div>
 
         {/* Signatures */}

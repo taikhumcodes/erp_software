@@ -4,7 +4,6 @@ export interface CompanyProfile {
   nameAr: string;
   commercialRegistration?: string;
   companyRegistration?: string;
-  vatNumber?: string;
   phone?: string;
   mobile?: string;
   email?: string;
@@ -25,11 +24,8 @@ export interface CompanyProfile {
   paperSize: 'A4' | 'Letter';
   defaultLanguage: 'en' | 'ar';
   bilingual: boolean;
-  purchaseTerms?: string;
-  deliveryTerms?: string;
-  invoiceTerms?: string;
-  warranty?: string;
-  returnPolicy?: string;
+  termsEn?: string;
+  termsAr?: string;
   preparedByLabel: string;
   checkedByLabel: string;
   approvedByLabel: string;

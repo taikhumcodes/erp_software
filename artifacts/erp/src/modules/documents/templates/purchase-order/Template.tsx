@@ -14,7 +14,7 @@ import {
 
 export const PurchaseOrderTemplate: React.FC<{ data: DocumentData }> = ({ data }) => {
   const { company } = data;
-  const color = '#eba225ff'; // Orange for Purchase Order
+  const color = '#000000'; // Black for Purchase Order (matches ShieldMax brand — no blue in the palette)
 
   return (
     <DocumentPageLayout company={company}>
@@ -59,7 +59,7 @@ export const PurchaseOrderTemplate: React.FC<{ data: DocumentData }> = ({ data }
       />
 
       {/* Custom Terms & Signatures + QR Code */}
-      <CustomFooter qrData={data.qrData} />
+      <CustomFooter qrData={data.qrData} termsEn={company.termsEn} termsAr={company.termsAr} />
 
       {/* Footer */}
       <CompanyFooter company={company} color={color} />

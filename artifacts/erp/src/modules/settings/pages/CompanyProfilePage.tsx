@@ -185,13 +185,6 @@ export const CompanyProfilePage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">VAT Number</label>
-              <input 
-                type="text" name="vatNumber" value={formData.vatNumber} onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium mb-1">License Number</label>
               <input 
                 type="text" name="licenseNumber" value={formData.licenseNumber} onChange={handleChange}
