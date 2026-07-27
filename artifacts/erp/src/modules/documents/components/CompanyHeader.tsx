@@ -47,7 +47,7 @@ export const CompanyHeader: React.FC<{ company: CompanyProfile; rightContent?: R
             <img
               src={company.logoUrl}
               alt="Company Logo"
-              style={{ height: '120px', maxWidth: '240px', objectFit: 'contain' }}
+              style={{ height: '160px', maxWidth: '320px', objectFit: 'contain' }}
             />
           )}
         </div>
@@ -57,7 +57,7 @@ export const CompanyHeader: React.FC<{ company: CompanyProfile; rightContent?: R
           <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, lineHeight: 1.2, color: '#000', fontFamily: '"IBM Plex Sans Arabic", "Noto Sans Arabic", sans-serif' }}>
             {company.nameAr}
           </h1>
-          <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '10px', color: '#333', alignItems: 'flex-end' }}>
+          <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '10px', color: '#333', alignItems: 'flex-start' }}>
             {company.phone && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', direction: 'ltr' }}>
                 <span>{company.phone}</span>

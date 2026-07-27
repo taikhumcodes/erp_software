@@ -111,7 +111,7 @@ export default function Customers() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.phone.trim()) return;
+    if (!form.name.trim()) return;
     const phoneError = getPhoneValidationError(form.phone);
     if (phoneError) {
       toast({ title: t('error'), description: phoneError, variant: 'destructive' });
@@ -202,9 +202,9 @@ export default function Customers() {
                 <input dir="rtl" value={form.nameAr} onChange={(e) => setForm((f) => ({ ...f, nameAr: e.target.value }))} className="form-input" placeholder="مثال: أحمد السالم" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t('phone')} <span className="text-destructive">*</span></label>
+                <label className="text-sm font-medium">{t('phone')}</label>
                 <div className="flex gap-2">
-                  <input required value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: formatPhoneInput(e.target.value) }))} className="form-input flex-1" placeholder="+965 xxxx xxxx" />
+                  <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: formatPhoneInput(e.target.value) }))} className="form-input flex-1" placeholder="+965 xxxx xxxx" />
                 </div>
               </div>
               <div className="space-y-1.5">
@@ -240,6 +240,7 @@ export default function Customers() {
 }
 
 function getPhoneValidationError(value: string) {
+  if (!value || !value.trim()) return null;
   const digits = value.replace(/\D/g, '');
   const local = digits.startsWith('965') ? digits.slice(3) : digits.replace(/^0+/, '');
   if (!local) return 'Kuwait mobile number is required';

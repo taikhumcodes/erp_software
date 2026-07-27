@@ -37,7 +37,7 @@ export default function Login() {
     <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-[400px]">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-24 h-24 mb-4">
+          <div className="w-32 h-32 mb-4">
             <img src="/logo.png" alt="Shield Max Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">{t('app_name')}</h1>

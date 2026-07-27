@@ -31,7 +31,7 @@ export class CustomersService {
   async create(body: Record<string, unknown>) {
     const name = this.requireString(body.name, 'name');
     const providedCode = this.optionalString(body.code);
-    const phone = this.requirePhone(body.phone);
+    const phone = this.optionalPhone(body.phone);
     const normalizedPhone = normalizeUniqueValue(phone, 'phone');
     const normalizedEmail = normalizeUniqueValue(body.email, 'email');
 
@@ -77,7 +77,7 @@ export class CustomersService {
 
     if (body.name !== undefined) updates.name = this.requireString(body.name, 'name');
     if (body.nameAr !== undefined) updates.nameAr = this.optionalString(body.nameAr);
-    if (body.phone !== undefined) updates.phone = this.requirePhone(body.phone);
+    if (body.phone !== undefined) updates.phone = this.optionalPhone(body.phone);
     if (body.email !== undefined) updates.email = this.optionalEmail(body.email);
     if (body.address !== undefined) updates.address = this.optionalString(body.address);
     if (body.creditLimit !== undefined) updates.creditLimit = this.optionalDecimal(body.creditLimit) ?? 0;
@@ -153,12 +153,14 @@ export class CustomersService {
     return typeof value === 'string' ? value.trim() || null : null;
   }
 
-  private requirePhone(value: unknown): string {
+  private optionalPhone(value: unknown): string | null {
+    if (value === null || value === undefined || value === '') return null;
+    if (typeof value === 'string' && !value.trim()) return null;
     const error = getPhoneValidationError(value);
     if (error) {
       throw new ValidationError(error);
     }
-    return formatPhoneNumber(value) ?? '';
+    return formatPhoneNumber(value);
   }
 
   private optionalEmail(value: unknown): string | null {
