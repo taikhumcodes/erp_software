@@ -146,8 +146,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         }`}
       >
         <div className="h-[60px] flex items-center px-6 border-b shrink-0">
-          <div className="w-8 h-8 bg-primary rounded flex items-center justify-center mr-3 rtl:ml-3 rtl:mr-0">
-            <Box className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 overflow-hidden bg-white">
+            <img src="/logo.png" alt="Shield Max Logo" className="w-full h-full object-contain" />
           </div>
           <span className="font-bold text-lg text-sidebar-foreground whitespace-nowrap overflow-hidden">
             {t('app_name')}

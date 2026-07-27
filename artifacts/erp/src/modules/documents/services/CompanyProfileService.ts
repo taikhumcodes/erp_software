@@ -14,7 +14,7 @@ class ProfileService {
 
     return {
       logoUrl: profile.logoUrl || undefined,
-      nameEn: profile.nameEn || 'Al-Bunyan Trading Co.',
+      nameEn: profile.nameEn || 'Shield Max',
       nameAr: profile.nameAr || 'شركة البنيان للتجارة',
       commercialRegistration: profile.commercialRegistration || undefined,
       companyRegistration: profile.companyRegistration || undefined,

@@ -4,7 +4,7 @@ import { initReactI18next } from 'react-i18next';
 // English translations
 const en = {
   translation: {
-    app_name: 'Al-Bunyan ERP',
+    app_name: 'Shield Max',
     dashboard: 'Dashboard',
     inventory: 'INVENTORY',
     products: 'Products',

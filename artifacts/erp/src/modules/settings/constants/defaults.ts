@@ -23,7 +23,7 @@ import type {
 } from '../types';
 
 export const DEFAULT_COMPANY_PROFILE: CompanyProfileSettings = {
-  nameEn: 'Al-Bunyan Trading Co.',
+  nameEn: 'Shield Max',
   nameAr: 'شركة البنيان للتجارة',
   tagline: '',
   commercialRegistration: '',

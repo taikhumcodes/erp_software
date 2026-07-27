@@ -13,7 +13,7 @@ import { ValidationError, NotFoundError } from '../../errors/AppError.js';
 const DEFAULTS: Record<string, Record<string, Record<string, unknown>>> = {
   company: {
     profile: {
-      nameEn: 'Al-Bunyan Trading Co.',
+      nameEn: 'Shield Max',
       nameAr: 'شركة البنيان للتجارة',
       tagline: '',
       commercialRegistration: '',

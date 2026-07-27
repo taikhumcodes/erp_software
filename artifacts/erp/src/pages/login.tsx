@@ -37,8 +37,8 @@ export default function Login() {
     <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-[400px]">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4 shadow-sm">
-            <Box className="w-6 h-6 text-white" />
+          <div className="w-24 h-24 mb-4">
+            <img src="/logo.png" alt="Shield Max Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">{t('app_name')}</h1>
           <p className="text-muted-foreground text-sm mt-2">{t('welcome_back')}</p>
@@ -57,7 +57,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground transition-shadow"
-                placeholder="admin@albunyan.com"
+                placeholder="admin@shieldmax.com"
                 dir="ltr"
               />
             </div>
