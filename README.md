@@ -23,7 +23,7 @@ Built as a **pnpm monorepo** with a React + Vite frontend and an Express + Prism
 
 ## Monorepo Layout
 
-```
+```text
 /
 ├── artifacts/
 │   ├── api-server/          # Express REST API (port 8080 by default)
@@ -32,12 +32,13 @@ Built as a **pnpm monorepo** with a React + Vite frontend and an Express + Prism
 │   │   │   ├── seed.ts
 │   │   │   └── migrations/
 │   │   └── src/
-│   │       ├── modules/     # auth | categories | brands | units | products
+│   │       ├── modules/     # auth | categories | brands | units | products | customers | suppliers | users | dashboard | settings
 │   │       ├── middlewares/ # authenticate | authorize | errorHandler
-│   │       └── lib/         # prisma | jwt | logger
+│   │       └── lib/         # prisma | jwt | logger | audit
 │   └── erp/                 # React + Vite frontend (port 3000 by default)
 │       └── src/
-│           ├── pages/       # login | dashboard | categories | brands | units | products
+│           ├── pages/       # login | dashboard | categories | brands | units | products | customers | suppliers | users
+│           ├── modules/     # documents | settings | dashboard
 │           ├── lib/         # api | store | auth-refresh | types
 │           └── components/
 ├── lib/
@@ -293,20 +294,24 @@ Delete: ADMIN and above.
 
 ## Implemented Modules
 
-| Module | Status |
-|---|---|
-| Authentication | ✅ Login, logout, JWT refresh, session restore |
-| Categories | ✅ Full CRUD, search, pagination |
-| Brands | ✅ Full CRUD, search, pagination |
-| Units | ✅ Full CRUD, search, pagination |
-| Products | ✅ Full CRUD, search, filter by category / brand / status |
-| Customers | 🔜 Planned |
-| Suppliers | 🔜 Planned |
-| Purchases | 🔜 Planned |
-| Sales | 🔜 Planned |
-| Delivery Orders | 🔜 Planned |
-| Payments | 🔜 Planned |
-| Reports | 🔜 Planned |
+| Module | Status | Features |
+|---|---|---|
+| Authentication | ✅ Complete | Login, logout, JWT refresh, session restore, inactive-user protection |
+| Dashboard | 🟡 In Progress | Dashboard interface integration |
+| Categories | ✅ Complete | Full CRUD, search, pagination, role guards, delete protection |
+| Brands | ✅ Complete | Full CRUD, search, pagination, role guards, delete protection |
+| Units | ✅ Complete | Full CRUD, search, pagination, role guards, delete protection |
+| Products | ✅ Complete | Full CRUD, search, filter by category / brand / status, stock and price precision |
+| Customers | ✅ Complete | Full CRUD, search, duplicate prevention, auto code generation |
+| Suppliers | ✅ Complete | Full CRUD, search, statistics, balance display, delete protection |
+| Users | ✅ Complete | Full user management, role hierarchy, password reset, audit logging |
+| Settings | 🟡 In Progress | Basic routes and controller setup |
+| Documents | 🟡 In Progress | Document templates integration (Purchase/Sales Orders, etc.) |
+| Purchases | ⬜ Not Started | Schema exists; API and UI not implemented |
+| Sales | ⬜ Not Started | Schema exists; API and UI not implemented |
+| Delivery Orders | ⬜ Not Started | Schema exists; API and UI not implemented |
+| Payments | ⬜ Not Started | Schema exists; API and UI not implemented |
+| Reports | ⬜ Not Started | Schema exists; API and UI not implemented |
 
 ---
 
