@@ -123,7 +123,7 @@ export class DashboardService {
     });
 
     const chartData = Array.from(chartMap.values()).sort((a, b) => a.date.localeCompare(b.date));
-    
+
     // Profit margin trend (simulated over periods based on data)
     const profitMarginTrend = chartData.map(d => ({
       date: d.date,
@@ -230,25 +230,25 @@ export class DashboardService {
     let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     if (diffDays <= 0) diffDays = 1;
 
-    const inventoryStats: any[] = await prisma.$queryRaw\`
+    const inventoryStats: any[] = await prisma.$queryRaw`
       SELECT 
         p.id, p.sku, p.name, 
         p.stock_quantity as "stockQuantity", 
         p.cost_price as "costPrice",
         p.selling_price as "sellingPrice",
         p.reorder_level as "safetyStock",
-        COALESCE(SUM(si.quantity) / \${diffDays}::numeric, 0) as "avgDailySales",
+        COALESCE(SUM(si.quantity) / ${diffDays}::numeric, 0) as "avgDailySales",
         MAX(s.sale_date) as "lastSaleDate"
       FROM products p
       LEFT JOIN sale_items si ON p.id = si.product_id
       LEFT JOIN sales s ON si.sale_id = s.id 
-        AND s.sale_date >= \${startDate} 
-        AND s.sale_date <= \${endDate}
+        AND s.sale_date >= ${startDate} 
+        AND s.sale_date <= ${endDate}
         AND s.status != 'CANCELLED'
       WHERE p.is_active = true
       GROUP BY p.id, p.sku, p.name, p.stock_quantity, p.cost_price, p.selling_price, p.reorder_level
       ORDER BY "avgDailySales" DESC
-    \`;
+    `;
 
     let totalValue = 0, totalCost = 0, lowStockCount = 0, outOfStockCount = 0, totalStockQty = 0;
     
@@ -367,7 +367,7 @@ export class DashboardService {
     });
 
     const activity = recentSales.map(s => ({
-      id: s.id, module: 'Sales', description: \`New Sale \${s.number} created\`,
+      id: s.id, module: 'Sales', description: `New Sale ${s.number} created`,
       user: s.user.name, entity: s.customer.name, amount: Number(s.netAmount),
       time: s.createdAt, status: s.status
     })).sort((a, b) => b.time.getTime() - a.time.getTime());
@@ -375,8 +375,8 @@ export class DashboardService {
     // Generate alerts
     const alerts = [];
     const inv = await this.getInventoryIntelligence(startDate, endDate);
-    if (inv.summary.outOfStockCount > 0) alerts.push({ severity: 'Critical', message: \`\${inv.summary.outOfStockCount} products out of stock\` });
-    if (inv.summary.lowStockCount > 0) alerts.push({ severity: 'High', message: \`\${inv.summary.lowStockCount} products are running low\` });
+    if (inv.summary.outOfStockCount > 0) alerts.push({ severity: 'Critical', message: `${inv.summary.outOfStockCount} products out of stock` });
+    if (inv.summary.lowStockCount > 0) alerts.push({ severity: 'High', message: `${inv.summary.lowStockCount} products are running low` });
     
     return {
       pendingDeliveries: pendingDeliveries.map(d => ({
