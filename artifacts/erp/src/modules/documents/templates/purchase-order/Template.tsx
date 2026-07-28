@@ -8,13 +8,19 @@ import {
   ItemsTable,
   TotalsSection,
   AmountInWords,
+  SignatureSection,
+  TermsConditions,
   CompanyFooter,
-  CustomFooter,
 } from '../../components';
 
 export const PurchaseOrderTemplate: React.FC<{ data: DocumentData }> = ({ data }) => {
   const { company } = data;
-  const color = '#000000'; // Black for Purchase Order (matches ShieldMax brand — no blue in the palette)
+  // Single brand accent color across all document types, matching the
+  // approved reference designs (previously hardcoded per-type colors).
+  const color = company.accentColor || '#F2A93B';
+
+  const termsEn = data.terms || 'Please supply the goods as per the specifications and agreed delivery schedule mentioned in this Purchase Order.';
+  const termsAr = data.termsAr || 'يرجى توريد البضائع وفقاً للمواصفات وجدول التسليم المتفق عليه والمذكور في أمر الشراء هذا.';
 
   return (
     <DocumentPageLayout company={company}>
@@ -44,22 +50,32 @@ export const PurchaseOrderTemplate: React.FC<{ data: DocumentData }> = ({ data }
         bilingual={company.bilingual}
       />
 
-      {/* Totals */}
-      <TotalsSection
-        summaryLines={data.summaryLines}
-        bilingual={company.bilingual}
+      {/* Amount in Words + Totals */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-end' }}>
+        <div style={{ flex: 1 }}>
+          <AmountInWords
+            amountEn={data.amountInWords}
+            amountAr={data.amountInWordsAr}
+            color={color}
+          />
+        </div>
+        <TotalsSection
+          summaryLines={data.summaryLines}
+          bilingual={company.bilingual}
+          color={color}
+        />
+      </div>
+
+      {/* Prepared By / Checked By */}
+      <SignatureSection signatures={data.signatures} bilingual={company.bilingual} color={color} />
+
+      {/* Terms & Conditions + QR */}
+      <TermsConditions
+        termsEn={termsEn}
+        termsAr={termsAr}
+        qrData={data.qrData}
         color={color}
       />
-
-      {/* Amount in Words */}
-      <AmountInWords
-        amountEn={data.amountInWords}
-        amountAr={data.amountInWordsAr}
-        color={color}
-      />
-
-      {/* Custom Terms & Signatures + QR Code */}
-      <CustomFooter qrData={data.qrData} termsEn={company.termsEn} termsAr={company.termsAr} />
 
       {/* Footer */}
       <CompanyFooter company={company} color={color} />

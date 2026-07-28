@@ -5,7 +5,7 @@ export const shieldMaxTheme: DocumentTheme = {
   name: 'Shield Max Theme',
   primaryColor: '#000000',
   secondaryColor: '#333333',
-  accentColor: '#D4AF37', // Gold
+  accentColor: '#F2A93B', // Warm amber/orange — matches ShieldMax brand mark
   borders: '1px solid #e2e8f0', // slate-200
   fonts: {
     primary: '"Inter", sans-serif',

@@ -27,11 +27,41 @@ export async function getInventoryIntelligenceHandler(req: Request, res: Respons
   }
 }
 
-export async function getChartsHandler(req: Request, res: Response, next: NextFunction) {
+export async function getFinancialAnalyticsHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const { startDate, endDate } = parseDates(req.query);
-    const charts = await dashboardService.getCharts(startDate, endDate);
+    const charts = await dashboardService.getFinancialAnalytics(startDate, endDate);
     res.json(charts);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getCustomerAnalyticsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { startDate, endDate } = parseDates(req.query);
+    const data = await dashboardService.getCustomerAnalytics(startDate, endDate);
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getSupplierAnalyticsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { startDate, endDate } = parseDates(req.query);
+    const data = await dashboardService.getSupplierAnalytics(startDate, endDate);
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getSalesAnalyticsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { startDate, endDate } = parseDates(req.query);
+    const data = await dashboardService.getSalesAnalytics(startDate, endDate);
+    res.json(data);
   } catch (error) {
     next(error);
   }
@@ -42,6 +72,25 @@ export async function getOperationsHandler(req: Request, res: Response, next: Ne
     const { startDate, endDate } = parseDates(req.query);
     const operations = await dashboardService.getOperations(startDate, endDate);
     res.json(operations);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getBusinessHealthHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { startDate, endDate } = parseDates(req.query);
+    const data = await dashboardService.getBusinessHealth(startDate, endDate);
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getFinancialCentersHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await dashboardService.getFinancialCenters();
+    res.json(data);
   } catch (error) {
     next(error);
   }

@@ -7,13 +7,17 @@ import {
   DocumentInformation,
   DeliveryDetailsGrid,
   ItemsTable,
+  SignatureSection,
+  TermsConditions,
   CompanyFooter,
-  CustomFooter,
 } from '../../components';
 
 export const DeliveryOrderTemplate: React.FC<{ data: DocumentData }> = ({ data }) => {
   const { company } = data;
-  const color = '#dc2626'; // Red for Delivery Order
+  const color = company.accentColor || '#F2A93B';
+
+  const termsEn = data.terms || "Customer's signature confirms receipt of the goods in good condition and correct quantity.";
+  const termsAr = data.termsAr || 'يؤكد توقيع العميل استلام البضائع بحالة جيدة وبالكمية الصحيحة.';
 
   return (
     <DocumentPageLayout company={company}>
@@ -52,28 +56,33 @@ export const DeliveryOrderTemplate: React.FC<{ data: DocumentData }> = ({ data }
       {/* Notes section */}
       {data.notes && (
         <div style={{
-          border: '1px solid #e5e7eb',
-          marginBottom: '12px',
+          borderLeft: `3px solid ${color}`,
+          backgroundColor: `${color}12`,
+          borderRadius: '3px',
+          marginTop: '10px',
+          marginBottom: '14px',
           fontSize: '10px',
+          padding: '8px 12px',
         }}>
-          <div style={{
-            padding: '4px 10px',
-            borderBottom: '1px solid #e5e7eb',
-            backgroundColor: '#f9fafb',
-            fontWeight: 700,
-            display: 'flex',
-            justifyContent: 'space-between',
-          }}>
-            <span>Notes / ملاحظات</span>
+          <div style={{ fontWeight: 700, color: '#111', marginBottom: '2px' }}>
+            Notes / ملاحظات
           </div>
-          <div style={{ padding: '6px 10px', lineHeight: 1.5 }}>
+          <div style={{ lineHeight: 1.5, color: '#374151' }}>
             {data.notes}
           </div>
         </div>
       )}
 
-      {/* Custom Terms & Signatures + QR Code */}
-      <CustomFooter qrData={data.qrData} termsEn={company.termsEn} termsAr={company.termsAr} />
+      {/* Prepared By / Checked By / For Receiving Use */}
+      <SignatureSection signatures={data.signatures} bilingual={company.bilingual} color={color} />
+
+      {/* Terms & Conditions + QR */}
+      <TermsConditions
+        termsEn={termsEn}
+        termsAr={termsAr}
+        qrData={data.qrData}
+        color={color}
+      />
 
       {/* Footer */}
       <CompanyFooter company={company} color={color} />

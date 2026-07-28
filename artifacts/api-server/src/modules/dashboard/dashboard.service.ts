@@ -7,7 +7,7 @@ export class DashboardService {
    * Executive KPIs
    */
   async getKPIs(startDate: Date, endDate: Date) {
-    const [sales, purchases, receivables, payables, activeCustomers, activeSuppliers] = await Promise.all([
+    const [sales, purchases, receivables, payables, activeCustomers, activeSuppliers, completedPayments] = await Promise.all([
       prisma.sale.aggregate({
         _sum: { netAmount: true, paidAmount: true, outstandingAmount: true },
         where: { saleDate: { gte: startDate, lte: endDate }, status: { not: 'CANCELLED' } }
@@ -27,133 +27,72 @@ export class DashboardService {
       }),
       prisma.supplier.count({
         where: { isActive: true }
+      }),
+      prisma.payment.groupBy({
+        by: ['type'],
+        _sum: { amount: true },
+        where: { status: 'COMPLETED', paymentDate: { lte: endDate } }
       })
     ]);
 
-    // Format output
-    return {
-      sales: {
-        totalRevenue: sales._sum.netAmount || 0,
-        totalCollections: sales._sum.paidAmount || 0,
-        outstanding: sales._sum.outstandingAmount || 0
-      },
-      purchases: {
-        totalCost: purchases._sum.netAmount || 0,
-        totalPayments: purchases._sum.paidAmount || 0,
-        outstanding: purchases._sum.outstandingAmount || 0
-      },
-      profit: {
-        grossProfit: Number(sales._sum.netAmount || 0) - Number(purchases._sum.netAmount || 0)
-      },
-      receivables: receivables._sum.balance || 0,
-      payables: payables._sum.balance || 0,
-      counts: {
-        customers: activeCustomers,
-        suppliers: activeSuppliers
-      }
-    };
-  }
-
-  /**
-   * Inventory Intelligence (Dynamic Parameterized SQL)
-   */
-  async getInventoryIntelligence(startDate: Date, endDate: Date) {
-    // Calculate the difference in days between startDate and endDate
-    // to use as the divisor for average daily sales. Ensure minimum of 1 day to avoid division by zero.
-    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays <= 0) diffDays = 1;
-
-    // Use raw SQL to calculate Average Daily Sales dynamically based on the date range
-    const inventoryStats: any[] = await prisma.$queryRaw`
-      SELECT 
-        p.id, 
-        p.sku,
-        p.name, 
-        p.stock_quantity as "stockQuantity", 
-        p.cost_price as "costPrice",
-        p.selling_price as "sellingPrice",
-        COALESCE(SUM(si.quantity) / ${diffDays}::numeric, 0) as "avgDailySales"
-      FROM products p
-      LEFT JOIN sale_items si ON p.id = si.product_id
-      LEFT JOIN sales s ON si.sale_id = s.id 
-        AND s.sale_date >= ${startDate} 
-        AND s.sale_date <= ${endDate}
-        AND s.status != 'CANCELLED'
-      WHERE p.is_active = true
-      GROUP BY p.id, p.sku, p.name, p.stock_quantity, p.cost_price, p.selling_price
-      ORDER BY "avgDailySales" DESC
-    `;
-
-    // Process and categorize logic
-    let totalValue = 0;
-    let totalCost = 0;
-    let lowStockCount = 0;
-    let outOfStockCount = 0;
-    let totalStockQty = 0;
-
-    const stockCoverage = inventoryStats.map(item => {
-      const stock = Number(item.stockQuantity);
-      const cost = Number(item.costPrice);
-      const price = Number(item.sellingPrice);
-      const ads = Number(item.avgDailySales);
-      
-      totalValue += stock * price;
-      totalCost += stock * cost;
-      totalStockQty += stock;
-
-      if (stock <= 0) outOfStockCount++;
-      
-      let status = 'Healthy';
-      let daysRemaining = 999;
-
-      if (stock <= 0) {
-        status = 'Out of Stock';
-        daysRemaining = 0;
-      } else if (ads > 0) {
-        daysRemaining = stock / ads;
-        if (daysRemaining < 7) {
-          status = 'Critical';
-          lowStockCount++;
-        }
-        else if (daysRemaining < 15) {
-          status = 'Reorder Soon';
-          lowStockCount++;
-        }
-        else if (daysRemaining < 30) status = 'Monitor';
-        else if (daysRemaining > 60) status = 'Overstock';
-      } else {
-        status = 'Overstock'; // Stock exists but no sales in period
-      }
-
-      return {
-        id: item.id,
-        sku: item.sku,
-        name: item.name,
-        stockQuantity: stock,
-        avgDailySales: ads,
-        daysRemaining: Math.round(daysRemaining),
-        status
-      };
+    // Calculate Cash Balance based on completed payments up to endDate
+    let cashBalance = 0;
+    completedPayments.forEach(p => {
+      if (p.type === 'CUSTOMER') cashBalance += Number(p._sum.amount || 0);
+      if (p.type === 'SUPPLIER') cashBalance -= Number(p._sum.amount || 0);
     });
 
+    const inventoryValueResult = await prisma.$queryRaw<[{ totalValue: number }]>`
+      SELECT COALESCE(SUM(stock_quantity * cost_price), 0) as "totalValue"
+      FROM products
+      WHERE is_active = true
+    `;
+    const inventoryValue = Number(inventoryValueResult[0]?.totalValue || 0);
+
+    const pendingDeliveries = await prisma.deliveryOrder.count({
+      where: { status: { in: ['DRAFT', 'APPROVED', 'DISPATCHED'] } }
+    });
+
+    const products = await prisma.product.count({ where: { isActive: true } });
+
+    const totalRevenue = Number(sales._sum.netAmount || 0);
+    const totalCost = Number(purchases._sum.netAmount || 0);
+
     return {
-      summary: {
-        totalValue,
-        totalCost,
-        totalStockQty,
-        lowStockCount,
-        outOfStockCount
+      sales: {
+        totalRevenue,
+        totalCollections: Number(sales._sum.paidAmount || 0),
+        outstanding: Number(sales._sum.outstandingAmount || 0)
       },
-      topMovingProducts: stockCoverage.slice(0, 10), // Top 10 by ADS (already sorted by SQL)
-      stockCoverage // Full list
+      purchases: {
+        totalCost,
+        totalPayments: Number(purchases._sum.paidAmount || 0),
+        outstanding: Number(purchases._sum.outstandingAmount || 0)
+      },
+      profit: {
+        grossProfit: totalRevenue - totalCost,
+        netProfit: totalRevenue - totalCost // simplified for Phase 2
+      },
+      balances: {
+        cashBalance,
+        bankBalance: 0, // Placeholder
+        inventoryValue
+      },
+      receivables: Number(receivables._sum.balance || 0),
+      payables: Number(payables._sum.balance || 0),
+      counts: {
+        customers: activeCustomers,
+        suppliers: activeSuppliers,
+        products,
+        pendingDeliveries
+      }
     };
   }
 
   /**
-   * Analytics & Charts
+   * Financial Analytics
    */
-  async getCharts(startDate: Date, endDate: Date) {
+  async getFinancialAnalytics(startDate: Date, endDate: Date) {
     const sales = await prisma.sale.findMany({
       where: { saleDate: { gte: startDate, lte: endDate }, status: { not: 'CANCELLED' } },
       select: { saleDate: true, netAmount: true, paidAmount: true }
@@ -164,9 +103,7 @@ export class DashboardService {
       select: { purchaseDate: true, netAmount: true, paidAmount: true }
     });
 
-    // Grouping by Date (YYYY-MM-DD)
     const chartMap = new Map<string, { date: string; revenue: number; expense: number; collections: number; payments: number }>();
-
     const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
     sales.forEach(s => {
@@ -185,66 +122,294 @@ export class DashboardService {
       entry.payments += Number(p.paidAmount);
     });
 
-    const revenueVsExpense = Array.from(chartMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+    const chartData = Array.from(chartMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+    
+    // Profit margin trend (simulated over periods based on data)
+    const profitMarginTrend = chartData.map(d => ({
+      date: d.date,
+      margin: d.revenue > 0 ? ((d.revenue - d.expense) / d.revenue) * 100 : 0
+    }));
 
     return {
-      revenueVsExpense
+      revenueVsExpense: chartData,
+      profitMarginTrend
     };
   }
 
   /**
-   * Operations & Alerts
+   * Customer Analytics
+   */
+  async getCustomerAnalytics(startDate: Date, endDate: Date) {
+    const topCustomers = await prisma.$queryRaw<any[]>`
+      SELECT c.id, c.name, 
+             COALESCE(SUM(s.net_amount), 0) as "totalRevenue",
+             COALESCE(SUM(s.outstanding_amount), 0) as "outstanding",
+             MAX(s.sale_date) as "lastPurchase",
+             COUNT(s.id) as "orderCount",
+             c.is_active as "isActive"
+      FROM customers c
+      LEFT JOIN sales s ON c.id = s.customer_id AND s.sale_date >= ${startDate} AND s.sale_date <= ${endDate} AND s.status != 'CANCELLED'
+      GROUP BY c.id
+      ORDER BY "totalRevenue" DESC
+      LIMIT 10
+    `;
+
+    return topCustomers.map(c => ({
+      id: c.id,
+      name: c.name,
+      totalRevenue: Number(c.totalRevenue),
+      outstanding: Number(c.outstanding),
+      lastPurchase: c.lastPurchase,
+      orderCount: Number(c.orderCount),
+      status: c.isActive ? 'Active' : 'Inactive',
+      avgOrderValue: Number(c.orderCount) > 0 ? Number(c.totalRevenue) / Number(c.orderCount) : 0
+    }));
+  }
+
+  /**
+   * Supplier Analytics
+   */
+  async getSupplierAnalytics(startDate: Date, endDate: Date) {
+    const topSuppliers = await prisma.$queryRaw<any[]>`
+      SELECT s.id, s.name, 
+             COALESCE(SUM(p.net_amount), 0) as "totalPurchases",
+             COALESCE(SUM(p.outstanding_amount), 0) as "outstanding",
+             MAX(p.purchase_date) as "lastPurchase",
+             s.is_active as "isActive"
+      FROM suppliers s
+      LEFT JOIN purchases p ON s.id = p.supplier_id AND p.purchase_date >= ${startDate} AND p.purchase_date <= ${endDate} AND p.status != 'CANCELLED'
+      GROUP BY s.id
+      ORDER BY "totalPurchases" DESC
+      LIMIT 10
+    `;
+
+    return topSuppliers.map(s => ({
+      id: s.id,
+      name: s.name,
+      totalPurchases: Number(s.totalPurchases),
+      outstanding: Number(s.outstanding),
+      lastPurchase: s.lastPurchase,
+      status: s.isActive ? 'Active' : 'Inactive'
+    }));
+  }
+
+  /**
+   * Sales & Product Performance Analytics
+   */
+  async getSalesAnalytics(startDate: Date, endDate: Date) {
+    const topProducts = await prisma.$queryRaw<any[]>`
+      SELECT p.id, p.name, p.sku, p.stock_quantity as "currentStock",
+             COALESCE(SUM(si.quantity), 0) as "unitsSold",
+             COALESCE(SUM(si.total), 0) as "revenue",
+             COALESCE(SUM(si.total) - SUM(si.quantity * p.cost_price), 0) as "profit"
+      FROM products p
+      JOIN sale_items si ON p.id = si.product_id
+      JOIN sales s ON si.sale_id = s.id
+      WHERE s.sale_date >= ${startDate} AND s.sale_date <= ${endDate} AND s.status != 'CANCELLED'
+      GROUP BY p.id
+      ORDER BY "revenue" DESC
+      LIMIT 15
+    `;
+
+    return {
+      topProducts: topProducts.map(p => ({
+        ...p,
+        currentStock: Number(p.currentStock),
+        unitsSold: Number(p.unitsSold),
+        revenue: Number(p.revenue),
+        profit: Number(p.profit)
+      }))
+    };
+  }
+
+  /**
+   * Inventory Intelligence (Dynamic Parameterized SQL)
+   */
+  async getInventoryIntelligence(startDate: Date, endDate: Date) {
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays <= 0) diffDays = 1;
+
+    const inventoryStats: any[] = await prisma.$queryRaw\`
+      SELECT 
+        p.id, p.sku, p.name, 
+        p.stock_quantity as "stockQuantity", 
+        p.cost_price as "costPrice",
+        p.selling_price as "sellingPrice",
+        p.reorder_level as "safetyStock",
+        COALESCE(SUM(si.quantity) / \${diffDays}::numeric, 0) as "avgDailySales",
+        MAX(s.sale_date) as "lastSaleDate"
+      FROM products p
+      LEFT JOIN sale_items si ON p.id = si.product_id
+      LEFT JOIN sales s ON si.sale_id = s.id 
+        AND s.sale_date >= \${startDate} 
+        AND s.sale_date <= \${endDate}
+        AND s.status != 'CANCELLED'
+      WHERE p.is_active = true
+      GROUP BY p.id, p.sku, p.name, p.stock_quantity, p.cost_price, p.selling_price, p.reorder_level
+      ORDER BY "avgDailySales" DESC
+    \`;
+
+    let totalValue = 0, totalCost = 0, lowStockCount = 0, outOfStockCount = 0, totalStockQty = 0;
+    
+    const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const sixtyDaysAgo = new Date(); sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    const stockCoverage = inventoryStats.map(item => {
+      const stock = Number(item.stockQuantity);
+      const cost = Number(item.costPrice);
+      const price = Number(item.sellingPrice);
+      const ads = Number(item.avgDailySales);
+      const safetyStock = Number(item.safetyStock) || 0;
+      const leadTime = 7; // Estimated for Phase 2
+      
+      totalValue += stock * price;
+      totalCost += stock * cost;
+      totalStockQty += stock;
+      if (stock <= 0) outOfStockCount++;
+      
+      let status = 'Healthy';
+      let daysRemaining = 999;
+      let isDeadStock = false;
+      let deadStockRecommendation = 'None';
+      let deadStockDuration = 'None';
+      
+      let reorderRecommendation = 'None';
+      let priority = 'Low';
+
+      if (stock <= 0) {
+        status = 'Out of Stock';
+        daysRemaining = 0;
+        reorderRecommendation = 'Immediate Purchase';
+        priority = 'Critical';
+      } else if (ads > 0) {
+        daysRemaining = stock / ads;
+        if (daysRemaining <= leadTime) {
+          status = 'Critical';
+          lowStockCount++;
+          reorderRecommendation = 'Urgent Purchase';
+          priority = 'High';
+        }
+        else if (daysRemaining <= leadTime + safetyStock) {
+          status = 'Reorder Soon';
+          lowStockCount++;
+          reorderRecommendation = 'Plan Purchase';
+          priority = 'Medium';
+        }
+        else if (daysRemaining < 30) status = 'Monitor';
+        else if (daysRemaining > 60) status = 'Overstock';
+      } else {
+        status = 'Overstock'; 
+        if (!item.lastSaleDate || new Date(item.lastSaleDate) < thirtyDaysAgo) {
+          isDeadStock = true;
+          deadStockDuration = !item.lastSaleDate || new Date(item.lastSaleDate) < sixtyDaysAgo ? '> 60 Days' : '> 30 Days';
+          deadStockRecommendation = deadStockDuration === '> 60 Days' ? 'Stop Purchasing' : 'Reduce Price / Bundle';
+        }
+      }
+
+      return {
+        id: item.id, sku: item.sku, name: item.name,
+        stockQuantity: stock, avgDailySales: ads,
+        daysRemaining: Math.round(daysRemaining),
+        status, isDeadStock, deadStockRecommendation, deadStockDuration,
+        inventoryValue: stock * cost,
+        reorderRecommendation, priority,
+        minimumStock: safetyStock + (leadTime * ads),
+        lastSaleDate: item.lastSaleDate
+      };
+    });
+
+    return {
+      summary: { totalValue, totalCost, totalStockQty, lowStockCount, outOfStockCount },
+      topMovingProducts: stockCoverage.filter(s => s.avgDailySales > 0).slice(0, 10),
+      deadStock: stockCoverage.filter(s => s.isDeadStock).slice(0, 20),
+      lowStock: stockCoverage.filter(s => ['Critical', 'Reorder Soon'].includes(s.status)).slice(0, 20),
+      stockCoverage 
+    };
+  }
+
+  /**
+   * Receivables & Payables Center
+   */
+  async getFinancialCenters() {
+    const receivables = await prisma.customer.findMany({
+      where: { balance: { gt: 0 }, isActive: true },
+      select: { id: true, name: true, balance: true, _count: { select: { sales: { where: { paymentStatus: { not: 'PAID' } } } } } },
+      orderBy: { balance: 'desc' }, take: 15
+    });
+
+    const payables = await prisma.supplier.findMany({
+      where: { balance: { gt: 0 }, isActive: true },
+      select: { id: true, name: true, balance: true, _count: { select: { purchases: { where: { paymentStatus: { not: 'PAID' } } } } } },
+      orderBy: { balance: 'desc' }, take: 15
+    });
+
+    return {
+      receivables: receivables.map(r => ({ ...r, balance: Number(r.balance), invoices: r._count.sales })),
+      payables: payables.map(p => ({ ...p, balance: Number(p.balance), bills: p._count.purchases }))
+    };
+  }
+
+  /**
+   * Action Center & Activity
    */
   async getOperations(startDate: Date, endDate: Date) {
     const pendingDeliveries = await prisma.deliveryOrder.findMany({
       where: { status: { in: ['DRAFT', 'APPROVED', 'DISPATCHED'] } },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
+      orderBy: { createdAt: 'desc' }, take: 10,
       include: { customer: { select: { name: true } } }
     });
 
     const recentSales = await prisma.sale.findMany({
       where: { saleDate: { gte: startDate, lte: endDate } },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      include: { user: { select: { name: true } } }
+      orderBy: { createdAt: 'desc' }, take: 5,
+      include: { user: { select: { name: true } }, customer: { select: { name: true } } }
     });
 
-    const recentPurchases = await prisma.purchase.findMany({
-      where: { purchaseDate: { gte: startDate, lte: endDate } },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      include: { user: { select: { name: true } } }
-    });
+    const activity = recentSales.map(s => ({
+      id: s.id, module: 'Sales', description: \`New Sale \${s.number} created\`,
+      user: s.user.name, entity: s.customer.name, amount: Number(s.netAmount),
+      time: s.createdAt, status: s.status
+    })).sort((a, b) => b.time.getTime() - a.time.getTime());
 
-    const activity = [
-      ...recentSales.map(s => ({
-        id: s.id,
-        module: 'Sales',
-        description: `New Sale ${s.number} created`,
-        user: s.user.name,
-        time: s.createdAt,
-        status: s.status
-      })),
-      ...recentPurchases.map(p => ({
-        id: p.id,
-        module: 'Purchases',
-        description: `New Purchase ${p.number} created`,
-        user: p.user.name,
-        time: p.createdAt,
-        status: p.status
-      }))
-    ].sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 10);
-
+    // Generate alerts
+    const alerts = [];
+    const inv = await this.getInventoryIntelligence(startDate, endDate);
+    if (inv.summary.outOfStockCount > 0) alerts.push({ severity: 'Critical', message: \`\${inv.summary.outOfStockCount} products out of stock\` });
+    if (inv.summary.lowStockCount > 0) alerts.push({ severity: 'High', message: \`\${inv.summary.lowStockCount} products are running low\` });
+    
     return {
       pendingDeliveries: pendingDeliveries.map(d => ({
-        id: d.id,
-        number: d.number,
-        customer: d.customerNameSnapshot || d.customer?.name,
-        status: d.status,
-        date: d.deliveryDate || d.createdAt
+        id: d.id, number: d.number, customer: d.customerNameSnapshot || d.customer?.name,
+        status: d.status, date: d.deliveryDate || d.createdAt
       })),
-      recentActivity: activity
+      recentActivity: activity,
+      alerts
+    };
+  }
+
+  /**
+   * Business Health & AI Insights (Rule-based)
+   */
+  async getBusinessHealth(startDate: Date, endDate: Date) {
+    const kpis = await this.getKPIs(startDate, endDate);
+    let score = 100;
+    
+    if (kpis.profit.netProfit < 0) score -= 20;
+    if (kpis.receivables > kpis.sales.totalRevenue * 0.3) score -= 10;
+    if (kpis.balances.cashBalance < kpis.payables) score -= 15;
+    
+    const insights = [];
+    if (kpis.profit.netProfit > 0) insights.push('Profitability is positive for the period.');
+    else insights.push('Business is operating at a loss for the period.');
+    
+    if (kpis.balances.cashBalance < kpis.payables) insights.push('Cash balance is lower than total payables. Liquidity risk detected.');
+    else insights.push('Cash flow is healthy.');
+
+    return {
+      score: Math.max(0, score),
+      status: score > 80 ? 'Healthy' : score > 50 ? 'Average' : 'Critical',
+      insights
     };
   }
 }

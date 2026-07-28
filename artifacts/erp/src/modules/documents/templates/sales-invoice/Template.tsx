@@ -8,13 +8,17 @@ import {
   ItemsTable,
   TotalsSection,
   AmountInWords,
+  SignatureSection,
+  TermsConditions,
   CompanyFooter,
-  CustomFooter,
 } from '../../components';
 
 export const SalesInvoiceTemplate: React.FC<{ data: DocumentData }> = ({ data }) => {
   const { company } = data;
-  const color = '#ca8a04'; // Yellow for Sales Invoice
+  const color = company.accentColor || '#F2A93B';
+
+  const termsEn = data.terms || 'Goods Sold Can Be Exchanges Or Returned Within 15 Days From The Date Of Purchase If The Goods Are In The Same Condition As The Time Of Purchase';
+  const termsAr = data.termsAr || 'يمكن استبدال أو إرجاع السلع المباعة خلال 15 يوماً من تاريخ الشراء، شريطة أن تكون السلع بحالتها الأصلية وقت الشراء.';
 
   return (
     <DocumentPageLayout company={company}>
@@ -44,22 +48,32 @@ export const SalesInvoiceTemplate: React.FC<{ data: DocumentData }> = ({ data })
         bilingual={company.bilingual}
       />
 
-      {/* Totals */}
-      <TotalsSection
-        summaryLines={data.summaryLines}
-        bilingual={company.bilingual}
+      {/* Amount in Words + Totals */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-end' }}>
+        <div style={{ flex: 1 }}>
+          <AmountInWords
+            amountEn={data.amountInWords}
+            amountAr={data.amountInWordsAr}
+            color={color}
+          />
+        </div>
+        <TotalsSection
+          summaryLines={data.summaryLines}
+          bilingual={company.bilingual}
+          color={color}
+        />
+      </div>
+
+      {/* Prepared By / Checked By / For Receiving Use */}
+      <SignatureSection signatures={data.signatures} bilingual={company.bilingual} color={color} />
+
+      {/* Terms & Conditions + QR */}
+      <TermsConditions
+        termsEn={termsEn}
+        termsAr={termsAr}
+        qrData={data.qrData}
         color={color}
       />
-
-      {/* Amount in Words */}
-      <AmountInWords
-        amountEn={data.amountInWords}
-        amountAr={data.amountInWordsAr}
-        color={color}
-      />
-
-      {/* Custom Terms & Signatures + QR Code */}
-      <CustomFooter qrData={data.qrData} termsEn={company.termsEn} termsAr={company.termsAr} />
 
       {/* Footer */}
       <CompanyFooter company={company} color={color} />

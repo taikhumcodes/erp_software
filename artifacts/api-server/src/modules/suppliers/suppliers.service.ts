@@ -63,12 +63,12 @@ export const SuppliersService = {
 
     let phone: string | null = null;
     const rawPhone = normalise(body['phone']);
-    if (!rawPhone) {
-      fieldErrors.push({ field: 'phone', message: 'Kuwait mobile number is required' });
-    } else if (!isValidKuwaitMobile(rawPhone)) {
-      fieldErrors.push({ field: 'phone', message: 'Enter a valid Kuwait mobile number starting with 5, 6, or 9' });
-    } else {
-      phone = formatKuwaitMobile(rawPhone);
+    if (rawPhone) {
+      if (!isValidKuwaitMobile(rawPhone)) {
+        fieldErrors.push({ field: 'phone', message: 'Enter a valid Kuwait mobile number starting with 5, 6, or 9' });
+      } else {
+        phone = formatKuwaitMobile(rawPhone);
+      }
     }
 
     const email = normalise(body['email']);
@@ -157,7 +157,7 @@ export const SuppliersService = {
     if ('phone' in body) {
       const p = normalise(body['phone']);
       if (!p) {
-        fieldErrors.push({ field: 'phone', message: 'Kuwait mobile number is required' });
+        phone = null;
       } else if (!isValidKuwaitMobile(p)) {
         fieldErrors.push({ field: 'phone', message: 'Enter a valid Kuwait mobile number starting with 5, 6, or 9' });
       } else {

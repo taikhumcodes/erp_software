@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useGetCurrentUser, getGetCurrentUserQueryKey } from '@workspace/api-client-react';
 import { DashboardHeader } from '../modules/dashboard/components/DashboardHeader';
 import { ExecutiveDashboard } from '../modules/dashboard/views/ExecutiveDashboard';
-// import { FinancialDashboard } from '../modules/dashboard/views/FinancialDashboard';
-// import { InventoryDashboard } from '../modules/dashboard/views/InventoryDashboard';
-// import { SalesDashboard } from '../modules/dashboard/views/SalesDashboard';
+import { FinancialDashboard } from '../modules/dashboard/views/FinancialDashboard';
+import { InventoryDashboard } from '../modules/dashboard/views/InventoryDashboard';
+import { SalesDashboard } from '../modules/dashboard/views/SalesDashboard';
 
 export default function Dashboard() {
   const { data: user } = useGetCurrentUser({
@@ -26,11 +26,11 @@ export default function Dashboard() {
       {role === 'OWNER' || role === 'ADMIN' || role === 'MANAGER' ? (
         <ExecutiveDashboard />
       ) : role === 'ACCOUNTANT' ? (
-        <ExecutiveDashboard /> // Fallback for now
+        <FinancialDashboard />
       ) : role === 'WAREHOUSE' ? (
-        <ExecutiveDashboard /> // Fallback for now
+        <InventoryDashboard />
       ) : role === 'SALES' ? (
-        <ExecutiveDashboard /> // Fallback for now
+        <SalesDashboard />
       ) : (
         <ExecutiveDashboard />
       )}

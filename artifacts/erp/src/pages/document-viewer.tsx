@@ -20,6 +20,24 @@ export default function DocumentViewer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<DocumentData | null>(null);
+  const [paymentStatusOverride, setPaymentStatusOverride] = useState<string>('');
+  
+  const handlePaymentStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const status = e.target.value;
+    setPaymentStatusOverride(status);
+    if (data) {
+       const newData = { ...data };
+       if (newData.leftInfoFields) {
+         const leftInfo = [...newData.leftInfoFields];
+         const idx = leftInfo.findIndex(f => f.label === 'Payment Status');
+         if (idx !== -1) {
+           leftInfo[idx] = { ...leftInfo[idx], value: status || '—' };
+           newData.leftInfoFields = leftInfo;
+           setData(newData);
+         }
+       }
+    }
+  };
 
   useEffect(() => {
     if (!docRegistration || !id) {
@@ -83,7 +101,22 @@ export default function DocumentViewer() {
 
   return (
     <div className="print:m-0 print:p-0 min-h-screen bg-gray-100 flex flex-col items-center py-8 print:bg-white print:py-0">
-      <div className="print:hidden mb-6 flex gap-4 w-full max-w-[210mm] justify-end">
+      <div className="print:hidden mb-6 flex flex-wrap gap-4 w-full max-w-[210mm] justify-end items-center">
+        {data?.leftInfoFields?.some(f => f.label === 'Payment Status') && (
+          <div className="flex items-center gap-2 mr-auto bg-white px-3 py-2 border shadow-sm rounded">
+            <label className="text-sm font-medium text-gray-700">Payment Status:</label>
+            <select 
+              value={paymentStatusOverride}
+              onChange={handlePaymentStatusChange}
+              className="text-sm border-gray-300 rounded focus:ring-primary/50"
+            >
+              <option value="">Default / Blank</option>
+              <option value="Paid">Paid</option>
+              <option value="Partially Paid">Partially Paid</option>
+              <option value="Unpaid">Unpaid</option>
+            </select>
+          </div>
+        )}
         <button 
           onClick={() => window.print()} 
           className="flex items-center gap-2 px-4 py-2 bg-white border shadow-sm text-sm font-medium rounded hover:bg-gray-50 text-gray-700"

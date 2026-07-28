@@ -16,10 +16,10 @@ export const CompanyHeader: React.FC<{ company: CompanyProfile; rightContent?: R
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', paddingBottom: '12px' }}>
         {/* Left: English company name + contact */}
         <div style={{ flex: '1', textAlign: 'left' }}>
-          <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, lineHeight: 1.2, letterSpacing: '0.5px', color: '#000' }}>
+          <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, lineHeight: 1.25, letterSpacing: '0.5px', color: '#000' }}>
             {company.nameEn}
           </h1>
-          <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '10px', color: '#333' }}>
+          <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '10px', color: '#333' }}>
             {company.phone && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Phone size={11} style={{ color: accent, flexShrink: 0 }} />
@@ -54,10 +54,10 @@ export const CompanyHeader: React.FC<{ company: CompanyProfile; rightContent?: R
 
         {/* Right: Arabic company name + contact (RTL) */}
         <div style={{ flex: '1', textAlign: 'right', direction: 'rtl' }}>
-          <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, lineHeight: 1.2, color: '#000', fontFamily: '"IBM Plex Sans Arabic", "Noto Sans Arabic", sans-serif' }}>
+          <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, lineHeight: 1.25, color: '#000', fontFamily: '"IBM Plex Sans Arabic", "Noto Sans Arabic", sans-serif' }}>
             {company.nameAr}
           </h1>
-          <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '10px', color: '#333', alignItems: 'flex-start' }}>
+          <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '10px', color: '#333', alignItems: 'flex-start' }}>
             {company.phone && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', direction: 'ltr' }}>
                 <span>{company.phone}</span>

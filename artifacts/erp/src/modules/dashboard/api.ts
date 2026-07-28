@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useDashboardStore } from './store';
 
 function getAuthHeaders() {
   const token = localStorage.getItem('erp_access_token');
@@ -9,19 +8,23 @@ function getAuthHeaders() {
   };
 }
 
-export function useDashboardKPIs(startDate: Date, endDate: Date) {
-  const [data, setData] = useState<any>(null);
+function useDashboardFetch<T>(endpoint: string, startDate?: Date, endDate?: Date) {
+  const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
 
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
-    fetch(`/api/dashboard/kpis?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`, {
-      headers: getAuthHeaders()
-    })
+
+    let url = `/api/dashboard/${endpoint}`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+    }
+
+    fetch(url, { headers: getAuthHeaders() })
       .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch KPIs');
+        if (!res.ok) throw new Error(`Failed to fetch ${endpoint}`);
         return res.json();
       })
       .then(json => {
@@ -37,106 +40,43 @@ export function useDashboardKPIs(startDate: Date, endDate: Date) {
         }
       });
     return () => { isMounted = false; };
-  }, [startDate, endDate]);
+  }, [endpoint, startDate?.toISOString(), endDate?.toISOString()]);
 
   return { data, isLoading, error };
+}
+
+export function useDashboardKPIs(startDate: Date, endDate: Date) {
+  return useDashboardFetch<any>('kpis', startDate, endDate);
 }
 
 export function useDashboardInventory(startDate: Date, endDate: Date) {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
-    fetch(`/api/dashboard/inventory?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`, {
-      headers: getAuthHeaders()
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch Inventory Intelligence');
-        return res.json();
-      })
-      .then(json => {
-        if (isMounted) {
-          setData(json);
-          setIsLoading(false);
-        }
-      })
-      .catch(err => {
-        if (isMounted) {
-          setError(err);
-          setIsLoading(false);
-        }
-      });
-    return () => { isMounted = false; };
-  }, [startDate, endDate]);
-
-  return { data, isLoading, error };
+  return useDashboardFetch<any>('inventory', startDate, endDate);
 }
 
-export function useDashboardCharts(startDate: Date, endDate: Date) {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
+export function useDashboardFinancial(startDate: Date, endDate: Date) {
+  return useDashboardFetch<any>('financial', startDate, endDate);
+}
 
-  useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
-    fetch(`/api/dashboard/charts?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`, {
-      headers: getAuthHeaders()
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch Charts');
-        return res.json();
-      })
-      .then(json => {
-        if (isMounted) {
-          setData(json);
-          setIsLoading(false);
-        }
-      })
-      .catch(err => {
-        if (isMounted) {
-          setError(err);
-          setIsLoading(false);
-        }
-      });
-    return () => { isMounted = false; };
-  }, [startDate, endDate]);
+export function useDashboardCustomers(startDate: Date, endDate: Date) {
+  return useDashboardFetch<any>('customers', startDate, endDate);
+}
 
-  return { data, isLoading, error };
+export function useDashboardSuppliers(startDate: Date, endDate: Date) {
+  return useDashboardFetch<any>('suppliers', startDate, endDate);
+}
+
+export function useDashboardSales(startDate: Date, endDate: Date) {
+  return useDashboardFetch<any>('sales', startDate, endDate);
 }
 
 export function useDashboardOperations(startDate: Date, endDate: Date) {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
+  return useDashboardFetch<any>('operations', startDate, endDate);
+}
 
-  useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
-    fetch(`/api/dashboard/operations?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`, {
-      headers: getAuthHeaders()
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch Operations');
-        return res.json();
-      })
-      .then(json => {
-        if (isMounted) {
-          setData(json);
-          setIsLoading(false);
-        }
-      })
-      .catch(err => {
-        if (isMounted) {
-          setError(err);
-          setIsLoading(false);
-        }
-      });
-    return () => { isMounted = false; };
-  }, [startDate, endDate]);
+export function useDashboardHealth(startDate: Date, endDate: Date) {
+  return useDashboardFetch<any>('health', startDate, endDate);
+}
 
-  return { data, isLoading, error };
+export function useDashboardCenters() {
+  return useDashboardFetch<any>('centers');
 }

@@ -263,7 +263,7 @@ function SupplierDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label htmlFor="s-phone">
-                {t('supplier_phone')} <span className="text-destructive">*</span>
+                {t('supplier_phone')}
               </Label>
               <Input
                 id="s-phone"

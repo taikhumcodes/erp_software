@@ -25,23 +25,19 @@ export const DeliveryDetailsGrid: React.FC<{ details: DeliveryDetailCard[]; colo
     <div style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '8px',
-      marginBottom: '14px',
-      border: `1px solid ${color}40`,
-      borderRadius: '4px',
-      padding: '10px',
-      backgroundColor: '#fefcf3',
+      rowGap: '14px',
+      columnGap: '10px',
+      marginBottom: '16px',
+      padding: '4px 2px',
     }}>
       {details.map((card, idx) => {
         const IconComponent = iconMap[card.icon] || FileText;
         return (
-          <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', fontSize: '10px' }}>
-            <div style={{ flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%', backgroundColor: `${color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <IconComponent size={11} style={{ color }} />
-            </div>
+          <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '10px' }}>
+            <IconComponent size={16} style={{ color, flexShrink: 0, marginTop: '1px' }} />
             <div>
-              <div style={{ fontWeight: 700, color: '#111', marginBottom: '1px' }}>{card.label}</div>
-              <div style={{ color: '#374151', lineHeight: 1.3 }}>{card.value}</div>
+              <div style={{ fontWeight: 700, color: '#111', marginBottom: '2px' }}>{card.label}</div>
+              <div style={{ color: '#374151', lineHeight: 1.4 }}>{card.value}</div>
             </div>
           </div>
         );

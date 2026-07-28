@@ -5,21 +5,30 @@ import {
   TrendingUp, 
   CreditCard, 
   Wallet, 
-  Package, 
-  AlertTriangle 
+  Package,
+  Users
 } from 'lucide-react';
 import { useDashboardStore } from '../store';
 import { 
   useDashboardKPIs, 
   useDashboardInventory, 
-  useDashboardCharts, 
-  useDashboardOperations 
+  useDashboardFinancial,
+  useDashboardCustomers,
+  useDashboardSuppliers,
+  useDashboardSales,
+  useDashboardOperations,
+  useDashboardHealth,
+  useDashboardCenters
 } from '../api';
 import { KPICard } from '../components/KPICard';
-// We will create these shortly
-// import { RevenueChart } from '../components/RevenueChart';
-// import { InventoryAlerts } from '../components/InventoryAlerts';
-// import { OperationsTimeline } from '../components/OperationsTimeline';
+import { FinancialAnalyticsWidget } from '../components/FinancialAnalyticsWidget';
+import { CustomerAnalyticsWidget } from '../components/CustomerAnalyticsWidget';
+import { SupplierAnalyticsWidget } from '../components/SupplierAnalyticsWidget';
+import { ProductPerformanceWidget } from '../components/ProductPerformanceWidget';
+import { StockCoverageWidget, SmartReorderWidget, DeadStockWidget } from '../components/InventoryIntelligenceWidgets';
+import { ReceivablesCenter, PayablesCenter } from '../components/FinancialCenters';
+import { BusinessHealthScore } from '../components/BusinessHealthScore';
+import { ActionCenterWidget } from '../components/ActionCenterWidget';
 
 export const ExecutiveDashboard = () => {
   const { t } = useTranslation();
@@ -27,124 +36,75 @@ export const ExecutiveDashboard = () => {
 
   const { data: kpis, isLoading: kpisLoading } = useDashboardKPIs(startDate, endDate);
   const { data: inventory, isLoading: invLoading } = useDashboardInventory(startDate, endDate);
-  const { data: charts } = useDashboardCharts(startDate, endDate);
-  const { data: operations } = useDashboardOperations(startDate, endDate);
+  const { data: financials, isLoading: finLoading } = useDashboardFinancial(startDate, endDate);
+  const { data: customers, isLoading: custLoading } = useDashboardCustomers(startDate, endDate);
+  const { data: suppliers, isLoading: supLoading } = useDashboardSuppliers(startDate, endDate);
+  const { data: sales, isLoading: salesLoading } = useDashboardSales(startDate, endDate);
+  const { data: operations, isLoading: opsLoading } = useDashboardOperations(startDate, endDate);
+  const { data: health, isLoading: healthLoading } = useDashboardHealth(startDate, endDate);
+  const { data: centers, isLoading: centersLoading } = useDashboardCenters();
 
   if (kpisLoading || !kpis) {
-    return <div className="animate-pulse space-y-4">
-      <div className="h-32 bg-muted rounded-xl w-full" />
-      <div className="h-32 bg-muted rounded-xl w-full" />
-    </div>;
+    return (
+      <div className="animate-pulse space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="h-32 bg-muted rounded-xl w-full" />
+          <div className="h-32 bg-muted rounded-xl w-full" />
+          <div className="h-32 bg-muted rounded-xl w-full" />
+          <div className="h-32 bg-muted rounded-xl w-full" />
+        </div>
+        <div className="h-64 bg-muted rounded-xl w-full" />
+      </div>
+    );
   }
 
-  // Formatting helpers
   const fmt = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'KWD' }).format(val);
 
   return (
     <div className="space-y-6">
-      {/* Executive KPIs */}
+      {/* Primary KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard 
-          title="Total Sales" 
-          value={fmt(kpis.sales.totalRevenue)} 
-          icon={TrendingUp} 
-          colorClass="text-green-600" 
-          bgClass="bg-green-100 dark:bg-green-900/20" 
-        />
-        <KPICard 
-          title="Gross Profit" 
-          value={fmt(kpis.profit.grossProfit)} 
-          icon={Wallet} 
-          colorClass="text-primary" 
-          bgClass="bg-primary/10" 
-        />
-        <KPICard 
-          title="Total Receivables" 
-          value={fmt(kpis.receivables)} 
-          icon={CreditCard} 
-          colorClass="text-blue-600" 
-          bgClass="bg-blue-100 dark:bg-blue-900/20" 
-        />
-        <KPICard 
-          title="Total Purchases" 
-          value={fmt(kpis.purchases.totalCost)} 
-          icon={ShoppingCart} 
-          colorClass="text-orange-600" 
-          bgClass="bg-orange-100 dark:bg-orange-900/20" 
-        />
+        <KPICard title="Total Sales" value={fmt(kpis.sales.totalRevenue)} icon={TrendingUp} colorClass="text-green-600" bgClass="bg-green-100 dark:bg-green-900/20" />
+        <KPICard title="Gross Profit" value={fmt(kpis.profit.grossProfit)} icon={Wallet} colorClass="text-primary" bgClass="bg-primary/10" />
+        <KPICard title="Total Receivables" value={fmt(kpis.receivables)} icon={CreditCard} colorClass="text-blue-600" bgClass="bg-blue-100 dark:bg-blue-900/20" />
+        <KPICard title="Inventory Value" value={fmt(kpis.balances.inventoryValue)} icon={Package} colorClass="text-purple-600" bgClass="bg-purple-100 dark:bg-purple-900/20" />
+      </div>
+      
+      {/* Secondary KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KPICard title="Total Purchases" value={fmt(kpis.purchases.totalCost)} icon={ShoppingCart} colorClass="text-orange-600" bgClass="bg-orange-100 dark:bg-orange-900/20" />
+        <KPICard title="Cash Balance" value={fmt(kpis.balances.cashBalance)} icon={Wallet} colorClass="text-teal-600" bgClass="bg-teal-100 dark:bg-teal-900/20" />
+        <KPICard title="Total Payables" value={fmt(kpis.payables)} icon={CreditCard} colorClass="text-red-600" bgClass="bg-red-100 dark:bg-red-900/20" />
+        <KPICard title="Active Customers" value={kpis.counts.customers} icon={Users} colorClass="text-indigo-600" bgClass="bg-indigo-100 dark:bg-indigo-900/20" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Charts Section */}
+        {/* Main Content Area */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-card border rounded-xl p-6 shadow-sm min-h-[300px]">
-             <h3 className="text-lg font-semibold mb-4">Revenue vs Expenses</h3>
-             {/* Chart placeholder */}
-             <div className="flex h-48 items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
-               Chart Component (Recharts)
-             </div>
+          <FinancialAnalyticsWidget data={financials} isLoading={finLoading} />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ReceivablesCenter data={centers} isLoading={centersLoading} />
+            <PayablesCenter data={centers} isLoading={centersLoading} />
           </div>
 
-          <div className="bg-card border rounded-xl p-6 shadow-sm">
-             <h3 className="text-lg font-semibold mb-4">Smart Inventory Intelligence</h3>
-             {!invLoading && inventory ? (
-               <div className="space-y-4">
-                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                   <div className="p-4 bg-muted/50 rounded-lg text-center">
-                     <p className="text-xs text-muted-foreground">Total Value</p>
-                     <p className="text-lg font-bold">{fmt(inventory.summary.totalValue)}</p>
-                   </div>
-                   <div className="p-4 bg-muted/50 rounded-lg text-center">
-                     <p className="text-xs text-muted-foreground">Total Items</p>
-                     <p className="text-lg font-bold">{inventory.summary.totalStockQty}</p>
-                   </div>
-                   <div className="p-4 bg-red-50 dark:bg-red-900/10 rounded-lg text-center border border-red-100 dark:border-red-900/20">
-                     <p className="text-xs text-red-600 dark:text-red-400">Critical Stock</p>
-                     <p className="text-lg font-bold text-red-700 dark:text-red-300">{inventory.summary.lowStockCount}</p>
-                   </div>
-                   <div className="p-4 bg-red-50 dark:bg-red-900/10 rounded-lg text-center border border-red-100 dark:border-red-900/20">
-                     <p className="text-xs text-red-600 dark:text-red-400">Out of Stock</p>
-                     <p className="text-lg font-bold text-red-700 dark:text-red-300">{inventory.summary.outOfStockCount}</p>
-                   </div>
-                 </div>
-                 {/* Table placeholder */}
-                 <div className="text-sm">Top Moving Products Table...</div>
-               </div>
-             ) : (
-               <div className="animate-pulse h-32 bg-muted rounded" />
-             )}
+          <ProductPerformanceWidget data={sales} isLoading={salesLoading} />
+          
+          <StockCoverageWidget data={inventory} isLoading={invLoading} />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CustomerAnalyticsWidget data={customers} isLoading={custLoading} />
+            <SupplierAnalyticsWidget data={suppliers} isLoading={supLoading} />
           </div>
+
+          <SmartReorderWidget data={inventory} isLoading={invLoading} />
+          <DeadStockWidget data={inventory} isLoading={invLoading} />
         </div>
 
-        {/* Sidebar Operations */}
-        <div className="space-y-6">
-          <div className="bg-card border rounded-xl p-6 shadow-sm">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <AlertTriangle className="w-5 h-5 mr-2 text-yellow-500" />
-              Action Center
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Requires immediate attention.
-            </p>
-            {/* Alerts placeholder */}
-          </div>
-
-          <div className="bg-card border rounded-xl p-6 shadow-sm">
-            <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-            {operations && (
-              <div className="space-y-4">
-                {operations.recentActivity.map((act: any) => (
-                  <div key={act.id} className="flex flex-col border-b last:border-0 pb-3 last:pb-0">
-                    <span className="text-sm font-medium">{act.description}</span>
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>{act.user}</span>
-                      <span>{new Date(act.time).toLocaleTimeString()}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Sidebar / Action Area */}
+        <div className="lg:col-span-1 space-y-6">
+          <BusinessHealthScore data={health} isLoading={healthLoading} />
+          <ActionCenterWidget data={operations} isLoading={opsLoading} />
         </div>
       </div>
     </div>

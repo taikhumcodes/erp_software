@@ -27,8 +27,10 @@ export function formatPhoneNumber(value: unknown) {
 }
 
 export function getPhoneValidationError(value: unknown) {
-  if (value === null || value === undefined) return 'Phone number is required';
-  if (typeof value !== 'string') return 'Phone number is required';
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (trimmed === '') return null;
 
   const local = getKuwaitMobileDigits(value);
   if (!local) return 'Kuwait mobile number is required';

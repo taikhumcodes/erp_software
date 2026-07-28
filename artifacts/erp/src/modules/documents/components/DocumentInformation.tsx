@@ -1,8 +1,8 @@
 /**
  * DocumentInformation — 3-column bilingual info section.
- * Left: English key-value pairs with colons
- * Center: Counterparty info block (Customer/Supplier)
- * Right: Arabic mirror of left (RTL)
+ * Left: English key-value pairs, in a tinted card with a left accent border
+ * Center: Counterparty info block (Customer/Supplier), plain background
+ * Right: Arabic mirror of left (RTL), tinted card with a right accent border
  */
 import React from 'react';
 import { DocumentInfo, CounterpartyInfo } from '../types';
@@ -19,48 +19,58 @@ export const DocumentInformation: React.FC<{
 }> = ({ leftInfoFields, counterpartyInfo, color = '#D4AF37', bilingual = true }) => {
   if (!leftInfoFields || leftInfoFields.length === 0) return null;
 
-  const borderColor = '#e5e7eb';
-  const cellPad = '4px 8px';
+  const tint = `${color}12`; // very light tint of the accent color
+  const cellPad = '5px 10px';
+
+  const fieldRow = (label: string, value: string, key: number, align: 'left' | 'right' = 'left') => (
+    <div key={key} style={{ display: 'flex', padding: cellPad, fontSize: '10px' }}>
+      <span style={{ fontWeight: 700, color: '#111', whiteSpace: 'nowrap' }}>{label}</span>
+      <span style={{ color: '#6b7280', margin: '0 6px' }}>:</span>
+      <span style={{ color: '#111', fontWeight: 500 }}>{value}</span>
+    </div>
+  );
 
   return (
-    <div style={{ display: 'flex', gap: '0', border: `1px solid ${borderColor}`, marginBottom: '14px', fontSize: '10px' }}>
-      {/* Left column — English fields */}
-      <div style={{ flex: '1', borderRight: `1px solid ${borderColor}` }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <tbody>
-            {leftInfoFields.map((field, idx) => (
-              <tr key={idx} style={{ borderBottom: idx < leftInfoFields.length - 1 ? `1px solid ${borderColor}` : 'none' }}>
-                <td style={{ padding: cellPad, fontWeight: 600, whiteSpace: 'nowrap', color: '#374151', width: '45%' }}>
-                  {field.label}
-                </td>
-                <td style={{ padding: cellPad, color: '#6b7280', width: '5%' }}>:</td>
-                <td style={{ padding: cellPad, fontWeight: 500, color: '#111' }}>{field.value}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div style={{ display: 'flex', gap: '14px', marginBottom: '16px', alignItems: 'stretch' }}>
+      {/* Left column — English fields, tinted card, accent left border */}
+      <div style={{
+        flex: '1',
+        backgroundColor: tint,
+        borderLeft: `3px solid ${color}`,
+        borderRadius: '3px',
+        padding: '2px 0',
+      }}>
+        {leftInfoFields.map((field, idx) => fieldRow(field.label, field.value, idx))}
       </div>
 
-      {/* Center column — Counterparty info */}
-      <div style={{ flex: '1', borderRight: bilingual ? `1px solid ${borderColor}` : 'none', padding: '8px 12px' }}>
+      {/* Center column — Counterparty info, no card, dashed underline under name */}
+      <div style={{ flex: '1.1', padding: '4px 8px', textAlign: 'center' }}>
         <div style={{ fontWeight: 700, fontSize: '11px', color: '#000', marginBottom: '2px' }}>
           {counterpartyInfo.title}
         </div>
-        <div style={{ fontWeight: 800, fontSize: '13px', color: '#000', marginBottom: '2px' }}>
+        <div style={{
+          fontWeight: 800,
+          fontSize: '14px',
+          color: '#000',
+          display: 'inline-block',
+          paddingBottom: '4px',
+          borderBottom: '1px dashed #9ca3af',
+          marginBottom: '6px',
+        }}>
           {counterpartyInfo.name}
         </div>
         {counterpartyInfo.titleAr && (
-          <div style={{ fontWeight: 700, fontSize: '11px', color: '#555', fontFamily: '"IBM Plex Sans Arabic", sans-serif', direction: 'rtl', marginBottom: '2px' }}>
+          <div style={{ fontWeight: 700, fontSize: '11px', color: '#555', fontFamily: '"IBM Plex Sans Arabic", sans-serif', direction: 'rtl', marginTop: '4px' }}>
             {counterpartyInfo.titleAr}
           </div>
         )}
         {counterpartyInfo.nameAr && (
-          <div style={{ fontWeight: 700, fontSize: '12px', color: '#000', fontFamily: '"IBM Plex Sans Arabic", sans-serif', direction: 'rtl', marginBottom: '6px' }}>
+          <div style={{ fontWeight: 700, fontSize: '13px', color: '#000', fontFamily: '"IBM Plex Sans Arabic", sans-serif', direction: 'rtl' }}>
             {counterpartyInfo.nameAr}
           </div>
         )}
         {/* Counterparty detail fields */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '8px', textAlign: 'left' }}>
           {counterpartyInfo.fields.map((f, idx) => (
             <div key={idx} style={{ display: 'flex', gap: '4px', fontSize: '10px' }}>
               <span style={{ fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' }}>{f.label}</span>
@@ -71,22 +81,23 @@ export const DocumentInformation: React.FC<{
         </div>
       </div>
 
-      {/* Right column — Arabic mirror */}
+      {/* Right column — Arabic mirror, tinted card, accent right border */}
       {bilingual && (
-        <div style={{ flex: '1' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', direction: 'rtl' }}>
-            <tbody>
-              {leftInfoFields.map((field, idx) => (
-                <tr key={idx} style={{ borderBottom: idx < leftInfoFields.length - 1 ? `1px solid ${borderColor}` : 'none' }}>
-                  <td style={{ padding: cellPad, fontWeight: 500, color: '#111', textAlign: 'left' }}>{field.value}</td>
-                  <td style={{ padding: cellPad, color: '#6b7280', width: '5%' }}>:</td>
-                  <td style={{ padding: cellPad, fontWeight: 600, whiteSpace: 'nowrap', color: '#374151', fontFamily: '"IBM Plex Sans Arabic", sans-serif', textAlign: 'right', width: '45%' }}>
-                    {field.labelAr}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{
+          flex: '1',
+          backgroundColor: tint,
+          borderRight: `3px solid ${color}`,
+          borderRadius: '3px',
+          padding: '2px 0',
+          direction: 'rtl',
+        }}>
+          {leftInfoFields.map((field, idx) => (
+            <div key={idx} style={{ display: 'flex', justifyContent: 'flex-end', padding: cellPad, fontSize: '10px' }}>
+              <span style={{ fontWeight: 700, color: '#111', whiteSpace: 'nowrap', fontFamily: '"IBM Plex Sans Arabic", sans-serif' }}>{field.labelAr}</span>
+              <span style={{ color: '#6b7280', margin: '0 6px' }}>:</span>
+              <span style={{ color: '#111', fontWeight: 500 }}>{field.value}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>

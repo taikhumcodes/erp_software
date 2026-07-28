@@ -1,0 +1,68 @@
+/**
+ * print.css
+ * Print / PDF-export safe styles for the document module.
+ *
+ * Root causes this file fixes:
+ * 1. Missing @page rule -> browser's default page margins (~12.7mm) were
+ *    being added on top of our own in-component padding, pushing content
+ *    past one physical page and creating blank 2nd/3rd pages.
+ * 2. No box-sizing reset -> width + padding on .document-page exceeded
+ *    210mm (content-box model), causing horizontal overflow. That overflow
+ *    is what made table/box borders drift away from their text ("text
+ *    misaligned with the box") once the browser/html2canvas tried to
+ *    squeeze the overflowing content back onto the page.
+ * 3. No shadow/background suppression -> the on-screen drop shadow around
+ *    the page was being rasterized too, adding a few extra pixels of
+ *    height that occasionally tipped the content over the 297mm boundary.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+@media print {
+  html, body {
+    width: 210mm;
+    height: 297mm;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .document-page {
+    box-shadow: none !important;
+    margin: 0 !important;
+    width: 210mm !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+
+  /* Never split a table row, a totals line, or a signature block across
+     a page boundary — this is what caused fields to visually detach
+     from their bordered box when a page break landed mid-row. */
+  tr,
+  .avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Prevent an accidental trailing blank page when content ends exactly
+     at (or fractionally above) a page boundary. */
+  .document-page::after {
+    content: '';
+    display: block;
+    height: 0;
+    clear: both;
+  }
+}
