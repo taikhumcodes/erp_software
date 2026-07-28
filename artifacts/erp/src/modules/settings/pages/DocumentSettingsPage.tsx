@@ -6,7 +6,7 @@ import { FileText, Save, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Type for the sub-tabs
-type Tab = 'layout' | 'typography' | 'header' | 'footer' | 'tables' | 'totals' | 'signatures' | 'colors';
+type Tab = 'layout' | 'typography' | 'header' | 'footer' | 'table' | 'totals' | 'signatures' | 'colors';
 
 export const DocumentSettingsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -75,7 +75,7 @@ export const DocumentSettingsPage: React.FC = () => {
     { id: 'typography', label: 'Typography' },
     { id: 'header', label: 'Header' },
     { id: 'footer', label: 'Footer' },
-    { id: 'tables', label: 'Tables' },
+    { id: 'table', label: 'Tables' },
     { id: 'totals', label: 'Totals' },
     { id: 'signatures', label: 'Signatures' },
     { id: 'colors', label: 'Colors' },
