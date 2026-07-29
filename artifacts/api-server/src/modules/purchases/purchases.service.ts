@@ -59,6 +59,14 @@ export const PurchasesService = {
     return PurchasesRepository.getStatistics();
   },
 
+  async getHistory(id: string) {
+    return prisma.purchaseHistory.findMany({
+      where: { purchaseId: id },
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { name: true } } }
+    });
+  },
+
   async create(userId: string, body: Record<string, unknown>) {
     const fieldErrors: { field: string; message: string }[] = [];
 
@@ -205,6 +213,16 @@ export const PurchasesService = {
       });
 
       // Financials and Stock are not updated here since new purchases can only be DRAFT or CONFIRMED
+
+      // ── Audit Log ───────────────────────────────────────────────────────────
+      await tx.purchaseHistory.create({
+        data: {
+          purchaseId: purchase.id,
+          toStatus: status,
+          userId,
+          notes: 'Purchase order created'
+        }
+      });
 
       return purchase;
     });
@@ -387,7 +405,26 @@ export const PurchasesService = {
         await PurchaseFinancialService.recalculatePurchase(tx, id, existing.netAmount, netAmount);
       }
 
-      // ── Persist update ────────────────────────────────────────────────
+      let historyNotes = 'Purchase order updated.';
+      const newNetAmount = netAmount ?? existing.netAmount.toFixed(3);
+      if (Number(existing.netAmount) !== Number(newNetAmount)) {
+        historyNotes += ` Amount changed from ${existing.netAmount} to ${newNetAmount}.`;
+      }
+      if (validatedItems && validatedItems.length !== existing.items.length) {
+        historyNotes += ` Items count changed from ${existing.items.length} to ${validatedItems.length}.`;
+      }
+
+      // ── Audit Log ───────────────────────────────────────────────────────────
+      await tx.purchaseHistory.create({
+        data: {
+          purchaseId: id,
+          fromStatus: existing.status,
+          toStatus: existing.status,
+          userId,
+          notes: historyNotes,
+        }
+      });
+
       return PurchasesRepository.update(tx, id, {
         supplierId,
         purchaseDate,
@@ -400,7 +437,7 @@ export const PurchasesService = {
     });
   },
 
-  async updateStatus(id: string, body: Record<string, unknown>) {
+  async updateStatus(id: string, userId: string, body: Record<string, unknown>) {
     const newStatus = normalise(body['status']) as PurchaseStatus | null;
     if (!newStatus || !['DRAFT', 'CONFIRMED', 'RECEIVED', 'CANCELLED'].includes(newStatus)) {
       throw new ValidationError('Invalid status value');
@@ -447,19 +484,33 @@ export const PurchasesService = {
         await PurchaseFinancialService.reversePurchase(tx, id);
       }
 
+      // ── Audit Log ───────────────────────────────────────────────────────────
+      await tx.purchaseHistory.create({
+        data: {
+          purchaseId: id,
+          fromStatus: existing.status,
+          toStatus: newStatus,
+          userId,
+          notes: `Status changed to ${newStatus}`
+        }
+      });
+
       return PurchasesRepository.updateStatus(tx, id, newStatus);
     });
   },
 
-  async delete(id: string) {
+  async delete(id: string, role?: string) {
     const purchase = await PurchasesRepository.findById(id);
     if (!purchase) throw new NotFoundError('Purchase');
 
-    // Only DRAFT and CANCELLED can be deleted
-    if (purchase.status !== 'DRAFT' && purchase.status !== 'CANCELLED') {
-      throw new ConflictError(
-        `Cannot delete a ${purchase.status.toLowerCase()} purchase. Cancel it first.`,
-      );
+    if (purchase.status !== 'DRAFT') {
+      if (purchase.status === 'CANCELLED' && role === 'OWNER') {
+        // Allow owner to delete cancelled purchases
+      } else {
+        throw new ConflictError(
+          `Cannot delete a ${purchase.status.toLowerCase()} purchase. Cancel it first (and only OWNER can delete cancelled ones).`,
+        );
+      }
     }
 
     await PurchasesRepository.delete(id);

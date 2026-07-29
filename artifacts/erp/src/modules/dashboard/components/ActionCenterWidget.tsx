@@ -30,14 +30,38 @@ export const ActionCenterWidget: React.FC<ActionCenterWidgetProps> = ({ data, is
               <p className="text-sm text-muted-foreground">No urgent actions required.</p>
             ) : (
               alerts.map((alert: any, idx: number) => (
-                <div key={idx} className="flex items-start justify-between p-3 border rounded-lg bg-red-50 dark:bg-red-950/20 border-red-100 dark:border-red-900/30">
-                  <div className="flex items-center">
-                    <AlertCircle className="w-4 h-4 text-red-500 mr-2" />
-                    <span className="text-sm font-medium">{alert.message}</span>
+                <div key={idx} className="flex flex-col p-3 border rounded-lg bg-red-50 dark:bg-red-950/20 border-red-100 dark:border-red-900/30">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center">
+                      <AlertCircle className="w-4 h-4 text-red-500 mr-2" />
+                      <span className="text-sm font-medium">{alert.message}</span>
+                    </div>
+                    <Badge variant={alert.severity === 'Critical' ? 'destructive' : 'secondary'}>
+                      {alert.severity}
+                    </Badge>
                   </div>
-                  <Badge variant={alert.severity === 'Critical' ? 'destructive' : 'secondary'}>
-                    {alert.severity}
-                  </Badge>
+                  {alert.items && alert.items.length > 0 && (
+                    <div className="mt-3 text-xs border-t border-red-200 dark:border-red-900/50 pt-2 max-h-40 overflow-y-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-left text-muted-foreground border-b border-red-200/50">
+                            <th className="pb-1 font-medium">SKU</th>
+                            <th className="pb-1 font-medium">Product</th>
+                            <th className="pb-1 text-right font-medium">Stock</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {alert.items.map((item: any) => (
+                            <tr key={item.id} className="border-b border-red-200/20 last:border-0">
+                              <td className="py-1 pr-2 font-mono text-red-800 dark:text-red-300">{item.sku}</td>
+                              <td className="py-1 pr-2 text-red-800 dark:text-red-300">{item.name}</td>
+                              <td className="py-1 text-right font-mono font-medium text-red-800 dark:text-red-300">{item.stockQuantity}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               ))
             )}

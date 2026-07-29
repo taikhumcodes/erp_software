@@ -21,6 +21,15 @@ export class ProductsController {
     }
   }
 
+  async getNextSku(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const sku = await productsService.getNextSku();
+      res.json({ sku });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await productsService.create(req.body as Record<string, unknown>);

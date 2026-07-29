@@ -89,6 +89,27 @@ export class SettingsController {
   }
 
   /**
+   * POST /api/settings/reset-database
+   * Body: { password: string }
+   */
+  async resetDatabase(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { password } = req.body as { password?: string };
+      if (!password) {
+        throw new ValidationError('password is required');
+      }
+      const userId = req.user?.id;
+      if (!userId) {
+        throw new ValidationError('Unauthorized');
+      }
+      const result = await settingsService.resetDatabase(password, userId);
+      res.json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * GET /api/settings/export
    */
   async exportAll(_req: Request, res: Response, next: NextFunction) {

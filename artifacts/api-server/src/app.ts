@@ -40,7 +40,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ── Static file serving for uploads (company logos, etc.) ────────────────────
-app.use("/uploads", express.static("uploads"));
+import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/api", router);

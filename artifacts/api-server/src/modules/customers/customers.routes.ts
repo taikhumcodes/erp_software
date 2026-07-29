@@ -9,8 +9,8 @@ router.use(authenticate);
 
 router.get('/', hasMinRole('WAREHOUSE'), customersController.list.bind(customersController));
 router.get('/:id', hasMinRole('WAREHOUSE'), customersController.getOne.bind(customersController));
-router.post('/', hasRole('OWNER', 'ADMIN', 'MANAGER'), customersController.create.bind(customersController));
-router.put('/:id', hasRole('OWNER', 'ADMIN', 'MANAGER'), customersController.update.bind(customersController));
+router.post('/', hasRole('OWNER', 'ADMIN', 'MANAGER', 'SALES'), customersController.create.bind(customersController));
+router.put('/:id', hasRole('OWNER', 'ADMIN', 'MANAGER', 'SALES'), customersController.update.bind(customersController));
 router.delete('/:id', hasRole('OWNER', 'ADMIN'), customersController.remove.bind(customersController));
 
 export default router;

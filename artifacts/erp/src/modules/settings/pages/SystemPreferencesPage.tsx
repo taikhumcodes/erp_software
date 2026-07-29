@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSettings, useSettingsMutation } from '../hooks/useSettings';
 import { DEFAULT_SYSTEM_PREFERENCES } from '../constants/defaults';
 import type { SystemPreferencesSettings } from '../types';
-import { Settings, Save, RotateCcw, Download, Upload } from 'lucide-react';
+import { Settings, Save, RotateCcw, Download, Upload, AlertTriangle, Key } from 'lucide-react';
 import { toast } from 'sonner';
 import { SettingsService } from '../services/SettingsService';
 
@@ -13,6 +13,8 @@ export const SystemPreferencesPage: React.FC = () => {
   const { save, reset, isLoading: isSaving } = useSettingsMutation('system', 'preferences');
 
   const [formData, setFormData] = React.useState(data);
+  const [resetPassword, setResetPassword] = React.useState('');
+  const [isResetting, setIsResetting] = React.useState(false);
 
   React.useEffect(() => {
     setFormData(data);
@@ -50,6 +52,26 @@ export const SystemPreferencesPage: React.FC = () => {
       URL.revokeObjectURL(url);
     } catch {
       toast.error('Failed to export settings');
+    }
+  };
+
+  const handleDatabaseReset = async () => {
+    if (!resetPassword) {
+      toast.error('Password is required');
+      return;
+    }
+    if (!confirm('Are you absolutely sure you want to delete ALL transactional data? This action CANNOT be undone!')) {
+      return;
+    }
+    setIsResetting(true);
+    try {
+      await SettingsService.resetDatabase(resetPassword);
+      toast.success('Database has been reset successfully. Transactional data cleared.');
+      setResetPassword('');
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || e.message || 'Failed to reset database');
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -104,6 +126,39 @@ export const SystemPreferencesPage: React.FC = () => {
               Import Settings
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-6 space-y-4">
+        <h3 className="text-sm font-semibold text-destructive uppercase tracking-wider flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5" />
+          Danger Zone: Factory Reset
+        </h3>
+        <p className="text-sm text-muted-foreground max-w-3xl">
+          Warning: This action will permanently delete all transactional data including Sales, Purchases, Delivery Orders, Customers, Suppliers, Products, Brands, Categories, Units, and Payments. System preferences, User accounts, and Roles will remain intact. This action can only be performed by an OWNER.
+        </p>
+        
+        <div className="flex items-end gap-4">
+          <div className="flex-1 max-w-sm space-y-1.5">
+            <label className="text-sm font-medium">Owner Password</label>
+            <div className="relative">
+              <Key className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="password"
+                value={resetPassword}
+                onChange={e => setResetPassword(e.target.value)}
+                placeholder="Enter password to confirm"
+                className="w-full pl-9 pr-3 py-2 border rounded-md"
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleDatabaseReset}
+            disabled={!resetPassword || isResetting}
+            className="px-4 py-2 bg-destructive text-destructive-foreground font-medium rounded hover:bg-destructive/90 disabled:opacity-50 transition-colors"
+          >
+            {isResetting ? 'Resetting...' : 'Reset Database'}
+          </button>
         </div>
       </div>
     </div>

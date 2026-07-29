@@ -1,5 +1,6 @@
 export interface CompanyProfile {
   logoUrl?: string;
+  qrCodeUrl?: string;
   nameEn: string;
   nameAr: string;
   commercialRegistration?: string;

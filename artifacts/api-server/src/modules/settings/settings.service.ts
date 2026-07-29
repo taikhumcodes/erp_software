@@ -418,6 +418,41 @@ class SettingsServiceImpl {
   }
 
   /**
+   * Reset database (factory reset).
+   * Deletes all transactional data, customers, suppliers, products, etc.
+   * Keeps users, roles, settings.
+   */
+  async resetDatabase(password: string, userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
+
+    if (!user || user.role.name !== 'OWNER') {
+      throw new ValidationError('Only OWNER can reset database');
+    }
+
+    const bcrypt = await import('bcryptjs');
+    const isValid = await bcrypt.default.compare(password, user.passwordHash);
+    if (!isValid) {
+      throw new ValidationError('Invalid password');
+    }
+
+    // Execute raw SQL TRUNCATE to avoid Prisma limitations with large cascading deletes
+    await prisma.$executeRawUnsafe(`
+      TRUNCATE TABLE 
+        "purchases", "purchase_items", "sales", "sale_items", 
+        "delivery_orders", "delivery_order_items", "delivery_order_history", 
+        "payments", "payment_allocations", "payment_attachments", 
+        "products", "categories", "brands", "units", 
+        "customers", "suppliers" 
+      CASCADE;
+    `);
+
+    return { success: true };
+  }
+
+  /**
    * Export all settings as a single JSON object.
    */
   async exportAll() {

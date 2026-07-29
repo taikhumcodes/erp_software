@@ -139,6 +139,8 @@ model User {
   deliveredDeliveryOrders  DeliveryOrder[]        @relation("DODeliveredBy")
   cancelledDeliveryOrders  DeliveryOrder[]        @relation("DOCancelledBy")
   deliveryOrderHistory     DeliveryOrderHistory[]
+  purchaseHistory          PurchaseHistory[]
+  saleHistory              SaleHistory[]
 
   @@map("users")
 }
@@ -286,6 +288,7 @@ model Purchase {
 
   items       PurchaseItem[]
   allocations PaymentAllocation[]
+  history     PurchaseHistory[]
 
   @@map("purchases")
 }
@@ -303,6 +306,23 @@ model PurchaseItem {
   updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@map("purchase_items")
+}
+
+model PurchaseHistory {
+  id         String         @id @default(cuid())
+  purchaseId String         @map("purchase_id")
+  purchase   Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  
+  fromStatus PurchaseStatus? @map("from_status")
+  toStatus   PurchaseStatus  @map("to_status")
+  
+  userId     String         @map("user_id")
+  user       User           @relation(fields: [userId], references: [id])
+  
+  notes      String?
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  @@map("purchase_history")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -339,6 +359,7 @@ model Sale {
 
   items       SaleItem[]
   allocations PaymentAllocation[]
+  history     SaleHistory[]
 
   @@map("sales")
 }
@@ -356,6 +377,23 @@ model SaleItem {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("sale_items")
+}
+
+model SaleHistory {
+  id         String     @id @default(cuid())
+  saleId     String     @map("sale_id")
+  sale       Sale       @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  
+  fromStatus SaleStatus? @map("from_status")
+  toStatus   SaleStatus  @map("to_status")
+  
+  userId     String     @map("user_id")
+  user       User       @relation(fields: [userId], references: [id])
+  
+  notes      String?
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  @@map("sale_history")
 }
 
 model DeliveryOrder {

@@ -172,7 +172,14 @@ function PurchaseViewDialog({
     enabled: !!purchaseId && open,
   });
 
+  const historyQuery = useQuery({
+    queryKey: ['purchase-history', purchaseId],
+    queryFn: () => api.get<any>(`/purchases/${purchaseId}/history`),
+    enabled: !!purchaseId && open,
+  });
+
   const purchase = query.data?.data;
+  const history = historyQuery.data?.data || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -284,6 +291,41 @@ function PurchaseViewDialog({
                 <p className="mt-1">{purchase.notes}</p>
               </div>
             )}
+
+            {/* Audit History */}
+            <div className="mt-6 border-t pt-4">
+              <h3 className="text-sm font-medium mb-3 flex items-center">
+                <MoreHorizontal className="w-4 h-4 mr-2 text-muted-foreground" />
+                Change History
+              </h3>
+              {historyQuery.isLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : history.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No history found.</p>
+              ) : (
+                <div className="space-y-3 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-muted-foreground/20 before:to-transparent">
+                  {history.map((record: any) => (
+                    <div key={record.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full border border-white bg-slate-200 dark:bg-slate-700 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2" />
+                      <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] p-3 rounded-lg border border-border shadow-sm bg-card">
+                        <div className="flex items-center justify-between space-x-2 mb-1">
+                          <div className="font-semibold text-sm text-foreground">{record.user.name}</div>
+                          <time className="text-xs font-medium text-muted-foreground">{new Date(record.createdAt).toLocaleString()}</time>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {record.notes}
+                        </div>
+                        {record.toStatus && (
+                          <Badge variant="outline" className={`mt-2 ${STATUS_COLORS[record.toStatus as PurchaseStatus]}`}>
+                            {t(`status_${record.toStatus.toLowerCase()}`)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         ) : null}
       </DialogContent>
@@ -292,6 +334,57 @@ function PurchaseViewDialog({
 }
 
 // ─── Create / Edit dialog ─────────────────────────────────────────────────────
+
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
+
+function QuickSupplierDialog({ open, onOpenChange, onSuccess }: { open: boolean, onOpenChange: (v: boolean) => void, onSuccess: (supplierId: string) => void }) {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [name, setName] = useState('');
+  const [nameAr, setNameAr] = useState('');
+  const [phone, setPhone] = useState('');
+  
+  const { handleArabicChange } = useAutoTranslate(name, nameAr, setNameAr);
+
+  const mutation = useMutation({
+    mutationFn: (body: any) => api.post<{ data: any }>('/api/suppliers', body),
+    onSuccess: (res) => {
+      toast({ title: t('supplier_created') || 'Supplier created' });
+      onSuccess(res.data.id);
+      onOpenChange(false);
+      setName('');
+      setNameAr('');
+      setPhone('');
+    },
+    onError: (err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' })
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader><DialogTitle>{t('add_supplier')}</DialogTitle></DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-1">
+            <Label>{t('name')} *</Label>
+            <Input value={name} onChange={e => setName(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>{t('name_ar')}</Label>
+            <Input dir="rtl" value={nameAr} onChange={e => handleArabicChange(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>{t('phone')}</Label>
+            <Input value={phone} onChange={e => setPhone(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('cancel')}</Button>
+          <Button onClick={() => mutation.mutate({ name, nameAr, phone })} disabled={!name.trim() || mutation.isPending}>{t('create')}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function PurchaseFormDialog({
   open, onOpenChange, purchaseId, onSuccess,
@@ -307,6 +400,8 @@ function PurchaseFormDialog({
 
   const [form, setForm]     = useState<PurchaseForm>(emptyForm);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [quickSupplierOpen, setQuickSupplierOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch reference data
   const suppliersQuery = useQuery({
@@ -514,18 +609,23 @@ function PurchaseFormDialog({
                 <Label htmlFor="p-supplier">
                   {t('purchase_supplier')} <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={form.supplierId}
-                  onValueChange={v => setForm(prev => ({ ...prev, supplierId: v }))}
-                  disabled={isPending}
-                >
-                  <SelectTrigger id="p-supplier"><SelectValue placeholder={t('purchase_select_supplier')} /></SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select
+                    value={form.supplierId}
+                    onValueChange={v => setForm(prev => ({ ...prev, supplierId: v }))}
+                    disabled={isPending}
+                  >
+                    <SelectTrigger id="p-supplier" className="flex-1"><SelectValue placeholder={t('purchase_select_supplier')} /></SelectTrigger>
+                    <SelectContent>
+                      {suppliers.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" variant="outline" size="icon" onClick={() => setQuickSupplierOpen(true)} disabled={isPending}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
                 {errors.supplierId && <p className="text-sm text-destructive">{errors.supplierId}</p>}
               </div>
               <div className="space-y-1">
@@ -694,16 +794,30 @@ function PurchaseFormDialog({
           </form>
         )}
       </DialogContent>
+      {quickSupplierOpen && (
+        <QuickSupplierDialog
+          open={quickSupplierOpen}
+          onOpenChange={setQuickSupplierOpen}
+          onSuccess={(supplierId) => {
+            queryClient.invalidateQueries({ queryKey: ['suppliers-list-for-purchase'] }).then(() => {
+              setForm((prev: any) => ({ ...prev, supplierId }));
+            });
+          }}
+        />
+      )}
     </Dialog>
   );
 }
 
 // ─── Purchases page ───────────────────────────────────────────────────────────
 
+import { useLogout, useGetCurrentUser, getGetCurrentUserQueryKey } from '@workspace/api-client-react';
+
 export default function PurchasesPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: user } = useGetCurrentUser({ query: { queryKey: getGetCurrentUserQueryKey() } });
 
   // Filters & pagination
   const [search,       setSearch]       = useState('');
@@ -1012,13 +1126,15 @@ export default function PurchasesPage() {
                               </DropdownMenuItem>
                             )}
 
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                              onClick={() => setDeleteTarget(purchase)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              {t('delete')}
-                            </DropdownMenuItem>
+                            {(purchase.status === 'DRAFT' || (purchase.status === 'CANCELLED' && user?.role === 'OWNER')) && (
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                onClick={() => setDeleteTarget(purchase)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                {t('delete')}
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -1091,7 +1207,11 @@ export default function PurchasesPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title={t('delete_purchase_confirm')}
-        description={t('purchase_delete_desc')}
+        description={
+          deleteTarget?.status === 'CANCELLED'
+            ? t('purchase_delete_cancelled_warning', 'Are you sure? This is a cancelled document. Deleting it will permanently remove it from the system, but since it is already cancelled, inventory has already been restored.')
+            : t('purchase_delete_desc')
+        }
         confirmLabel={t('delete')}
         onConfirm={() => deleteMutation.mutate()}
         onCancel={() => setDeleteTarget(null)}

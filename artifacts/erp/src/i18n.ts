@@ -866,6 +866,20 @@ i18n
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false
+    },
+    parseMissingKeyHandler: (key) => {
+      let cleanKey = key;
+      const prefixes = [
+        'role_', 'status_', 'payment_status_', 'payment_type_', 
+        'payment_method_', 'payment_mode_', 'do_stat_', 'do_order_source_'
+      ];
+      for (const prefix of prefixes) {
+        if (cleanKey.startsWith(prefix)) {
+          cleanKey = cleanKey.substring(prefix.length);
+          break;
+        }
+      }
+      return cleanKey.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
     }
   });
 

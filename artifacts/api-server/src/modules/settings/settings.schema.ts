@@ -16,6 +16,7 @@ const positiveNumber = z.number().nonnegative();
 
 export const companyProfileSchema = z.object({
   logoUrl: z.string().optional(),
+  qrCodeUrl: z.string().default(''),
   nameEn: z.string().min(1, 'English name is required'),
   nameAr: z.string().default(''),
   tagline: z.string().default(''),

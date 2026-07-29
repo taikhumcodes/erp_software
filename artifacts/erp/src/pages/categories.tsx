@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Search, Loader2, PackageOpen } from 'lucide-react
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { api } from '@/lib/api';
 import type { Category, PaginatedResponse } from '@/lib/types';
 
@@ -64,9 +65,16 @@ export default function Categories() {
   });
 
   // ── Handlers ───────────────────────────────────────────────────────────────
-  const openCreate = () => { setEditing(null); setForm(emptyForm()); setModalOpen(true); };
+  const { handleArabicChange, resetTranslationState } = useAutoTranslate(
+    form.name,
+    form.nameAr,
+    (text) => setForm((prev) => ({ ...prev, nameAr: text }))
+  );
+
+  const openCreate = () => { setEditing(null); setForm(emptyForm()); resetTranslationState(); setModalOpen(true); };
   const openEdit = (c: Category) => {
     setEditing(c);
+    resetTranslationState();
     setForm({ name: c.name, nameAr: c.nameAr ?? '', description: c.description ?? '', isActive: c.isActive });
     setModalOpen(true);
   };
@@ -179,7 +187,7 @@ export default function Categories() {
                 className="form-input" placeholder="e.g. Cement & Concrete" />
             </FormField>
             <FormField label={t('name_ar')}>
-              <input dir="rtl" value={form.nameAr} onChange={(e) => setForm((f) => ({ ...f, nameAr: e.target.value }))}
+              <input dir="rtl" value={form.nameAr} onChange={(e) => handleArabicChange(e.target.value)}
                 className="form-input" placeholder="مثال: الإسمنت والخرسانة" />
             </FormField>
             <FormField label={t('description_field')}>

@@ -14,6 +14,7 @@ router.get('/statistics', hasMinRole('WAREHOUSE'), PurchasesController.getStatis
 // List & single
 router.get('/',    hasMinRole('WAREHOUSE'), PurchasesController.list);
 router.get('/:id', hasMinRole('WAREHOUSE'), PurchasesController.getById);
+router.get('/:id/history', hasMinRole('WAREHOUSE'), PurchasesController.getHistory);
 
 // Create — minimum MANAGER
 router.post('/', hasMinRole('MANAGER'), PurchasesController.create);

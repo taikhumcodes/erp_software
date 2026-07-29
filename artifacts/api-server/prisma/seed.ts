@@ -58,6 +58,32 @@ async function main() {
     console.log(`✓ Created owner user: ${ownerEmail} / ${ownerPassword}`);
     console.log("  ⚠  Change this password immediately after first login!");
   }
+
+  // ── 3. Seed hardware business units ──────────────────────────────────────────
+  const units = [
+    { abbreviation: "PCS",  name: "Pieces",     nameAr: "قطع" },
+    { abbreviation: "NOS",  name: "Numbers",    nameAr: "عدد" },
+    { abbreviation: "BOX",  name: "Box",        nameAr: "صندوق" },
+    { abbreviation: "PKT",  name: "Packet",     nameAr: "حزمة" },
+    { abbreviation: "SET",  name: "Set",        nameAr: "طقم" },
+    { abbreviation: "BND",  name: "Bundle",     nameAr: "ربطة" },
+    { abbreviation: "ROLL", name: "Roll",       nameAr: "لفة" },
+    { abbreviation: "DOZ",  name: "Dozen",      nameAr: "درزن" },
+    { abbreviation: "BAG",  name: "Bag",        nameAr: "كيس" },
+    { abbreviation: "KG",   name: "Kilogram",   nameAr: "كيلوغرام" },
+    { abbreviation: "MTR",  name: "Meter",      nameAr: "متر" },
+    { abbreviation: "LTR",  name: "Liter",      nameAr: "لتر" },
+    { abbreviation: "GAL",  name: "Gallon",     nameAr: "جالون" },
+  ];
+
+  for (const unit of units) {
+    await prisma.unit.upsert({
+      where: { name: unit.name },
+      update: {},
+      create: unit,
+    });
+  }
+  console.log(`✓ Seeded ${units.length} units`);
 }
 
 main()

@@ -25,6 +25,7 @@ import type {
 export const DEFAULT_COMPANY_PROFILE: CompanyProfileSettings = {
   nameEn: 'Shield Max',
   nameAr: 'شركة البنيان للتجارة',
+  qrCodeUrl: '',
   tagline: '',
   commercialRegistration: '',
   companyRegistration: '',

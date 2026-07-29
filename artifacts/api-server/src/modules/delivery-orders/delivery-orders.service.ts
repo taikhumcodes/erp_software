@@ -371,12 +371,16 @@ export const DeliveryOrdersService = {
   },
 
   // ── Delete ──────────────────────────────────────────────────────────────
-  async delete(id: string) {
+  async delete(id: string, role?: string) {
     const existing = await DeliveryOrdersRepository.findById(id);
     if (!existing) throw new NotFoundError('Delivery Order');
 
-    if (existing.status !== 'DRAFT') {
-      throw new ConflictError('Only DRAFT delivery orders can be deleted. For other statuses, use Cancel.');
+    if (existing.status !== 'DRAFT' && existing.status !== 'APPROVED') {
+      if (existing.status === 'CANCELLED' && role === 'OWNER') {
+        // Allow owner to delete cancelled delivery orders
+      } else {
+        throw new ConflictError('Only DRAFT and APPROVED delivery orders can be deleted, or CANCELLED delivery orders by OWNER.');
+      }
     }
 
     await prisma.$transaction(async (tx) => {

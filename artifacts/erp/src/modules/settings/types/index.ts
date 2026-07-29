@@ -9,6 +9,7 @@
 
 export interface CompanyProfileSettings {
   logoUrl?: string;
+  qrCodeUrl?: string;
   nameEn: string;
   nameAr: string;
   tagline: string;

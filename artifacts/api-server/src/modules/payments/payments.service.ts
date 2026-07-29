@@ -170,8 +170,8 @@ export const PaymentsService = {
     if (!payment) {
       throw new AppError('Payment not found', 404);
     }
-    if (payment.status !== 'PENDING') {
-      throw new AppError('Only PENDING payments can be deleted', 400);
+    if (payment.status !== 'PENDING' && payment.status !== 'CANCELLED') {
+      throw new AppError('Only PENDING or CANCELLED payments can be deleted', 400);
     }
 
     await PaymentsRepository.delete(id);

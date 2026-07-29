@@ -67,6 +67,13 @@ router.post(
   settingsController.reset.bind(settingsController),
 );
 
+router.post(
+  '/reset-database',
+  authenticate,
+  hasMinRole('OWNER'),
+  settingsController.resetDatabase.bind(settingsController),
+);
+
 // ── Logo Upload ───────────────────────────────────────────────────────────────
 
 router.post(

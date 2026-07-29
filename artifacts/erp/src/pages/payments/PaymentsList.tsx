@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, Search, Eye, Download, Printer, Banknote } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, Search, Eye, Download, Printer, Banknote, Trash } from 'lucide-react';
 
 import { api } from '@/lib/api';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -18,6 +18,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 import { PaymentForm } from './PaymentForm';
 import { PaymentDetails } from './PaymentDetails';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export function PaymentsList() {
   const { t } = useTranslation();
@@ -29,6 +31,29 @@ export function PaymentsList() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/api/payments/${id}`),
+    onSuccess: () => {
+      setDeletePaymentId(null);
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['payments-stats'] });
+      refetch();
+      toast({ title: t('success'), description: t('payment_deleted') || 'Payment deleted successfully' });
+    },
+    onError: (error: any) => {
+      setDeletePaymentId(null);
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: error?.message || 'Failed to delete payment'
+      });
+    }
+  });
 
   const { data: statsResponse, isLoading: isLoadingStats } = useQuery({
     queryKey: ['payments-stats'],
@@ -225,7 +250,7 @@ export function PaymentsList() {
                           {t(`payment_status_${payment.status.toLowerCase()}`)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right flex items-center justify-end gap-2">
                         <Button 
                           variant="ghost" 
                           size="icon"
@@ -234,6 +259,16 @@ export function PaymentsList() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
+                        {payment.status === 'CANCELLED' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => setDeletePaymentId(payment.id)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -293,6 +328,16 @@ export function PaymentsList() {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deletePaymentId}
+        title={t('delete_payment_title')}
+        description={t('delete_payment_confirm')}
+        variant="destructive"
+        loading={deleteMutation.isPending}
+        onConfirm={() => deletePaymentId && deleteMutation.mutate(deletePaymentId)}
+        onCancel={() => setDeletePaymentId(null)}
+      />
     </div>
   );
 }

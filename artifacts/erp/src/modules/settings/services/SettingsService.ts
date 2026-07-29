@@ -159,6 +159,10 @@ class SettingsServiceImpl {
     this.notify();
   }
 
+  async resetDatabase(password: string): Promise<void> {
+    await api.post<any>('/api/settings/reset-database', { password });
+  }
+
   // ─── Import / Export ──────────────────────────────────────────────────────
 
   async exportSettings(): Promise<Record<string, unknown>> {

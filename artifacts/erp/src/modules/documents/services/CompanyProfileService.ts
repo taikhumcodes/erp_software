@@ -14,6 +14,7 @@ class ProfileService {
 
     return {
       logoUrl: profile.logoUrl || undefined,
+      qrCodeUrl: profile.qrCodeUrl || undefined,
       nameEn: profile.nameEn || 'Shield Max',
       nameAr: profile.nameAr || 'شركة البنيان للتجارة',
       commercialRegistration: profile.commercialRegistration || undefined,

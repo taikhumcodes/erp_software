@@ -112,7 +112,7 @@ export const DeliveryOrdersController = {
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      await DeliveryOrdersService.delete(id!);
+      await DeliveryOrdersService.delete(id!, req.user!.role);
       res.status(204).send();
     } catch (err) {
       next(err);

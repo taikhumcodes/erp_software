@@ -228,6 +228,14 @@ export const CompanyProfilePage: React.FC = () => {
                 className="w-full px-3 py-2 border rounded-md"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Invoice QR Code URL</label>
+              <input 
+                type="text" name="qrCodeUrl" value={formData.qrCodeUrl || ''} onChange={handleChange}
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder="https://example.com/verify?id="
+              />
+            </div>
           </div>
         </section>
 

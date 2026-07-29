@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { useDebounce } from '@/hooks/use-debounce';
 import type { DeliveryOrderListItem, DeliveryOrderStatistics, PaginatedResponse } from '@/lib/types';
 import type { DeliveryOrderStatus } from '@/lib/types';
+import { useLogout, useGetCurrentUser, getGetCurrentUserQueryKey } from '@workspace/api-client-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,7 @@ export function DeliveryOrdersList({
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: user } = useGetCurrentUser({ query: { queryKey: getGetCurrentUserQueryKey() } });
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -215,7 +217,7 @@ export function DeliveryOrdersList({
                             {t('do_edit')}
                           </DropdownMenuItem>
                         )}
-                        {order.status === 'DRAFT' && (
+                        {(order.status === 'DRAFT' || order.status === 'APPROVED' || (order.status === 'CANCELLED' && user?.role === 'OWNER')) && (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => handleDelete(order.id)}>
@@ -265,7 +267,11 @@ export function DeliveryOrdersList({
         open={!!deleteConfirm}
         onOpenChange={(v) => !v && setDeleteConfirm(null)}
         title={t('delete_do_confirm')}
-        description={t('do_delete_desc')}
+        description={
+          listQuery.data?.data?.find(d => d.id === deleteConfirm)?.status === 'CANCELLED'
+            ? t('do_delete_cancelled_warning', 'Are you sure? This is a cancelled document. Deleting it will permanently remove it from the system, but since it is already cancelled, inventory has already been restored.')
+            : t('do_delete_desc')
+        }
         onConfirm={confirmDelete}
         variant="destructive"
       />

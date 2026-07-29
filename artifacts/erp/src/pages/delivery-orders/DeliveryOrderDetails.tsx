@@ -40,7 +40,7 @@ export function DeliveryOrderDetails({ id, onBack }: DeliveryOrderDetailsProps) 
   const deliveryOrder = doQuery.data?.data;
 
   const statusMutation = useMutation({
-    mutationFn: (newStatus: DeliveryOrderStatus) => api.patch(`/api/delivery-orders/${id}/status`, { status: newStatus }),
+    mutationFn: (data: { status: DeliveryOrderStatus; cancelReason?: string }) => api.patch(`/api/delivery-orders/${id}/status`, data),
     onSuccess: () => {
       toast({ title: t('do_status_updated') });
       queryClient.invalidateQueries({ queryKey: ['delivery-order', id] });
@@ -54,10 +54,16 @@ export function DeliveryOrderDetails({ id, onBack }: DeliveryOrderDetailsProps) 
   });
 
   const handleStatusChange = (newStatus: DeliveryOrderStatus) => {
-    if (confirm(t('do_confirm_status_desc'))) {
-      setIsUpdatingStatus(true);
-      statusMutation.mutate(newStatus);
+    let cancelReason: string | null = null;
+    if (newStatus === 'CANCELLED') {
+      cancelReason = window.prompt(t('do_cancel_reason_prompt') || 'Please enter a reason for cancellation:');
+      if (!cancelReason) return;
+    } else {
+      if (!confirm(t('do_confirm_status_desc'))) return;
     }
+
+    setIsUpdatingStatus(true);
+    statusMutation.mutate({ status: newStatus, cancelReason: cancelReason || undefined });
   };
 
   if (doQuery.isLoading) {

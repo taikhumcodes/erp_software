@@ -40,6 +40,24 @@ export class ProductsService {
     return this.serialize(product);
   }
 
+  async getNextSku(): Promise<string> {
+    const lastProduct = await prisma.product.findFirst({
+      orderBy: { sku: 'desc' },
+      select: { sku: true },
+    });
+
+    if (!lastProduct) return '001';
+
+    // Extract numbers from the end of the SKU string (if any), otherwise start from 1
+    const match = lastProduct.sku.match(/(\d+)$/);
+    if (match) {
+      const nextNum = parseInt(match[1], 10) + 1;
+      return nextNum.toString().padStart(3, '0');
+    }
+
+    return '001';
+  }
+
   async create(body: Record<string, unknown>) {
     const sku = this.requireString(body.sku, 'sku');
     const name = this.requireString(body.name, 'name');

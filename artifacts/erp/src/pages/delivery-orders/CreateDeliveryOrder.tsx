@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface DOItemForm {
@@ -37,6 +39,55 @@ interface CreateDeliveryOrderProps {
   onSuccess: (id: string) => void;
 }
 
+function QuickCustomerDialog({ open, onOpenChange, onSuccess }: { open: boolean, onOpenChange: (v: boolean) => void, onSuccess: (customerId: string) => void }) {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [name, setName] = useState('');
+  const [nameAr, setNameAr] = useState('');
+  const [phone, setPhone] = useState('');
+  
+  const { handleArabicChange } = useAutoTranslate(name, nameAr, setNameAr);
+
+  const mutation = useMutation({
+    mutationFn: (body: any) => api.post<any>('/api/customers', body),
+    onSuccess: (res) => {
+      toast({ title: t('customer_created') || 'Customer created' });
+      onSuccess(res.data?.id || res.id);
+      onOpenChange(false);
+      setName('');
+      setNameAr('');
+      setPhone('');
+    },
+    onError: (err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' })
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader><DialogTitle>{t('add_customer')}</DialogTitle></DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-1">
+            <Label>{t('name')} *</Label>
+            <Input value={name} onChange={e => setName(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>{t('name_ar')}</Label>
+            <Input dir="rtl" value={nameAr} onChange={e => handleArabicChange(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>{t('phone')}</Label>
+            <Input value={phone} onChange={e => setPhone(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('cancel')}</Button>
+          <Button onClick={() => mutation.mutate({ name, nameAr, phone })} disabled={!name.trim() || mutation.isPending}>{t('create')}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function CreateDeliveryOrder({ onBack, onSuccess }: CreateDeliveryOrderProps) {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
@@ -56,6 +107,7 @@ export function CreateDeliveryOrder({ onBack, onSuccess }: CreateDeliveryOrderPr
   const [internalNotes, setInternalNotes] = useState<string>('');
   
   const [items, setItems] = useState<DOItemForm[]>([emptyItem()]);
+  const [quickCustomerOpen, setQuickCustomerOpen] = useState(false);
 
   const { data: customersResponse } = useQuery({
     queryKey: ['customers', { limit: 1000 }],
@@ -164,18 +216,23 @@ export function CreateDeliveryOrder({ onBack, onSuccess }: CreateDeliveryOrderPr
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{t('do_customer')} *</Label>
-                <Select value={customerId} onValueChange={setCustomerId} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('do_select_customer')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name} {c.code ? `(${c.code})` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center space-x-2">
+                  <Select value={customerId} onValueChange={setCustomerId} required>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder={t('do_select_customer')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map(c => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name} {c.code ? `(${c.code})` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" variant="outline" size="icon" onClick={() => setQuickCustomerOpen(true)}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               {orderType === 'CUSTOMER_PO' && (
@@ -342,6 +399,18 @@ export function CreateDeliveryOrder({ onBack, onSuccess }: CreateDeliveryOrderPr
           </Button>
         </div>
       </form>
+
+      {quickCustomerOpen && (
+        <QuickCustomerDialog
+          open={quickCustomerOpen}
+          onOpenChange={setQuickCustomerOpen}
+          onSuccess={(newCustomerId) => {
+            queryClient.invalidateQueries({ queryKey: ['customers'] }).then(() => {
+              setCustomerId(newCustomerId);
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

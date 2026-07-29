@@ -78,6 +78,14 @@ export const SalesService = {
     };
   },
 
+  async getHistory(id: string) {
+    return prisma.saleHistory.findMany({
+      where: { saleId: id },
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { name: true } } }
+    });
+  },
+
   async create(userId: string, body: Record<string, unknown>) {
     const fieldErrors: { field: string; message: string }[] = [];
 
@@ -238,6 +246,7 @@ export const SalesService = {
         discount: headerDiscount,
         netAmount: netAmount.toFixed(3),
         notes: normalise(body['notes']),
+        paymentMethod: body['paymentMethod'] as any || null,
         items: validatedItems,
       });
 
@@ -257,6 +266,15 @@ export const SalesService = {
         await InventoryService.adjustStockBatch(tx, itemsDelta);
       }
 
+      await tx.saleHistory.create({
+        data: {
+          saleId: newSale.id,
+          toStatus: status,
+          userId,
+          notes: 'Sale created'
+        }
+      });
+
       return newSale;
     });
   },
@@ -265,8 +283,8 @@ export const SalesService = {
     const existing = await SalesRepository.findById(id);
     if (!existing) throw new NotFoundError('Sale');
 
-    if (existing.status !== 'DRAFT') {
-      throw new ConflictError('Only DRAFT sales can be edited');
+    if (existing.status !== 'DRAFT' && existing.status !== 'CONFIRMED') {
+      throw new ConflictError('Only DRAFT or CONFIRMED sales can be edited');
     }
 
     const fieldErrors: { field: string; message: string }[] = [];
@@ -393,6 +411,59 @@ export const SalesService = {
     }
 
     return prisma.$transaction(async (tx) => {
+      if (existing.status === 'CONFIRMED' && !existing.deliveryOrderId && validatedItems) {
+        const oldQtyMap = new Map<string, number>();
+        for (const oldItem of existing.items) {
+          const prev = oldQtyMap.get(oldItem.productId) ?? 0;
+          oldQtyMap.set(oldItem.productId, prev + parseFloat(oldItem.quantity));
+        }
+
+        const newQtyMap = new Map<string, number>();
+        for (const newItem of validatedItems) {
+          const prev = newQtyMap.get(newItem.productId) ?? 0;
+          newQtyMap.set(newItem.productId, prev + parseFloat(newItem.quantity));
+        }
+
+        const allProductIds = new Set([...oldQtyMap.keys(), ...newQtyMap.keys()]);
+        const itemsDelta: { productId: string; quantity: string }[] = [];
+        
+        for (const productId of allProductIds) {
+          const oldQty = oldQtyMap.get(productId) ?? 0;
+          const newQty = newQtyMap.get(productId) ?? 0;
+          const diff = oldQty - newQty; 
+
+          if (diff !== 0) {
+            itemsDelta.push({ productId, quantity: diff.toFixed(3) });
+          }
+        }
+        
+        if (itemsDelta.length > 0) {
+          try {
+            await InventoryService.adjustStockBatch(tx, itemsDelta);
+          } catch (err: any) {
+            throw new ValidationError(err.message);
+          }
+        }
+      }
+
+      let historyNotes = 'Sale updated.';
+      if (Number(existing.netAmount) !== Number(netAmount.toFixed(3))) {
+        historyNotes += ` Amount changed from ${existing.netAmount} to ${netAmount.toFixed(3)}.`;
+      }
+      if (validatedItems && validatedItems.length !== existing.items.length) {
+        historyNotes += ` Items count changed from ${existing.items.length} to ${validatedItems.length}.`;
+      }
+
+      await tx.saleHistory.create({
+        data: {
+          saleId: id,
+          fromStatus: existing.status,
+          toStatus: existing.status,
+          userId,
+          notes: historyNotes,
+        }
+      });
+
       return SalesRepository.update(tx, id, {
         customerId: customerId !== existing.customerId ? customerId : undefined,
         saleDate,
@@ -405,7 +476,7 @@ export const SalesService = {
     });
   },
 
-  async updateStatus(id: string, body: Record<string, unknown>) {
+  async updateStatus(id: string, userId: string, body: Record<string, unknown>) {
     const existing = await SalesRepository.findById(id);
     if (!existing) throw new NotFoundError('Sale');
 
@@ -427,7 +498,7 @@ export const SalesService = {
     }
 
     const isCashSale = body['isCashSale'] === true; // Optional param from frontend when confirming
-    const userId = body['userId'] as string | undefined;
+    const amountPaid = body['amountPaid'] as number | undefined;
 
     return prisma.$transaction(async (tx) => {
       
@@ -477,17 +548,32 @@ export const SalesService = {
         });
       }
 
+      await tx.saleHistory.create({
+        data: {
+          saleId: id,
+          fromStatus: existing.status,
+          toStatus: newStatus,
+          userId,
+          notes: `Status changed to ${newStatus}`
+        }
+      });
+
       return SalesRepository.updateStatus(tx, id, newStatus);
     });
   },
 
-  async delete(id: string) {
+  async delete(id: string, role?: string) {
     const existing = await SalesRepository.findById(id);
     if (!existing) {
       throw new NotFoundError('Sale');
     }
+    
     if (existing.status !== 'DRAFT') {
-      throw new ConflictError('Only DRAFT sales can be deleted');
+      if (existing.status === 'CANCELLED' && role === 'OWNER') {
+        // Allow owner to delete cancelled sales
+      } else {
+        throw new ConflictError('Only DRAFT sales can be deleted, or CANCELLED sales by OWNER');
+      }
     }
 
     return prisma.$transaction(async (tx) => {

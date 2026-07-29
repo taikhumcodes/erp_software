@@ -232,6 +232,7 @@ export const SalesRepository = {
         discount:     new Prisma.Decimal(data.discount),
         netAmount:    new Prisma.Decimal(data.netAmount),
         notes:        data.notes ?? null,
+        paymentMethod: data.paymentMethod ?? null,
         items: {
           create: data.items.map(item => ({
             productId: item.productId,

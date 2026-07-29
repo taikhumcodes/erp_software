@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Search, Loader2, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { api } from '@/lib/api';
 import type { Customer, PaginatedResponse } from '@/lib/types';
 import { formatKWD } from '@/lib/utils';
@@ -89,9 +90,16 @@ export default function Customers() {
     return `CUST-${String(latest + 1).padStart(3, '0')}`;
   }, [data?.data]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm(nextCustomerCode())); setModalOpen(true); };
+  const { handleArabicChange, resetTranslationState } = useAutoTranslate(
+    form.name,
+    form.nameAr,
+    (text) => setForm((prev) => ({ ...prev, nameAr: text }))
+  );
+
+  const openCreate = () => { setEditing(null); setForm(emptyForm(nextCustomerCode())); resetTranslationState(); setModalOpen(true); };
   const openEdit = (customer: Customer) => {
     setEditing(customer);
+    resetTranslationState();
     setForm({
       code: customer.code,
       name: customer.name,
@@ -199,7 +207,7 @@ export default function Customers() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t('name_ar')}</label>
-                <input dir="rtl" value={form.nameAr} onChange={(e) => setForm((f) => ({ ...f, nameAr: e.target.value }))} className="form-input" placeholder="مثال: أحمد السالم" />
+                <input dir="rtl" value={form.nameAr} onChange={(e) => handleArabicChange(e.target.value)} className="form-input" placeholder="مثال: أحمد السالم" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t('phone')}</label>

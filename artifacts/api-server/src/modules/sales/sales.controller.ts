@@ -62,6 +62,16 @@ export const SalesController = {
     }
   },
 
+  async getHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const history = await SalesService.getHistory(id!);
+      res.json({ data: history });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
@@ -88,9 +98,10 @@ export const SalesController = {
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
       
       // Pass along userId in case it's a cash sale being confirmed/delivered
-      const body = { ...(req.body as Record<string, unknown>), userId: req.user!.id };
+      const userId = req.user!.id;
+      const body = { ...(req.body as Record<string, unknown>), userId };
 
-      const sale = await SalesService.updateStatus(id!, body);
+      const sale = await SalesService.updateStatus(id!, userId, body);
       res.json({ data: sale });
     } catch (err) {
       next(err);
@@ -100,7 +111,7 @@ export const SalesController = {
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      await SalesService.delete(id!);
+      await SalesService.delete(id!, req.user!.role);
       res.status(204).send();
     } catch (err) {
       next(err);

@@ -27,7 +27,11 @@ export const ReceivablesCenter: React.FC<FinancialCentersProps> = ({ data, isLoa
           <TableHeader>
             <TableRow>
               <TableHead>Customer</TableHead>
-              <TableHead className="text-right">Outstanding Amount</TableHead>
+              <TableHead className="text-right whitespace-nowrap">0-30 Days</TableHead>
+              <TableHead className="text-right whitespace-nowrap">31-60 Days</TableHead>
+              <TableHead className="text-right whitespace-nowrap">61-90 Days</TableHead>
+              <TableHead className="text-right whitespace-nowrap">90+ Days</TableHead>
+              <TableHead className="text-right font-bold whitespace-nowrap">Total Outstanding</TableHead>
               <TableHead className="text-right">Unpaid Invoices</TableHead>
             </TableRow>
           </TableHeader>
@@ -35,13 +39,17 @@ export const ReceivablesCenter: React.FC<FinancialCentersProps> = ({ data, isLoa
             {data.receivables.map((customer: any) => (
               <TableRow key={customer.id}>
                 <TableCell className="font-medium">{customer.name}</TableCell>
-                <TableCell className="text-right font-semibold text-blue-600">{fmt(customer.balance)}</TableCell>
+                <TableCell className="text-right text-muted-foreground">{fmt(customer.brackets?.b0_30 || 0)}</TableCell>
+                <TableCell className="text-right text-muted-foreground">{fmt(customer.brackets?.b31_60 || 0)}</TableCell>
+                <TableCell className="text-right text-muted-foreground">{fmt(customer.brackets?.b61_90 || 0)}</TableCell>
+                <TableCell className="text-right text-destructive">{fmt(customer.brackets?.b90Plus || 0)}</TableCell>
+                <TableCell className="text-right font-bold text-blue-600">{fmt(customer.balance)}</TableCell>
                 <TableCell className="text-right">{customer.invoices}</TableCell>
               </TableRow>
             ))}
             {data.receivables.length === 0 && (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
                   No outstanding receivables.
                 </TableCell>
               </TableRow>
@@ -72,7 +80,11 @@ export const PayablesCenter: React.FC<FinancialCentersProps> = ({ data, isLoadin
           <TableHeader>
             <TableRow>
               <TableHead>Supplier</TableHead>
-              <TableHead className="text-right">Outstanding Amount</TableHead>
+              <TableHead className="text-right whitespace-nowrap">0-30 Days</TableHead>
+              <TableHead className="text-right whitespace-nowrap">31-60 Days</TableHead>
+              <TableHead className="text-right whitespace-nowrap">61-90 Days</TableHead>
+              <TableHead className="text-right whitespace-nowrap">90+ Days</TableHead>
+              <TableHead className="text-right font-bold whitespace-nowrap">Total Outstanding</TableHead>
               <TableHead className="text-right">Unpaid Bills</TableHead>
             </TableRow>
           </TableHeader>
@@ -80,13 +92,17 @@ export const PayablesCenter: React.FC<FinancialCentersProps> = ({ data, isLoadin
             {data.payables.map((supplier: any) => (
               <TableRow key={supplier.id}>
                 <TableCell className="font-medium">{supplier.name}</TableCell>
-                <TableCell className="text-right font-semibold text-orange-600">{fmt(supplier.balance)}</TableCell>
+                <TableCell className="text-right text-muted-foreground">{fmt(supplier.brackets?.b0_30 || 0)}</TableCell>
+                <TableCell className="text-right text-muted-foreground">{fmt(supplier.brackets?.b31_60 || 0)}</TableCell>
+                <TableCell className="text-right text-muted-foreground">{fmt(supplier.brackets?.b61_90 || 0)}</TableCell>
+                <TableCell className="text-right text-destructive">{fmt(supplier.brackets?.b90Plus || 0)}</TableCell>
+                <TableCell className="text-right font-bold text-orange-600">{fmt(supplier.balance)}</TableCell>
                 <TableCell className="text-right">{supplier.bills}</TableCell>
               </TableRow>
             ))}
             {data.payables.length === 0 && (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
                   No outstanding payables.
                 </TableCell>
               </TableRow>

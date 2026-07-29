@@ -22,6 +22,33 @@ export class UnitsService {
       active,
     });
 
+    if (total === 0 && !query.search && page === 1) {
+      const defaults = [
+        { name: 'Piece', nameAr: 'قطعة', abbreviation: 'PC' },
+        { name: 'Kilogram', nameAr: 'كيلوغرام', abbreviation: 'KG' },
+        { name: 'Liter', nameAr: 'لتر', abbreviation: 'L' },
+        { name: 'Meter', nameAr: 'متر', abbreviation: 'M' },
+        { name: 'Centimeter', nameAr: 'سنتيمتر', abbreviation: 'CM' },
+        { name: 'Gram', nameAr: 'غرام', abbreviation: 'G' },
+      ];
+      
+      for (const u of defaults) {
+        await unitsRepository.create(u);
+      }
+      
+      const refreshed = await unitsRepository.findAll({
+        search: query.search?.trim(),
+        page,
+        limit,
+        active,
+      });
+      
+      return {
+        data: refreshed.data.map((u) => this.serialize(u)),
+        meta: { total: refreshed.total, page, limit, pages: Math.ceil(refreshed.total / limit) },
+      };
+    }
+
     return {
       data: data.map((u) => this.serialize(u)),
       meta: { total, page, limit, pages: Math.ceil(total / limit) },

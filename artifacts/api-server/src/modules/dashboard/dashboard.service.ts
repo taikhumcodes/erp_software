@@ -332,21 +332,55 @@ export class DashboardService {
    * Receivables & Payables Center
    */
   async getFinancialCenters() {
+    const now = new Date();
+    const calculateBrackets = (docs: any[], dateField: string) => {
+      let b0_30 = 0, b31_60 = 0, b61_90 = 0, b90Plus = 0;
+      docs.forEach(doc => {
+        const days = Math.floor((now.getTime() - new Date(doc[dateField]).getTime()) / (1000 * 60 * 60 * 24));
+        const amount = Number(doc.outstandingAmount || 0);
+        if (days <= 30) b0_30 += amount;
+        else if (days <= 60) b31_60 += amount;
+        else if (days <= 90) b61_90 += amount;
+        else b90Plus += amount;
+      });
+      return { b0_30, b31_60, b61_90, b90Plus };
+    };
+
     const receivables = await prisma.customer.findMany({
       where: { balance: { gt: 0 }, isActive: true },
-      select: { id: true, name: true, balance: true, _count: { select: { sales: { where: { paymentStatus: { not: 'PAID' } } } } } },
+      select: { 
+        id: true, name: true, balance: true, 
+        _count: { select: { sales: { where: { paymentStatus: { not: 'PAID' } } } } },
+        sales: { 
+          where: { paymentStatus: { not: 'PAID' }, status: { in: ['CONFIRMED', 'DELIVERED'] } },
+          select: { saleDate: true, outstandingAmount: true }
+        }
+      },
       orderBy: { balance: 'desc' }, take: 15
     });
 
     const payables = await prisma.supplier.findMany({
       where: { balance: { gt: 0 }, isActive: true },
-      select: { id: true, name: true, balance: true, _count: { select: { purchases: { where: { paymentStatus: { not: 'PAID' } } } } } },
+      select: { 
+        id: true, name: true, balance: true, 
+        _count: { select: { purchases: { where: { paymentStatus: { not: 'PAID' } } } } },
+        purchases: {
+          where: { paymentStatus: { not: 'PAID' }, status: { in: ['CONFIRMED', 'RECEIVED'] } },
+          select: { purchaseDate: true, outstandingAmount: true }
+        }
+      },
       orderBy: { balance: 'desc' }, take: 15
     });
 
     return {
-      receivables: receivables.map(r => ({ ...r, balance: Number(r.balance), invoices: r._count.sales })),
-      payables: payables.map(p => ({ ...p, balance: Number(p.balance), bills: p._count.purchases }))
+      receivables: receivables.map(r => {
+        const brackets = calculateBrackets(r.sales, 'saleDate');
+        return { ...r, balance: Number(r.balance), invoices: r._count.sales, brackets };
+      }),
+      payables: payables.map(p => {
+        const brackets = calculateBrackets(p.purchases, 'purchaseDate');
+        return { ...p, balance: Number(p.balance), bills: p._count.purchases, brackets };
+      })
     };
   }
 
@@ -375,8 +409,8 @@ export class DashboardService {
     // Generate alerts
     const alerts = [];
     const inv = await this.getInventoryIntelligence(startDate, endDate);
-    if (inv.summary.outOfStockCount > 0) alerts.push({ severity: 'Critical', message: `${inv.summary.outOfStockCount} products out of stock` });
-    if (inv.summary.lowStockCount > 0) alerts.push({ severity: 'High', message: `${inv.summary.lowStockCount} products are running low` });
+    if (inv.summary.outOfStockCount > 0) alerts.push({ severity: 'Critical', message: `${inv.summary.outOfStockCount} products out of stock`, type: 'OUT_OF_STOCK', items: inv.stockCoverage.filter(s => s.stockQuantity <= 0) });
+    if (inv.summary.lowStockCount > 0) alerts.push({ severity: 'High', message: `${inv.summary.lowStockCount} products are running low`, type: 'LOW_STOCK', items: inv.lowStock });
     
     return {
       pendingDeliveries: pendingDeliveries.map(d => ({

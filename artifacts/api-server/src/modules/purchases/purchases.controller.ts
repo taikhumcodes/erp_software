@@ -62,6 +62,16 @@ export const PurchasesController = {
     }
   },
 
+  async getHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const history = await PurchasesService.getHistory(id!);
+      res.json({ data: history });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
@@ -86,7 +96,8 @@ export const PurchasesController = {
   async updateStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      const purchase = await PurchasesService.updateStatus(id!, req.body as Record<string, unknown>);
+      const userId = req.user!.id;
+      const purchase = await PurchasesService.updateStatus(id!, userId, req.body as Record<string, unknown>);
       res.json({ data: purchase });
     } catch (err) {
       next(err);
@@ -96,7 +107,7 @@ export const PurchasesController = {
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      await PurchasesService.delete(id!);
+      await PurchasesService.delete(id!, req.user!.role);
       res.status(204).send();
     } catch (err) {
       next(err);

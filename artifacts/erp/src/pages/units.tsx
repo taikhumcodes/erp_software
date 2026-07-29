@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Search, Loader2, PackageOpen } from 'lucide-react
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { api } from '@/lib/api';
 import type { Unit, PaginatedResponse } from '@/lib/types';
 
@@ -55,9 +56,16 @@ export default function Units() {
     onError: (e: Error) => { setDeleteTarget(null); toast({ title: t('error'), description: e.message, variant: 'destructive' }); },
   });
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm()); setModalOpen(true); };
+  const { handleArabicChange, resetTranslationState } = useAutoTranslate(
+    form.name,
+    form.nameAr,
+    (text) => setForm((prev) => ({ ...prev, nameAr: text }))
+  );
+
+  const openCreate = () => { setEditing(null); setForm(emptyForm()); resetTranslationState(); setModalOpen(true); };
   const openEdit = (u: Unit) => {
     setEditing(u);
+    resetTranslationState();
     setForm({ name: u.name, nameAr: u.nameAr ?? '', abbreviation: u.abbreviation, isActive: u.isActive });
     setModalOpen(true);
   };
@@ -165,7 +173,7 @@ export default function Units() {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t('name_ar')}</label>
-              <input dir="rtl" value={form.nameAr} onChange={f('nameAr')} className="form-input" placeholder="مثال: كيلوجرام" />
+              <input dir="rtl" value={form.nameAr} onChange={(e) => handleArabicChange(e.target.value)} className="form-input" placeholder="مثال: كيلوجرام" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t('abbreviation')} <span className="text-destructive">*</span></label>

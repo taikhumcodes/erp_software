@@ -8,6 +8,7 @@ import {
 
 import { api } from '@/lib/api';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { formatKWD } from '@/lib/utils';
 import type { Supplier, SupplierStatistics, PaginatedResponse } from '@/lib/types';
 
@@ -141,8 +142,15 @@ function SupplierDialog({
   const [form, setForm]     = useState<SupplierForm>(emptyForm);
   const [errors, setErrors] = useState<FieldErrors>({});
 
+  const { handleArabicChange, resetTranslationState } = useAutoTranslate(
+    form.name,
+    form.nameAr,
+    (text) => setForm((prev) => ({ ...prev, nameAr: text }))
+  );
+
   useEffect(() => {
     if (!open) return;
+    resetTranslationState();
     setForm(supplier ? supplierToForm(supplier) : emptyForm());
     setErrors({});
   }, [open, supplier]);
@@ -252,7 +260,7 @@ function SupplierDialog({
               id="s-name-ar"
               dir="rtl"
               value={form.nameAr}
-              onChange={field('nameAr')}
+              onChange={(e) => handleArabicChange(e.target.value)}
               placeholder={t('supplier_name_ar_placeholder')}
               disabled={isPending}
             />

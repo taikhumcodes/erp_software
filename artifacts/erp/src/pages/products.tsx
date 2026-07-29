@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Search, Loader2, PackageOpen, ChevronDown } from 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { api } from '@/lib/api';
 import type { Product, Category, Brand, Unit, PaginatedResponse } from '@/lib/types';
 
@@ -96,9 +97,27 @@ export default function Products() {
   });
 
   // ── Handlers ──────────────────────────────────────────────────────────────
-  const openCreate = () => { setEditing(null); setForm(emptyForm()); setModalOpen(true); };
+  const { handleArabicChange, resetTranslationState } = useAutoTranslate(
+    form.name,
+    form.nameAr,
+    (text) => setForm((prev) => ({ ...prev, nameAr: text }))
+  );
+
+  const openCreate = async () => { 
+    setEditing(null); 
+    setForm(emptyForm()); 
+    resetTranslationState();
+    setModalOpen(true); 
+    try {
+      const res = await api.get<{sku: string}>('/products/next-sku');
+      setForm(prev => ({ ...prev, sku: res.sku }));
+    } catch (err) {
+      console.error('Failed to generate next SKU', err);
+    }
+  };
   const openEdit = (p: Product) => {
     setEditing(p);
+    resetTranslationState();
     setForm({
       sku: p.sku, name: p.name, nameAr: p.nameAr ?? '', description: p.description ?? '',
       categoryId: p.categoryId, brandId: p.brandId ?? '', unitId: p.unitId,
@@ -256,7 +275,7 @@ export default function Products() {
             {/* Name AR */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t('name_ar')}</label>
-              <input dir="rtl" value={form.nameAr} onChange={sf('nameAr')} className="form-input" placeholder="مثال: إسمنت بورتلاند ٥٠ كجم" />
+              <input dir="rtl" value={form.nameAr} onChange={(e) => handleArabicChange(e.target.value)} className="form-input" placeholder="مثال: إسمنت بورتلاند ٥٠ كجم" />
             </div>
 
             {/* Row 2: Category, Brand, Unit */}

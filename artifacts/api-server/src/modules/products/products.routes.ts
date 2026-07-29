@@ -9,6 +9,7 @@ router.use(authenticate);
 
 // Read — Sales and Warehouse can view products
 router.get('/', hasMinRole('WAREHOUSE'), productsController.list.bind(productsController));
+router.get('/next-sku', hasRole('OWNER', 'ADMIN', 'MANAGER'), productsController.getNextSku.bind(productsController));
 router.get('/:id', hasMinRole('WAREHOUSE'), productsController.getOne.bind(productsController));
 
 // Write — Manager and above can create/edit

@@ -9,10 +9,14 @@ const A4_HEIGHT_MM = 297;
 class Service {
   async prepareDocument(payload: Omit<DocumentData, 'company'>): Promise<DocumentData> {
     const company = await CompanyProfileService.getProfile();
-    return {
+    const finalDoc: DocumentData = {
       ...payload,
       company,
     };
+    if (company.qrCodeUrl) {
+      finalDoc.qrData = company.qrCodeUrl;
+    }
+    return finalDoc;
   }
 
   triggerPrint() {

@@ -47,7 +47,7 @@ export const CompanyHeader: React.FC<{ company: CompanyProfile; rightContent?: R
             <img
               src={company.logoUrl}
               alt="Company Logo"
-              style={{ height: '160px', maxWidth: '320px', objectFit: 'contain' }}
+              style={{ height: '200px', maxWidth: '350px', objectFit: 'contain' }}
             />
           )}
         </div>

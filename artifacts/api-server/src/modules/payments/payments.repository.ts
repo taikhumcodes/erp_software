@@ -198,7 +198,11 @@ export const PaymentsRepository = {
   },
 
   async delete(id: string) {
-    await prisma.payment.delete({ where: { id } });
+    await prisma.$transaction([
+      prisma.paymentAttachment.deleteMany({ where: { paymentId: id } }),
+      prisma.paymentAllocation.deleteMany({ where: { paymentId: id } }),
+      prisma.payment.delete({ where: { id } }),
+    ]);
   },
 
   async getStatistics() {

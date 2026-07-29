@@ -14,6 +14,7 @@ router.get('/statistics', hasMinRole('SALES'), SalesController.getStatistics);
 // List & single
 router.get('/',    hasMinRole('SALES'), SalesController.list);
 router.get('/:id', hasMinRole('SALES'), SalesController.getById);
+router.get('/:id/history', hasMinRole('SALES'), SalesController.getHistory);
 
 // Create — minimum SALES
 router.post('/', hasMinRole('SALES'), SalesController.create);
