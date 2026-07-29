@@ -1,3 +1,4 @@
+/// <reference types="node" />
 /**
  * Prisma seed script — creates the initial roles and owner/admin user.
  *
@@ -8,14 +9,14 @@
  * Idempotent: safe to run multiple times; skips records that already exist.
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
   // ── 1. Seed roles ──────────────────────────────────────────────────────────
-  const roles = [
+  const roles: { name: UserRole; description: string }[] = [
     { name: "OWNER",     description: "Full system access, cannot be restricted" },
     { name: "ADMIN",     description: "Manage users, settings, all modules" },
     { name: "MANAGER",   description: "Approve transactions, view all reports" },
