@@ -33,7 +33,7 @@ html, body {
 @media print {
   html, body {
     width: 210mm;
-    height: 297mm;
+    height: auto;
   }
 
   .no-print {
@@ -64,5 +64,13 @@ html, body {
     display: block;
     height: 0;
     clear: both;
+  }
+
+  /* Fix for text shifting downward in PDF/print:
+     Chrome's print engine miscalculates vertical-align: middle.
+     Forcing top alignment prevents the text from sagging. */
+  .document-page td,
+  .document-page th {
+    vertical-align: top !important;
   }
 }

@@ -337,7 +337,7 @@
   .document-page {
     box-shadow: none !important;
     margin: 0 !important;
-    page-break-after: always;
+    page-break-after: auto;
   }
 
   /* Don't print the UI chrome if any leaks in */
