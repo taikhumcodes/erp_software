@@ -67,18 +67,20 @@ export const PurchaseOrderTemplate: React.FC<{ data: DocumentData }> = ({ data }
       </div>
 
       {/* Prepared By / Checked By */}
-      <SignatureSection signatures={data.signatures} bilingual={company.bilingual} color={color} />
+      <SignatureSection signatures={data.signatures} bilingual={company.bilingual} color={color} isCompact={data.items && data.items.length >= 4} />
 
-      {/* Terms & Conditions + QR */}
-      <TermsConditions
-        termsEn={termsEn}
-        termsAr={termsAr}
-        qrData={data.qrData}
-        color={color}
-      />
+      <div className="avoid-break">
+        {/* Terms & Conditions + QR */}
+        <TermsConditions
+          termsEn={termsEn}
+          termsAr={termsAr}
+          qrData={data.qrData}
+          color={color}
+        />
 
-      {/* Footer */}
-      <CompanyFooter company={company} color={color} />
+        {/* Footer */}
+        <CompanyFooter company={company} color={color} />
+      </div>
     </DocumentPageLayout>
   );
 };
