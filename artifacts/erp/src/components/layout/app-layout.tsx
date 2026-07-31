@@ -20,7 +20,16 @@ import {
   LogOut,
   Box,
   ChevronRight,
-  Menu
+  ChevronDown,
+  Menu,
+  Building2,
+  BookOpen,
+  ArrowLeftRight,
+  Receipt,
+  UserCheck,
+  BarChart3,
+  ClipboardList,
+  PiggyBank,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -30,6 +39,19 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const logoutMutation = useLogout();
   const logout = useAuthStore(state => state.logout);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('open_sections') || '{}');
+    } catch { return {}; }
+  });
+
+  const toggleSection = (label: string) => {
+    setOpenSections(prev => {
+      const next = { ...prev, [label]: prev[label] === undefined ? false : !prev[label] };
+      localStorage.setItem('open_sections', JSON.stringify(next));
+      return next;
+    });
+  };
 
   const isRtl = i18n.language === 'ar';
 
@@ -87,7 +109,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       items: [
         { name: t('purchases'), path: '/purchases', icon: ShoppingCart, disabled: false },
         { name: t('sales'), path: '/sales', icon: Banknote, disabled: false },
-        { name: t('delivery_orders'), path: '/delivery-orders', icon: Truck, disabled: false }
+        { name: t('delivery_orders'), path: '/delivery-orders', icon: Truck, disabled: false },
+        { name: t('quotations'), path: '/quotations', icon: FileText, disabled: false }
       ]
     },
     {
@@ -98,10 +121,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       ]
     },
     {
-      label: t('finance'),
+      label: 'Finance',
       items: [
-        { name: t('payments'), path: '/payments', icon: CreditCard },
-        { name: t('reports'), path: '/reports', icon: FileText, disabled: true }
+        { name: 'Dashboard',       path: '/finance/dashboard',  icon: PiggyBank, disabled: false },
+        { name: 'Accounts Master', path: '/finance/accounts',   icon: Building2, disabled: false },
+        { name: 'Account Ledger',  path: '/finance/ledger',     icon: BookOpen, disabled: false },
+        { name: 'Transfers',       path: '/finance/transfers',  icon: ArrowLeftRight, disabled: false },
+        { name: 'Expenses',        path: '/finance/expenses',   icon: Receipt, disabled: false },
+        { name: 'Salary',          path: '/finance/salary',     icon: UserCheck, disabled: false },
+        { name: 'Payments',        path: '/payments',           icon: CreditCard, disabled: false },
+        { name: 'Reports',         path: '/finance/reports',    icon: BarChart3, disabled: false },
+        { name: 'Audit Logs',      path: '/finance/audit-logs', icon: ClipboardList, disabled: false },
       ]
     },
     {
@@ -125,6 +155,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       '/units': t('units'),
       '/suppliers': t('suppliers'),
       '/purchases': t('purchases'),
+      '/sales': t('sales'),
+      '/delivery-orders': t('delivery_orders'),
+      '/quotations': t('quotations'),
+      '/payments': t('payments'),
     };
     return map[location] ?? '';
   };
@@ -153,19 +187,25 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {t('app_name')}
           </span>
         </div>
-
         <div className="flex-1 overflow-y-auto py-6 px-3 scrollbar-thin scrollbar-thumb-gray-200">
-          {navigation.map((section, idx) => (
+          {navigation.map((section, idx) => {
+            const isOpen = section.label ? (openSections[section.label] ?? true) : true;
+            return (
             <div key={idx} className="mb-6 last:mb-0">
               {section.label && (
-                <h4 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  {section.label}
-                </h4>
+                <button
+                  onClick={() => toggleSection(section.label)}
+                  className="w-full flex items-center justify-between px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 hover:text-foreground transition-colors"
+                >
+                  <span>{section.label}</span>
+                  <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-0' : '-rotate-90'}`} />
+                </button>
               )}
+              {isOpen && (
               <ul className="space-y-1">
                 {section.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = location === item.path;
+                  const isActive = location === item.path || (item.path !== '/' && item.path !== '/payments' && location.startsWith(item.path + '/'));
                   
                   return (
                     <li key={item.path}>
@@ -202,8 +242,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   );
                 })}
               </ul>
+              )}
             </div>
-          ))}
+          )})}
         </div>
       </aside>
 

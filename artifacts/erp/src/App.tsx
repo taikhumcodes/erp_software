@@ -25,7 +25,18 @@ import Purchases from '@/pages/purchases';
 import Sales from '@/pages/sales';
 import Payments from '@/pages/payments';
 import DeliveryOrdersPage from '@/pages/delivery-orders';
+import QuotationsPage from '@/pages/quotations';
 import DocumentViewer from '@/pages/document-viewer';
+
+// Finance Module Pages
+import FinanceDashboard from '@/pages/finance/FinanceDashboard';
+import AccountsMaster from '@/pages/finance/AccountsMaster';
+import AccountLedger from '@/pages/finance/AccountLedger';
+import MoneyTransfers from '@/pages/finance/MoneyTransfers';
+import Expenses from '@/pages/finance/Expenses';
+import SalaryManagement from '@/pages/finance/SalaryManagement';
+import FinanceAuditLogs from '@/pages/finance/FinanceAuditLogs';
+import FinanceReports from '@/pages/finance/FinanceReports';
 
 import { registerDocuments } from '@/modules/documents';
 
@@ -205,6 +216,37 @@ function Router() {
         </Route>
         <Route path="/delivery-orders">
           <ProtectedRoute component={DeliveryOrdersPage} />
+        </Route>
+        <Route path="/quotations">
+          <ProtectedRoute component={QuotationsPage} />
+        </Route>
+        {/* Finance Module Routes */}
+        <Route path="/finance/dashboard">
+          <ProtectedRoute component={FinanceDashboard} />
+        </Route>
+        <Route path="/finance/accounts">
+          <ProtectedRoute component={AccountsMaster} />
+        </Route>
+        <Route path="/finance/ledger">
+          <ProtectedRoute component={AccountLedger} />
+        </Route>
+        <Route path="/finance/ledger/:accountId">
+          <ProtectedRoute component={AccountLedger} />
+        </Route>
+        <Route path="/finance/transfers">
+          <ProtectedRoute component={MoneyTransfers} />
+        </Route>
+        <Route path="/finance/expenses">
+          <ProtectedRoute component={Expenses} />
+        </Route>
+        <Route path="/finance/salary">
+          <ProtectedRoute component={SalaryManagement} />
+        </Route>
+        <Route path="/finance/audit-logs">
+          <ProtectedRoute component={FinanceAuditLogs} />
+        </Route>
+        <Route path="/finance/reports">
+          <ProtectedRoute component={FinanceReports} />
         </Route>
         <Route component={NotFound} />
       </Switch>

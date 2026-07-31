@@ -54,6 +54,16 @@ enum OrderSource {
   DIRECT
 }
 
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+  CONVERTED
+}
+
 enum SaleStatus {
   DRAFT
   CONFIRMED
@@ -93,6 +103,89 @@ enum TransactionStatus {
   PENDING
   COMPLETED
   CANCELLED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Finance Module Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum FinanceAccountType {
+  CASH
+  BANK
+  WALLET
+  OTHER
+  PARTNER_CAPITAL
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum LedgerEntryType {
+  OPENING_BALANCE
+  SALE_PAYMENT
+  PURCHASE_PAYMENT
+  OWNER_INVESTMENT
+  OWNER_WITHDRAWAL
+  DEPOSIT
+  WITHDRAWAL
+  BANK_INTEREST
+  BANK_CHARGES
+  EXPENSE
+  SALARY
+  SALARY_ADVANCE
+  BONUS
+  TRANSFER_IN
+  TRANSFER_OUT
+  MISC_INCOME
+  MISC_EXPENSE
+  ADJUSTMENT
+  PROFIT_SHARE
+}
+
+enum ExpenseFrequency {
+  ONCE
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum ExpenseStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SalaryStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum FinanceAuditAction {
+  ACCOUNT_CREATED
+  ACCOUNT_UPDATED
+  ACCOUNT_STATUS_CHANGED
+  LEDGER_ENTRY_CREATED
+  ADJUSTMENT_CREATED
+  TRANSFER_CREATED
+  EXPENSE_CREATED
+  EXPENSE_UPDATED
+  EXPENSE_DELETED
+  EMPLOYEE_CREATED
+  EMPLOYEE_UPDATED
+  SALARY_GENERATED
+  SALARY_PAID
+  SALARY_CANCELLED
+  SALARY_ADVANCE_CREATED
+  PAYMENT_LINKED
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -141,6 +234,20 @@ model User {
   deliveryOrderHistory     DeliveryOrderHistory[]
   purchaseHistory          PurchaseHistory[]
   saleHistory              SaleHistory[]
+
+  // Finance Module relations
+  createdFinanceAccounts FinanceAccount[]  @relation("FACreatedBy")
+  financeLedgerEntries   FinanceLedger[]
+  moneyTransfers         MoneyTransfer[]
+  createdExpenses        Expense[]
+  paidSalaries           SalaryRecord[]    @relation("SalaryPaidBy")
+  createdSalaryAdvances  SalaryAdvance[]   @relation("AdvanceCreatedBy")
+  financeAuditLogs       FinanceAuditLog[]
+
+  // Quotation Module relations
+  quotations              Quotation[]
+  quotationsSalesperson    Quotation[]        @relation("QuotationSalesperson")
+  quotationHistory         QuotationHistory[]
 
   @@map("users")
 }
@@ -207,13 +314,15 @@ model Product {
   sellingPrice  Decimal  @map("selling_price") @db.Decimal(15, 3) // KWD
   stockQuantity Decimal  @default(0) @map("stock_quantity") @db.Decimal(15, 3)
   reorderLevel  Decimal  @default(0) @map("reorder_level") @db.Decimal(15, 3)
+  countryOfOrigin String? @map("country_of_origin")
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  purchaseItems PurchaseItem[]
-  saleItems     SaleItem[]
-  deliveryItems DeliveryOrderItem[]
+  purchaseItems  PurchaseItem[]
+  saleItems      SaleItem[]
+  deliveryItems  DeliveryOrderItem[]
+  quotationItems QuotationItem[]
 
   @@map("products")
 }
@@ -239,6 +348,7 @@ model Customer {
   sales          Sale[]
   payments       Payment[]
   deliveryOrders DeliveryOrder[]
+  quotations     Quotation[]
 
   @@map("customers")
 }
@@ -360,6 +470,7 @@ model Sale {
   items       SaleItem[]
   allocations PaymentAllocation[]
   history     SaleHistory[]
+  quotation   Quotation?
 
   @@map("sales")
 }
@@ -516,6 +627,10 @@ model Payment {
   supplierId String?   @map("supplier_id")
   supplier   Supplier? @relation(fields: [supplierId], references: [id])
 
+  // Finance Account linkage (optional for backward compat with existing payments)
+  accountId String?         @map("account_id")
+  account   FinanceAccount? @relation(fields: [accountId], references: [id])
+
   amount          Decimal @db.Decimal(15, 3) // Total Amount
   allocatedAmount Decimal @default(0) @db.Decimal(15, 3)
   remainingAmount Decimal @db.Decimal(15, 3) // amount - allocatedAmount
@@ -618,4 +733,305 @@ model SettingHistory {
   changedAt DateTime @default(now()) @map("changed_at")
 
   @@map("setting_history")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Finance Module Models
+// ─────────────────────────────────────────────────────────────────────────────
+
+model FinanceAccount {
+  id             String             @id @default(cuid())
+  name           String
+  type           FinanceAccountType
+  status         AccountStatus      @default(ACTIVE)
+  bankName       String?            @map("bank_name")
+  accountNumber  String?            @map("account_number")
+  branch         String?
+  currency       String             @default("KWD")
+  // Opening balance is for record-keeping; actual balance is always calculated
+  openingBalance Decimal            @default(0) @map("opening_balance") @db.Decimal(15, 3)
+  description    String?
+  isDefault      Boolean            @default(false) @map("is_default")
+  createdById    String             @map("created_by_id")
+  createdBy      User               @relation("FACreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  ledgerEntries  FinanceLedger[]
+  payments       Payment[]
+  transfersFrom  MoneyTransfer[]    @relation("TransferFrom")
+  transfersTo    MoneyTransfer[]    @relation("TransferTo")
+  expenses       Expense[]
+  salaryPayments SalaryRecord[]
+  salaryAdvances SalaryAdvance[]
+  auditLogs      FinanceAuditLog[]
+
+  @@map("finance_accounts")
+}
+
+model FinanceLedger {
+  id              String          @id @default(cuid())
+  accountId       String          @map("account_id")
+  account         FinanceAccount  @relation(fields: [accountId], references: [id])
+  entryType       LedgerEntryType @map("entry_type")
+  referenceNumber String?         @map("reference_number")
+  referenceId     String?         @map("reference_id")
+  description     String
+  debit           Decimal         @default(0) @db.Decimal(15, 3)
+  credit          Decimal         @default(0) @db.Decimal(15, 3)
+  // Running balance stored for display performance; recalculated from scratch for exports
+  runningBalance  Decimal         @map("running_balance") @db.Decimal(15, 3)
+  createdById     String          @map("created_by_id")
+  createdBy       User            @relation(fields: [createdById], references: [id])
+  remarks         String?
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  @@map("finance_ledger")
+}
+
+model MoneyTransfer {
+  id              String         @id @default(cuid())
+  number          String         @unique // TRF-2026-000001
+  fromAccountId   String         @map("from_account_id")
+  fromAccount     FinanceAccount @relation("TransferFrom", fields: [fromAccountId], references: [id])
+  toAccountId     String         @map("to_account_id")
+  toAccount       FinanceAccount @relation("TransferTo", fields: [toAccountId], references: [id])
+  amount          Decimal        @db.Decimal(15, 3)
+  transferDate    DateTime       @default(now()) @map("transfer_date")
+  description     String?
+  referenceNumber String?        @map("reference_number")
+  createdById     String         @map("created_by_id")
+  createdBy       User           @relation(fields: [createdById], references: [id])
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@map("money_transfers")
+}
+
+model ExpenseCategory {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  isDefault Boolean   @default(false) @map("is_default")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  expenses  Expense[]
+
+  @@map("expense_categories")
+}
+
+model Expense {
+  id             String          @id @default(cuid())
+  number         String          @unique // EXP-2026-000001
+  categoryId     String          @map("category_id")
+  category       ExpenseCategory @relation(fields: [categoryId], references: [id])
+  name           String
+  vendor         String?
+  amount         Decimal         @db.Decimal(15, 3)
+  accountId      String          @map("account_id")
+  account        FinanceAccount  @relation(fields: [accountId], references: [id])
+  expenseDate    DateTime        @default(now()) @map("expense_date")
+  description    String?
+  attachmentPath String?         @map("attachment_path")
+  status         ExpenseStatus   @default(PAID)
+  // Recurring expense support
+  isRecurring    Boolean         @default(false) @map("is_recurring")
+  frequency      ExpenseFrequency?
+  nextDueDate    DateTime?       @map("next_due_date")
+  parentId       String?         @map("parent_id")
+  parent         Expense?        @relation("RecurringExpenses", fields: [parentId], references: [id])
+  children       Expense[]       @relation("RecurringExpenses")
+  createdById    String          @map("created_by_id")
+  createdBy      User            @relation(fields: [createdById], references: [id])
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  @@map("expenses")
+}
+
+model Employee {
+  id           String         @id @default(cuid())
+  employeeId   String         @unique @map("employee_id") // EMP-001
+  name         String
+  phone        String?
+  department   String?
+  designation  String?
+  joiningDate  DateTime?      @map("joining_date")
+  basicSalary  Decimal        @map("basic_salary") @db.Decimal(15, 3)
+  allowances   Decimal        @default(0) @db.Decimal(15, 3)
+  deductions   Decimal        @default(0) @db.Decimal(15, 3)
+  status       EmployeeStatus @default(ACTIVE)
+  notes        String?
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  salaryRecords SalaryRecord[]
+  advances      SalaryAdvance[]
+
+  @@map("employees")
+}
+
+model SalaryRecord {
+  id          String          @id @default(cuid())
+  number      String          @unique // SAL-2026-000001
+  employeeId  String          @map("employee_id")
+  employee    Employee        @relation(fields: [employeeId], references: [id])
+  month       Int
+  year        Int
+  basicSalary Decimal         @map("basic_salary") @db.Decimal(15, 3)
+  allowances  Decimal         @db.Decimal(15, 3)
+  deductions  Decimal         @db.Decimal(15, 3)
+  bonus       Decimal         @default(0) @db.Decimal(15, 3)
+  overtime    Decimal         @default(0) @db.Decimal(15, 3)
+  // netSalary = basicSalary + allowances + bonus + overtime - deductions
+  netSalary   Decimal         @map("net_salary") @db.Decimal(15, 3)
+  accountId   String?         @map("account_id")
+  account     FinanceAccount? @relation(fields: [accountId], references: [id])
+  status      SalaryStatus    @default(PENDING)
+  paidAt      DateTime?       @map("paid_at")
+  paidById    String?         @map("paid_by_id")
+  paidBy      User?           @relation("SalaryPaidBy", fields: [paidById], references: [id])
+  notes       String?
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@unique([employeeId, month, year]) // Prevent duplicate salary for same month
+  @@map("salary_records")
+}
+
+model SalaryAdvance {
+  id          String         @id @default(cuid())
+  number      String         @unique // ADV-2026-000001
+  employeeId  String         @map("employee_id")
+  employee    Employee       @relation(fields: [employeeId], references: [id])
+  amount      Decimal        @db.Decimal(15, 3)
+  accountId   String         @map("account_id")
+  account     FinanceAccount @relation(fields: [accountId], references: [id])
+  advanceDate DateTime       @default(now()) @map("advance_date")
+  reason      String?
+  recovered   Boolean        @default(false)
+  recoveredAt DateTime?      @map("recovered_at")
+  createdById String         @map("created_by_id")
+  createdBy   User           @relation("AdvanceCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  @@map("salary_advances")
+}
+
+model FinanceAuditLog {
+  id          String              @id @default(cuid())
+  action      FinanceAuditAction
+  module      String              // "ACCOUNT" | "EXPENSE" | "SALARY" | "TRANSFER" | "PAYMENT"
+  referenceId String?             @map("reference_id")
+  reference   String?             // Human-readable: EXP-2026-000001
+  amount      Decimal?            @db.Decimal(15, 3)
+  accountId   String?             @map("account_id")
+  account     FinanceAccount?     @relation(fields: [accountId], references: [id])
+  userId      String              @map("user_id")
+  user        User                @relation(fields: [userId], references: [id])
+  oldValue    Json?               @map("old_value")
+  newValue    Json?               @map("new_value")
+  reason      String?
+  remarks     String?
+  ipAddress   String?             @map("ip_address")
+  createdAt   DateTime            @default(now()) @map("created_at")
+
+  @@map("finance_audit_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quotation Module
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Quotation {
+  id                String          @id @default(cuid())
+  number            String          @unique // QT-2026-000001
+  customerId        String?         @map("customer_id")
+  customer          Customer?       @relation(fields: [customerId], references: [id])
+  customerName      String?         @map("customer_name")
+  customerNameAr    String?         @map("customer_name_ar")
+  quotationBy       String?         @map("quotation_by")
+  quotationByAr     String?         @map("quotation_by_ar")
+  quotationByAddress String?        @map("quotation_by_address")
+  userId            String          @map("user_id")
+  user              User            @relation(fields: [userId], references: [id])
+  salespersonId     String?         @map("salesperson_id")
+  salesperson       User?           @relation("QuotationSalesperson", fields: [salespersonId], references: [id])
+  status            QuotationStatus @default(DRAFT)
+  quotationDate     DateTime        @default(now()) @map("quotation_date")
+  validityDate      DateTime?       @map("validity_date")
+  referenceNumber   String?         @map("reference_number")
+  customerReference String?         @map("customer_reference")
+
+  // Pricing (no tax — Kuwait deployment)
+  totalAmount       Decimal         @map("total_amount") @db.Decimal(15, 3)
+  discount          Decimal         @default(0) @db.Decimal(15, 3)
+  roundOff          Decimal         @default(0) @map("round_off") @db.Decimal(15, 3)
+  grandTotal        Decimal         @map("grand_total") @db.Decimal(15, 3)
+
+  notes              String?  @db.Text
+  termsAndConditions String?  @map("terms_and_conditions") @db.Text
+
+  // Customer snapshot fields (editable per quotation)
+  contactPerson     String?  @map("contact_person")
+  phone             String?
+  email             String?
+  address           String?  @db.Text
+  country           String?
+
+  // Conversion tracking
+  convertedToSaleId String?  @unique @map("converted_to_sale_id")
+  convertedToSale   Sale?    @relation(fields: [convertedToSaleId], references: [id])
+  convertedAt       DateTime? @map("converted_at")
+  convertedById     String?  @map("converted_by_id")
+
+  // Revision support (future-ready)
+  revisionNumber    Int       @default(1) @map("revision_number")
+  parentQuotationId String?   @map("parent_quotation_id")
+  parentQuotation   Quotation? @relation("QuotationRevisions", fields: [parentQuotationId], references: [id])
+  revisions         Quotation[] @relation("QuotationRevisions")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  items   QuotationItem[]
+  history QuotationHistory[]
+
+  @@map("quotations")
+}
+
+model QuotationItem {
+  id              String    @id @default(cuid())
+  quotationId     String    @map("quotation_id")
+  quotation       Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  productId       String    @map("product_id")
+  product         Product   @relation(fields: [productId], references: [id])
+  description     String?
+  countryOfOrigin String?   @map("country_of_origin")
+  quantity        Decimal   @db.Decimal(15, 3)
+  unitPrice       Decimal   @map("unit_price") @db.Decimal(15, 3)
+  amount          Decimal   @db.Decimal(15, 3)
+  sortOrder       Int       @default(0) @map("sort_order")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("quotation_items")
+}
+
+model QuotationHistory {
+  id          String           @id @default(cuid())
+  quotationId String           @map("quotation_id")
+  quotation   Quotation        @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  action      String           // CREATE, EDIT, STATUS_CHANGE, PRINT, DOWNLOAD, CONVERT, CANCEL, DELETE, DUPLICATE
+  fromStatus  QuotationStatus? @map("from_status")
+  toStatus    QuotationStatus? @map("to_status")
+  userId      String           @map("user_id")
+  user        User             @relation(fields: [userId], references: [id])
+  notes       String?
+  oldValue    Json?            @map("old_value")
+  newValue    Json?            @map("new_value")
+  ipAddress   String?          @map("ip_address")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@map("quotation_history")
 }

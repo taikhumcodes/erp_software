@@ -3,6 +3,7 @@ import { useLocation, useParams } from 'wouter';
 import { Printer, Download } from 'lucide-react';
 import { DocumentRegistry, DocumentData, DocumentService, DocumentType } from '@/modules/documents';
 import { adaptPurchaseOrder, adaptDeliveryOrder, adaptSalesInvoice } from '@/modules/documents/adapters';
+import { QuotationAdapter } from '@/modules/documents/adapters/QuotationAdapter';
 import { api } from '@/lib/api';
 
 /**
@@ -54,19 +55,21 @@ export default function DocumentViewer() {
         if (docRegistration!.type === 'PURCHASE_ORDER') apiEndpoint = `/api/purchases/${id}`;
         if (docRegistration!.type === 'DELIVERY_ORDER') apiEndpoint = `/api/delivery-orders/${id}`;
         if (docRegistration!.type === 'SALES_INVOICE') apiEndpoint = `/api/sales/${id}`;
+        if (docRegistration!.type === 'QUOTATION') apiEndpoint = `/api/quotations/${id}`;
 
         if (!apiEndpoint) {
           throw new Error(`No API endpoint configured for ${docRegistration!.type}`);
         }
 
         const res = await api.get<any>(apiEndpoint);
-        const rawData = res.data.data || res.data;
+        const rawData = res?.data?.data || res?.data || res;
         
         // Map raw data using the appropriate adapter
         let adaptedPayload: Omit<DocumentData, 'company'>;
         if (docRegistration!.type === 'PURCHASE_ORDER') adaptedPayload = adaptPurchaseOrder(rawData);
         else if (docRegistration!.type === 'DELIVERY_ORDER') adaptedPayload = adaptDeliveryOrder(rawData);
         else if (docRegistration!.type === 'SALES_INVOICE') adaptedPayload = adaptSalesInvoice(rawData);
+        else if (docRegistration!.type === 'QUOTATION') adaptedPayload = new QuotationAdapter().adapt(rawData);
         else throw new Error('Adapter not found');
 
         // Pass the adapted payload to the DocumentService to attach company profile and prepare it

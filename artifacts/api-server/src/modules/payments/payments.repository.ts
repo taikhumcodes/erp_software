@@ -39,6 +39,10 @@ const paymentSelect = {
   user: {
     select: { id: true, name: true, nameAr: true },
   },
+  accountId: true,
+  account: {
+    select: { id: true, name: true, type: true },
+  },
   cancelledById: true,
   cancelledBy: {
     select: { id: true, name: true, nameAr: true },
@@ -93,6 +97,10 @@ const paymentListSelect = {
   userId: true,
   user: {
     select: { id: true, name: true, nameAr: true },
+  },
+  accountId: true,
+  account: {
+    select: { id: true, name: true, type: true },
   },
   createdAt: true,
   updatedAt: true,

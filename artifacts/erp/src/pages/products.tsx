@@ -16,6 +16,7 @@ interface ProductForm {
   categoryId: string; brandId: string; unitId: string;
   costPrice: string; sellingPrice: string;
   stockQuantity: string; reorderLevel: string;
+  countryOfOrigin: string;
   isActive: boolean;
 }
 
@@ -24,6 +25,7 @@ const emptyForm = (): ProductForm => ({
   categoryId: '', brandId: '', unitId: '',
   costPrice: '', sellingPrice: '',
   stockQuantity: '0', reorderLevel: '0',
+  countryOfOrigin: '',
   isActive: true,
 });
 
@@ -44,6 +46,11 @@ export default function Products() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm());
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+
+  const COMMON_COUNTRIES = [
+    'China', 'India', 'Kuwait', 'UAE', 'Germany', 'Italy', 'Turkey', 'Japan',
+    'USA', 'UK', 'South Korea', 'Taiwan', 'Malaysia', 'Saudi Arabia', 'France'
+  ];
 
   // ── Lookups for dropdowns ─────────────────────────────────────────────────
   const { data: categoriesData } = useQuery<PaginatedResponse<Category>>({
@@ -123,6 +130,7 @@ export default function Products() {
       categoryId: p.categoryId, brandId: p.brandId ?? '', unitId: p.unitId,
       costPrice: p.costPrice, sellingPrice: p.sellingPrice,
       stockQuantity: p.stockQuantity, reorderLevel: p.reorderLevel,
+      countryOfOrigin: p.countryOfOrigin ?? '',
       isActive: p.isActive,
     });
     setModalOpen(true);
@@ -334,6 +342,26 @@ export default function Products() {
                 <label className="text-sm font-medium">{t('min_stock')}</label>
                 <input type="number" step="0.001" min="0" value={form.reorderLevel} onChange={sf('reorderLevel')}
                   className="form-input" placeholder="0" dir="ltr" />
+              </div>
+            </div>
+
+            {/* Row 5: Country of Origin */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Country of Origin <span className="text-muted-foreground text-xs font-normal">({t('optional')})</span></label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={form.countryOfOrigin} 
+                    onChange={sf('countryOfOrigin')}
+                    list="countries-list"
+                    className="form-input" 
+                    placeholder="e.g. China" 
+                  />
+                  <datalist id="countries-list">
+                    {COMMON_COUNTRIES.map(c => <option key={c} value={c} />)}
+                  </datalist>
+                </div>
               </div>
             </div>
 

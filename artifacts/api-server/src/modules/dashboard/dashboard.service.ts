@@ -400,6 +400,12 @@ export class DashboardService {
       include: { user: { select: { name: true } }, customer: { select: { name: true } } }
     });
 
+    const pendingQuotations = await prisma.quotation.findMany({
+      where: { status: { in: ['DRAFT', 'SENT', 'ACCEPTED'] } },
+      orderBy: { createdAt: 'desc' }, take: 5,
+      include: { customer: { select: { name: true } } }
+    });
+
     const activity = recentSales.map(s => ({
       id: s.id, module: 'Sales', description: `New Sale ${s.number} created`,
       user: s.user.name, entity: s.customer.name, amount: Number(s.netAmount),
@@ -416,6 +422,10 @@ export class DashboardService {
       pendingDeliveries: pendingDeliveries.map(d => ({
         id: d.id, number: d.number, customer: d.customerNameSnapshot || d.customer?.name,
         status: d.status, date: d.deliveryDate || d.createdAt
+      })),
+      pendingQuotations: pendingQuotations.map(q => ({
+        id: q.id, number: q.number, customer: q.customer?.name,
+        status: q.status, date: q.quotationDate || q.createdAt, amount: Number(q.grandTotal)
       })),
       recentActivity: activity,
       alerts

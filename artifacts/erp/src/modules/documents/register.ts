@@ -2,6 +2,7 @@ import { DocumentRegistry } from './registry/DocumentRegistry';
 import { PurchaseOrderTemplate } from './templates/purchase-order/Template';
 import { DeliveryOrderTemplate } from './templates/delivery-order/Template';
 import { SalesInvoiceTemplate } from './templates/sales-invoice/Template';
+import { QuotationTemplate } from './templates/quotation/Template';
 
 export function registerDocuments() {
   DocumentRegistry.register({
@@ -25,6 +26,14 @@ export function registerDocuments() {
     displayName: 'Sales Invoice',
     route: '/documents/sales-invoice',
     templateComponent: SalesInvoiceTemplate,
+    supportedActions: ['PREVIEW', 'PRINT', 'PDF']
+  });
+
+  DocumentRegistry.register({
+    type: 'QUOTATION',
+    displayName: 'Quotation',
+    route: '/documents/quotation',
+    templateComponent: QuotationTemplate,
     supportedActions: ['PREVIEW', 'PRINT', 'PDF']
   });
 }

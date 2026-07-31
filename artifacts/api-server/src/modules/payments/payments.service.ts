@@ -5,6 +5,8 @@ import { SalesFinancialService } from '../sales/sales-financial.service.js';
 import { PurchaseFinancialService } from '../purchases/purchase-financial.service.js';
 import { AppError } from '../../errors/AppError.js';
 import { DocumentNumberService } from '../../lib/document-number.service.js';
+import { FinanceLedgerService } from '../finance/finance-ledger.service.js';
+import { FinanceAuditService } from '../finance/finance-audit.service.js';
 
 export const PaymentsService = {
   async list(filters: PaymentFilters) {
@@ -24,7 +26,7 @@ export const PaymentsService = {
   },
 
   async create(userId: string, data: Record<string, any>) {
-    const { type, method, mode, customerId, supplierId, amount, paymentDate, referenceNumber, notes } = data;
+    const { type, method, mode, customerId, supplierId, amount, paymentDate, referenceNumber, notes, accountId } = data;
 
     if (!type || !['CUSTOMER', 'SUPPLIER'].includes(type)) {
       throw new AppError('Invalid payment type', 400);
@@ -39,6 +41,13 @@ export const PaymentsService = {
 
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
       throw new AppError('Amount must be greater than zero', 400);
+    }
+
+    // Validate accountId if provided
+    if (accountId) {
+      const account = await prisma.financeAccount.findUnique({ where: { id: accountId } });
+      if (!account) throw new AppError('Financial account not found', 404);
+      if (account.status !== 'ACTIVE') throw new AppError('Selected financial account is not active', 400);
     }
 
     const number = await DocumentNumberService.generateNextNumber({
@@ -64,6 +73,7 @@ export const PaymentsService = {
         referenceNumber,
         notes,
         userId,
+        accountId: accountId || null,
       });
     });
   },
@@ -122,6 +132,34 @@ export const PaymentsService = {
           }
         }
 
+        // ── Finance Ledger Integration ────────────────────────────────────────
+        // If this payment is linked to a financial account, post the ledger entry
+        if (payment.accountId) {
+          const entryType = payment.type === 'CUSTOMER' ? 'SALE_PAYMENT' : 'PURCHASE_PAYMENT';
+          const isIncoming = payment.type === 'CUSTOMER';
+          await FinanceLedgerService.postEntry(tx, {
+            accountId: payment.accountId,
+            entryType,
+            credit: isIncoming ? Number(payment.amount) : 0,
+            debit:  isIncoming ? 0 : Number(payment.amount),
+            description: `Payment ${payment.number}`,
+            referenceNumber: payment.number,
+            referenceId: payment.id,
+            createdById: userId,
+          });
+          await FinanceAuditService.log(tx, {
+            action: 'PAYMENT_LINKED',
+            module: 'PAYMENT',
+            referenceId: payment.id,
+            reference: payment.number,
+            amount: Number(payment.amount),
+            accountId: payment.accountId,
+            userId,
+            newValue: { type: payment.type, amount: payment.amount.toFixed(3) },
+          });
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         return PaymentsRepository.updateStatus(tx, id, { status: 'COMPLETED' });
       }
 
@@ -153,6 +191,23 @@ export const PaymentsService = {
             });
           }
         }
+
+        // ── Finance Ledger Reversal ───────────────────────────────────────────
+        // Reverse the ledger entry if the payment was linked to a financial account
+        if (payment.accountId) {
+          const isIncoming = payment.type === 'CUSTOMER';
+          await FinanceLedgerService.postEntry(tx, {
+            accountId: payment.accountId,
+            entryType: 'ADJUSTMENT',
+            debit:  isIncoming ? Number(payment.amount) : 0,
+            credit: isIncoming ? 0 : Number(payment.amount),
+            description: `Reversal of Payment ${payment.number}`,
+            referenceNumber: payment.number,
+            referenceId: payment.id,
+            createdById: userId,
+          });
+        }
+        // ─────────────────────────────────────────────────────────────────────
 
         return PaymentsRepository.updateStatus(tx, id, {
           status: 'CANCELLED',

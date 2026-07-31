@@ -29,6 +29,7 @@ import { StockCoverageWidget, SmartReorderWidget, DeadStockWidget } from '../com
 import { ReceivablesCenter, PayablesCenter } from '../components/FinancialCenters';
 import { BusinessHealthScore } from '../components/BusinessHealthScore';
 import { ActionCenterWidget } from '../components/ActionCenterWidget';
+import { PartnerCapitalWidget } from '../components/PartnerCapitalWidget';
 
 export const ExecutiveDashboard = () => {
   const { t } = useTranslation();
@@ -103,6 +104,7 @@ export const ExecutiveDashboard = () => {
 
         {/* Sidebar / Action Area */}
         <div className="lg:col-span-1 space-y-6">
+          <PartnerCapitalWidget />
           <BusinessHealthScore data={health} isLoading={healthLoading} />
           <ActionCenterWidget data={operations} isLoading={opsLoading} />
         </div>

@@ -17,9 +17,9 @@ import { prisma } from './prisma.js';
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface NumberConfig {
-  /** Table name to query (e.g. 'sale', 'purchase', 'deliveryOrder', 'payment') */
-  model: 'sale' | 'purchase' | 'deliveryOrder' | 'payment';
-  /** Prefix for the document number (e.g. 'SO', 'PO', 'DO', 'INV', 'PAY') */
+  /** Table name to query (e.g. 'sale', 'purchase', 'deliveryOrder', 'payment', 'moneyTransfer', 'expense', 'salaryRecord', 'salaryAdvance', 'quotation') */
+  model: 'sale' | 'purchase' | 'deliveryOrder' | 'payment' | 'moneyTransfer' | 'expense' | 'salaryRecord' | 'salaryAdvance' | 'quotation';
+  /** Prefix for the document number (e.g. 'SO', 'PO', 'DO', 'PAY', 'TRF', 'EXP', 'SAL', 'ADV') */
   prefix: string;
   /** Number of digits in the sequence portion (default: 6) */
   sequenceLength?: number;
@@ -103,6 +103,10 @@ export const DocumentNumberService = {
     return this.generateNextNumber({ model: 'deliveryOrder', prefix: 'DO', sequenceLength: 6 }, tx);
   },
 
+  async generateQuotationNumber(tx?: Prisma.TransactionClient): Promise<string> {
+    return this.generateNextNumber({ model: 'quotation', prefix: 'QT', sequenceLength: 6 }, tx);
+  },
+
   /**
    * @internal Find the last document number matching a prefix for a given model.
    */
@@ -139,6 +143,46 @@ export const DocumentNumberService = {
       }
       case 'payment': {
         const record = await client.payment.findFirst({
+          where: { number: { startsWith: prefix } },
+          orderBy: { number: 'desc' },
+          select: { number: true },
+        });
+        return record?.number ?? null;
+      }
+      case 'moneyTransfer': {
+        const record = await client.moneyTransfer.findFirst({
+          where: { number: { startsWith: prefix } },
+          orderBy: { number: 'desc' },
+          select: { number: true },
+        });
+        return record?.number ?? null;
+      }
+      case 'expense': {
+        const record = await client.expense.findFirst({
+          where: { number: { startsWith: prefix } },
+          orderBy: { number: 'desc' },
+          select: { number: true },
+        });
+        return record?.number ?? null;
+      }
+      case 'salaryRecord': {
+        const record = await client.salaryRecord.findFirst({
+          where: { number: { startsWith: prefix } },
+          orderBy: { number: 'desc' },
+          select: { number: true },
+        });
+        return record?.number ?? null;
+      }
+      case 'salaryAdvance': {
+        const record = await client.salaryAdvance.findFirst({
+          where: { number: { startsWith: prefix } },
+          orderBy: { number: 'desc' },
+          select: { number: true },
+        });
+        return record?.number ?? null;
+      }
+      case 'quotation': {
+        const record = await client.quotation.findFirst({
           where: { number: { startsWith: prefix } },
           orderBy: { number: 'desc' },
           select: { number: true },

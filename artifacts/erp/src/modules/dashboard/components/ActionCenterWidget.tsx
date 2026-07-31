@@ -13,7 +13,7 @@ export const ActionCenterWidget: React.FC<ActionCenterWidgetProps> = ({ data, is
     return <div className="animate-pulse h-64 bg-muted rounded-xl w-full" />;
   }
 
-  const { alerts, recentActivity } = data;
+  const { alerts, recentActivity, pendingQuotations } = data;
 
   return (
     <div className="space-y-6">
@@ -68,6 +68,30 @@ export const ActionCenterWidget: React.FC<ActionCenterWidgetProps> = ({ data, is
           </div>
         </CardContent>
       </Card>
+
+      {pendingQuotations && pendingQuotations.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center">
+              <Info className="w-5 h-5 mr-2" />
+              Pending Quotations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {pendingQuotations.map((q: any) => (
+                <div key={q.id} className="flex flex-col border-b last:border-0 pb-3 last:pb-0">
+                  <span className="text-sm font-medium">{q.number} - {q.customer}</span>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'KWD' }).format(q.amount)}</span>
+                    <Badge variant="outline">{q.status}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="pb-3">

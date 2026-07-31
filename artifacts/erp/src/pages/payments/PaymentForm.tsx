@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { formatKWD } from '@/lib/utils';
 import type { Customer, Supplier, PaymentType, PaymentMethodType, PaymentMode, PaginatedResponse } from '@/lib/types';
+import { FinanceAPI } from '@/lib/finance-api';
+import type { FinanceAccount } from '@/lib/finance-types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,6 +35,7 @@ export function PaymentForm({ open, onOpenChange, onSuccess }: PaymentFormProps)
   const [method, setMethod] = useState<PaymentMethodType>('CASH');
   const [mode, setMode] = useState<PaymentMode>('IMMEDIATE');
   const [partyId, setPartyId] = useState('');
+  const [accountId, setAccountId] = useState('');
   const [amount, setAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [referenceNumber, setReferenceNumber] = useState('');
@@ -44,6 +47,7 @@ export function PaymentForm({ open, onOpenChange, onSuccess }: PaymentFormProps)
     queryFn: () => api.get<PaginatedResponse<Customer>>('/api/customers?limit=1000'),
     enabled: type === 'CUSTOMER' && open,
   });
+  const customers = customersResponse?.data || [];
 
   const { data: suppliersResponse, isLoading: isLoadingSuppliers } = useQuery({
     queryKey: ['suppliers', { limit: 1000 }],
@@ -51,12 +55,18 @@ export function PaymentForm({ open, onOpenChange, onSuccess }: PaymentFormProps)
     enabled: type === 'SUPPLIER' && open,
   });
 
-  const customers = customersResponse?.data || [];
   const suppliers = suppliersResponse?.data || [];
+
+  const { data: accountsResponse } = useQuery({
+    queryKey: ['finance-accounts'],
+    queryFn: () => FinanceAPI.getAccounts(),
+    enabled: open,
+  });
+  const accounts: FinanceAccount[] = accountsResponse?.data?.filter((a: any) => a.status === 'ACTIVE') || [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!partyId || !amount || Number(amount) <= 0) {
+    if (!partyId || !accountId || !amount || Number(amount) <= 0) {
       toast({ title: t('error'), description: 'Please fill all required fields correctly', variant: 'destructive' });
       return;
     }
@@ -69,6 +79,7 @@ export function PaymentForm({ open, onOpenChange, onSuccess }: PaymentFormProps)
         mode,
         customerId: type === 'CUSTOMER' ? partyId : undefined,
         supplierId: type === 'SUPPLIER' ? partyId : undefined,
+        accountId,
         amount: Number(amount),
         paymentDate: new Date(paymentDate).toISOString(),
         referenceNumber,
@@ -101,6 +112,7 @@ export function PaymentForm({ open, onOpenChange, onSuccess }: PaymentFormProps)
     setMethod('CASH');
     setMode('IMMEDIATE');
     setPartyId('');
+    setAccountId('');
     setAmount('');
     setPaymentDate(new Date().toISOString().split('T')[0]);
     setReferenceNumber('');
@@ -144,6 +156,16 @@ export function PaymentForm({ open, onOpenChange, onSuccess }: PaymentFormProps)
                   ) : (
                     suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name} ({formatKWD(s.balance)})</SelectItem>)
                   )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2 col-span-2">
+              <Label>Payment Account *</Label>
+              <Select value={accountId} onValueChange={setAccountId}>
+                <SelectTrigger><SelectValue placeholder="Select Account..." /></SelectTrigger>
+                <SelectContent>
+                  {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name} (Bal: {Number(a.calculatedBalance).toFixed(3)})</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

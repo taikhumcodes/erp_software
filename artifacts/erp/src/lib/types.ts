@@ -73,6 +73,7 @@ export interface Product {
   sellingPrice: string;
   stockQuantity: string;
   reorderLevel: string;
+  countryOfOrigin?: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -195,8 +196,97 @@ export interface PurchaseStatistics {
   totalAmount: string;
 }
 
-// ─── Sales ────────────────────────────────────────────────────────────────
- 
+// ─── Sales & Delivery ─────────────────────────────────────────────────────────
+
+export type QuotationStatus = 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' | 'CONVERTED';
+
+export interface QuotationItem {
+  id: string;
+  productId: string;
+  product: Product;
+  description: string | null;
+  countryOfOrigin: string | null;
+  quantity: string;
+  unitPrice: string;
+  amount: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Quotation {
+  id: string;
+  number: string;
+  customerId: string | null;
+  customer: Customer | null;
+  customerName: string | null;
+  customerNameAr: string | null;
+  quotationBy: string | null;
+  quotationByAr: string | null;
+  quotationByAddress: string | null;
+  userId: string;
+  user: { id: string; name: string; nameAr: string | null };
+  salespersonId: string | null;
+  salesperson: { id: string; name: string; nameAr: string | null } | null;
+  status: QuotationStatus;
+  quotationDate: string;
+  validityDate: string | null;
+  referenceNumber: string | null;
+  customerReference: string | null;
+  totalAmount: string;
+  discount: string;
+  roundOff: string;
+  grandTotal: string;
+  notes: string | null;
+  termsAndConditions: string | null;
+  contactPerson: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  country: string | null;
+  convertedToSaleId: string | null;
+  convertedToSale: { id: string; number: string } | null;
+  convertedAt: string | null;
+  convertedById: string | null;
+  revisionNumber: number;
+  parentQuotationId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: QuotationItem[];
+}
+
+export interface QuotationListItem {
+  id: string;
+  number: string;
+  customerId: string;
+  customer: Pick<Customer, 'id' | 'name' | 'nameAr' | 'code'>;
+  userId: string;
+  user: { id: string; name: string; nameAr: string | null };
+  salespersonId: string | null;
+  salesperson: { id: string; name: string; nameAr: string | null } | null;
+  status: QuotationStatus;
+  quotationDate: string;
+  validityDate: string | null;
+  grandTotal: string;
+  convertedToSaleId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  itemCount: number;
+}
+
+export interface QuotationStatistics {
+  total: number;
+  draft: number;
+  sent: number;
+  accepted: number;
+  rejected: number;
+  expired: number;
+  cancelled: number;
+  converted: number;
+  totalAmount: string;
+  conversionRate: string;
+}
+
 export type SaleStatus = 'DRAFT' | 'CONFIRMED' | 'DELIVERED' | 'CANCELLED';
 
 export interface SaleItem {
@@ -503,3 +593,13 @@ export interface SalesOrderDetails {
     availableStock: string;
   }[];
 }
+
+// --- Finance Module ----------------------------------------------------------
+export type FinanceAccountType = 'CASH' | 'BANK' | 'WALLET' | 'OTHER';
+export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+export type LedgerEntryType = 'OPENING_BALANCE' | 'SALE_PAYMENT' | 'PURCHASE_PAYMENT' | 'OWNER_INVESTMENT' | 'OWNER_WITHDRAWAL' | 'DEPOSIT' | 'WITHDRAWAL' | 'BANK_INTEREST' | 'BANK_CHARGES' | 'EXPENSE' | 'SALARY' | 'SALARY_ADVANCE' | 'BONUS' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'MISC_INCOME' | 'MISC_EXPENSE' | 'ADJUSTMENT';
+export type ExpenseFrequency = 'ONCE' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+export type ExpenseStatus = 'PENDING' | 'PAID' | 'CANCELLED';
+export type EmployeeStatus = 'ACTIVE' | 'INACTIVE';
+export type SalaryStatus = 'PENDING' | 'PAID' | 'CANCELLED';
+

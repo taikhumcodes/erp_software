@@ -1,6 +1,7 @@
 import { Prisma, PaymentStatus, PaymentType, PaymentMethod } from '@prisma/client';
 import { ValidationError } from '../../errors/AppError.js';
 import { prisma } from '../../lib/prisma.js';
+import { FinanceProfitService } from '../finance/finance-profit.service.js';
 
 export const SalesFinancialService = {
   /**
@@ -70,6 +71,9 @@ export const SalesFinancialService = {
         }
       });
       
+      // Distribute profit immediately on cash sale since it's fully paid
+      await FinanceProfitService.distributeSaleProfit(tx, saleId, userId);
+      
       // Note: Cash sale doesn't increase AR balance because it's paid instantly.
     } else {
       // Credit Sale: Increase Accounts Receivable balance
@@ -128,6 +132,10 @@ export const SalesFinancialService = {
         paymentStatus: 'UNPAID',
       },
     });
+
+    if (sale.paymentStatus === 'PAID') {
+      await FinanceProfitService.revertSaleProfit(tx, saleId);
+    }
   },
 
   /**
@@ -140,7 +148,7 @@ export const SalesFinancialService = {
   ): Promise<void> {
     const sale = await tx.sale.findUnique({
       where: { id: saleId },
-      select: { customerId: true, paidAmount: true, outstandingAmount: true, netAmount: true },
+      select: { customerId: true, paidAmount: true, outstandingAmount: true, netAmount: true, paymentStatus: true },
     });
 
     if (!sale) throw new ValidationError('Sale not found');
@@ -169,6 +177,14 @@ export const SalesFinancialService = {
       }
     });
 
+    // If just became fully paid, distribute profit
+    if (sale.paymentStatus !== 'PAID' && newPaymentStatus === 'PAID') {
+      // We don't have userId directly here in registerPayment. We can just use a system ID or fetch from somewhere, but registerPayment is usually called from payment creation. 
+      // Wait, registerPayment doesn't take userId. I'll just use the customer's ID or pass 'system' since it's automated.
+      // Actually, passing 'system' is fine for createdById since it's an automated ledger entry.
+      await FinanceProfitService.distributeSaleProfit(tx, saleId, 'system');
+    }
+
     // Decrease the customer's AR balance since they paid
     await tx.customer.update({
       where: { id: sale.customerId },
@@ -190,7 +206,7 @@ export const SalesFinancialService = {
   ): Promise<void> {
     const sale = await tx.sale.findUnique({
       where: { id: saleId },
-      select: { customerId: true, paidAmount: true, outstandingAmount: true, netAmount: true },
+      select: { customerId: true, paidAmount: true, outstandingAmount: true, netAmount: true, paymentStatus: true },
     });
 
     if (!sale) throw new ValidationError('Sale not found');
@@ -218,6 +234,11 @@ export const SalesFinancialService = {
         paymentStatus: newPaymentStatus
       }
     });
+
+    // If it was fully paid and now it's not, revert profit
+    if (sale.paymentStatus === 'PAID') {
+      await FinanceProfitService.revertSaleProfit(tx, saleId);
+    }
 
     // Increase the customer's AR balance back since the payment was cancelled
     await tx.customer.update({

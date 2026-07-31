@@ -163,6 +163,14 @@ export function PaymentDetails({ paymentId, onClose }: PaymentDetailsProps) {
               )}
             </div>
             <div>
+              <h4 className="font-semibold text-sm mb-2">Payment Account</h4>
+              {(payment as any).account ? (
+                <p className="text-sm text-muted-foreground">{(payment as any).account.name} <Badge variant="outline" className="text-[10px]">{(payment as any).account.type}</Badge></p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Legacy (No Account Linked)</p>
+              )}
+            </div>
+            <div className="col-span-2">
               <h4 className="font-semibold text-sm mb-2">{t('payment_notes')}</h4>
               <p className="text-sm text-muted-foreground">{payment.notes || t('none')}</p>
             </div>

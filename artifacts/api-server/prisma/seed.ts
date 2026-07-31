@@ -84,7 +84,36 @@ async function main() {
       create: unit,
     });
   }
-  console.log(`✓ Seeded ${units.length} units`);
+  console.log(`🌱 Seeded ${units.length} units`);
+
+  // ── 4. Seed expense categories ─────────────────────────────────────────────
+  const expenseCategories = [
+    { name: "Electricity",          isDefault: true },
+    { name: "Water",                isDefault: true },
+    { name: "Internet",             isDefault: true },
+    { name: "Telephone",            isDefault: true },
+    { name: "Rent",                 isDefault: true },
+    { name: "Shop Repair",          isDefault: true },
+    { name: "Vehicle Fuel",         isDefault: true },
+    { name: "Vehicle Maintenance",  isDefault: true },
+    { name: "Office Supplies",      isDefault: true },
+    { name: "Cleaning",             isDefault: true },
+    { name: "Packaging",            isDefault: true },
+    { name: "Transportation",       isDefault: true },
+    { name: "Marketing",            isDefault: true },
+    { name: "Advertising",          isDefault: true },
+    { name: "Bank Charges",         isDefault: true },
+    { name: "Miscellaneous",        isDefault: true },
+  ];
+
+  for (const cat of expenseCategories) {
+    await prisma.expenseCategory.upsert({
+      where: { name: cat.name },
+      update: {},
+      create: cat,
+    });
+  }
+  console.log(`🌱 Seeded ${expenseCategories.length} expense categories`);
 }
 
 main()

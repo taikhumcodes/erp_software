@@ -14,6 +14,8 @@ import paymentsRouter from "../modules/payments/payments.routes.js";
 import deliveryOrdersRouter from "../modules/delivery-orders/delivery-orders.routes.js";
 import settingsRouter from "../modules/settings/settings.routes.js";
 import dashboardRouter from "../modules/dashboard/dashboard.routes.js";
+import financeRouter from "../modules/finance/finance.routes.js";
+import quotationsRouter from "../modules/quotations/quotations.routes.js";
 
 const router: IRouter = Router();
 
@@ -45,6 +47,9 @@ router.use("/sales", salesRouter);
 // Delivery Orders — /api/delivery-orders
 router.use("/delivery-orders", deliveryOrdersRouter);
 
+// Quotations — /api/quotations
+router.use("/quotations", quotationsRouter);
+
 // Payments — /api/payments
 router.use("/payments", paymentsRouter);
 
@@ -53,6 +58,9 @@ router.use("/settings", settingsRouter);
 
 // Dashboard — /api/dashboard
 router.use("/dashboard", dashboardRouter);
+
+// Finance Module — /api/finance
+router.use("/finance", financeRouter);
 
 export default router;
 

@@ -110,6 +110,9 @@ export interface DocumentData {
   /** Counterparty info (Customer or Supplier — center column) */
   counterpartyInfo: CounterpartyInfo;
 
+  /** Issuer info (Quotation By / From) */
+  issuerInfo?: CounterpartyInfo;
+
   /** Delivery details cards (Delivery Order only) */
   deliveryDetails?: DeliveryDetailCard[];
 

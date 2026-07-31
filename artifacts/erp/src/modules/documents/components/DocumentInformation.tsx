@@ -10,13 +10,10 @@ import { DocumentInfo, CounterpartyInfo } from '../types';
 export const DocumentInformation: React.FC<{
   leftInfoFields: DocumentInfo[];
   counterpartyInfo: CounterpartyInfo;
+  issuerInfo?: CounterpartyInfo;
   color?: string;
   bilingual?: boolean;
-  // Legacy props
-  fields?: DocumentInfo[];
-  title?: string;
-  titleAr?: string;
-}> = ({ leftInfoFields, counterpartyInfo, color = '#D4AF37', bilingual = true }) => {
+}> = ({ leftInfoFields, counterpartyInfo, issuerInfo, color = '#D4AF37', bilingual = true }) => {
   if (!leftInfoFields || leftInfoFields.length === 0) return null;
 
   const tint = `${color}12`; // very light tint of the accent color
@@ -30,6 +27,73 @@ export const DocumentInformation: React.FC<{
     </div>
   );
 
+  const renderCounterparty = (info: CounterpartyInfo) => (
+    <div style={{ padding: '8px 12px', textAlign: 'center' }}>
+      <div style={{ fontWeight: 700, fontSize: '11px', color: '#000', marginBottom: '2px' }}>
+        {info.title}
+      </div>
+      <div style={{
+        fontWeight: 800,
+        fontSize: '14px',
+        color: '#000',
+        display: 'inline-block',
+        paddingBottom: '4px',
+        borderBottom: '1px dashed #9ca3af',
+        marginBottom: '6px',
+      }}>
+        {info.name}
+      </div>
+      {info.titleAr && (
+        <div style={{ fontWeight: 700, fontSize: '11px', color: '#555', fontFamily: '"IBM Plex Sans Arabic", sans-serif', direction: 'rtl', marginTop: '4px' }}>
+          {info.titleAr}
+        </div>
+      )}
+      {info.nameAr && (
+        <div style={{ fontWeight: 700, fontSize: '13px', color: '#000', fontFamily: '"IBM Plex Sans Arabic", sans-serif', direction: 'rtl' }}>
+          {info.nameAr}
+        </div>
+      )}
+      {/* Counterparty detail fields */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '12px', textAlign: 'left' }}>
+        {info.fields.map((f, idx) => (
+          <div key={idx} style={{ display: 'flex', gap: '6px', fontSize: '10px' }}>
+            <span style={{ fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' }}>{f.label}</span>
+            <span style={{ color: '#6b7280' }}>:</span>
+            <span style={{ color: '#111' }}>{f.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (issuerInfo) {
+    // Symmetrical 3-column Layout (Issuer | Document Meta | Counterparty)
+    return (
+      <div style={{ display: 'flex', gap: '14px', marginBottom: '16px', alignItems: 'stretch' }}>
+        <div style={{ flex: '1', backgroundColor: tint, borderLeft: `3px solid ${color}`, borderRadius: '3px' }}>
+          {renderCounterparty(issuerInfo)}
+        </div>
+        <div style={{ flex: '1.2', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          {leftInfoFields.map((field, idx) => (
+            <div key={idx} style={{ display: 'flex', padding: '6px 8px', fontSize: '10px', backgroundColor: idx % 2 === 0 ? '#f9fafb' : 'transparent' }}>
+              <div style={{ flex: 1, fontWeight: 700, color: '#374151' }}>{field.label}</div>
+              <div style={{ flex: 1.2, textAlign: 'center', color: '#111', fontWeight: 600 }}>{field.value}</div>
+              {bilingual && (
+                <div style={{ flex: 1, textAlign: 'right', fontWeight: 700, color: '#374151', fontFamily: '"IBM Plex Sans Arabic", sans-serif' }}>
+                  {field.labelAr}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div style={{ flex: '1', backgroundColor: tint, borderRight: `3px solid ${color}`, borderRadius: '3px' }}>
+          {renderCounterparty(counterpartyInfo)}
+        </div>
+      </div>
+    );
+  }
+
+  // Legacy Layout
   return (
     <div style={{ display: 'flex', gap: '14px', marginBottom: '16px', alignItems: 'stretch' }}>
       {/* Left column — English fields, tinted card, accent left border */}
