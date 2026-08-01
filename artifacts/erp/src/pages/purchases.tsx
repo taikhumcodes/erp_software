@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProductCombobox } from '@/components/ui/product-combobox';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
@@ -682,20 +683,13 @@ function PurchaseFormDialog({
                       return (
                         <TableRow key={item.key}>
                           <TableCell>
-                            <Select
+                            <ProductCombobox
+                              products={products}
                               value={item.productId}
-                              onValueChange={v => handleProductSelect(item.key, v)}
+                              onSelect={v => handleProductSelect(item.key, v)}
                               disabled={isPending}
-                            >
-                              <SelectTrigger><SelectValue placeholder={t('purchase_select_product')} /></SelectTrigger>
-                              <SelectContent>
-                                {products.map(p => (
-                                  <SelectItem key={p.id} value={p.id}>
-                                    {p.name} ({p.sku})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              placeholder={t('purchase_select_product')}
+                            />
                           </TableCell>
                           <TableCell>
                             <Input

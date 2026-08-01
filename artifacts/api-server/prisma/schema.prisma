@@ -1004,9 +1004,10 @@ model QuotationItem {
   id              String    @id @default(cuid())
   quotationId     String    @map("quotation_id")
   quotation       Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
-  productId       String    @map("product_id")
-  product         Product   @relation(fields: [productId], references: [id])
+  productId       String?   @map("product_id")
+  product         Product?  @relation(fields: [productId], references: [id])
   description     String?
+  productNameAr   String?   @map("product_name_ar")
   countryOfOrigin String?   @map("country_of_origin")
   quantity        Decimal   @db.Decimal(15, 3)
   unitPrice       Decimal   @map("unit_price") @db.Decimal(15, 3)

@@ -155,12 +155,17 @@ export const QuotationsService = {
     for (let i = 0; i < itemsArr.length; i++) {
       const row = itemsArr[i] as Record<string, unknown>;
       const productId = normalise(row['productId']);
-      if (!productId) {
-        fieldErrors.push({ field: `items[${i}].productId`, message: 'Product is required' });
+      const description = normalise(row['description']);
+      const productNameAr = normalise(row['productNameAr']);
+      
+      if (!productId && !description) {
+        fieldErrors.push({ field: `items[${i}]`, message: 'Product or Description is required' });
         continue;
       }
 
-      productIds.add(productId);
+      if (productId) {
+        productIds.add(productId);
+      }
 
       try {
         const qty = parsePositiveDecimal(row['quantity'], 'Quantity');
@@ -174,8 +179,9 @@ export const QuotationsService = {
         calculatedTotal += lineTotal;
 
         validatedItems.push({
-          productId,
-          description: normalise(row['description']),
+          productId: productId || null,
+          description,
+          productNameAr,
           countryOfOrigin: normalise(row['countryOfOrigin']),
           quantity: qty,
           unitPrice: price,
@@ -343,8 +349,9 @@ export const QuotationsService = {
     }
 
     let validatedItems: {
-      productId: string;
+      productId?: string | null;
       description: string | null;
+      productNameAr: string | null;
       countryOfOrigin: string | null;
       quantity: string;
       unitPrice: string;
@@ -361,12 +368,17 @@ export const QuotationsService = {
       for (let i = 0; i < itemsArr.length; i++) {
         const row = itemsArr[i] as Record<string, unknown>;
         const productId = normalise(row['productId']);
-        if (!productId) {
-          fieldErrors.push({ field: `items[${i}].productId`, message: 'Product is required' });
+        const description = normalise(row['description']);
+        const productNameAr = normalise(row['productNameAr']);
+        
+        if (!productId && !description) {
+          fieldErrors.push({ field: `items[${i}]`, message: 'Product or Description is required' });
           continue;
         }
 
-        productIds.add(productId);
+        if (productId) {
+          productIds.add(productId);
+        }
 
         try {
           const qty = parsePositiveDecimal(row['quantity'], 'Quantity');
@@ -380,8 +392,9 @@ export const QuotationsService = {
           calculatedTotal += lineTotal;
 
           validatedItems.push({
-            productId,
-            description: normalise(row['description']),
+            productId: productId || null,
+            description,
+            productNameAr,
             countryOfOrigin: normalise(row['countryOfOrigin']),
             quantity: qty,
             unitPrice: price,
@@ -582,6 +595,11 @@ export const QuotationsService = {
 
     if (existing.convertedToSaleId) {
       throw new ConflictError('Quotation has already been converted');
+    }
+
+    const hasAdHocItems = existing.items.some((item: any) => !item.productId);
+    if (hasAdHocItems) {
+      throw new ConflictError('Quotations containing Ad-hoc (non-stock) items cannot be automatically converted to Sales Invoices. Please create the Sales Invoice manually.');
     }
 
     return prisma.$transaction(async (tx) => {

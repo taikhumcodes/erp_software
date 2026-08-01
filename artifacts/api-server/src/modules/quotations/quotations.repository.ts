@@ -14,8 +14,9 @@ export interface QuotationFilters {
 }
 
 export interface CreateQuotationItemData {
-  productId: string;
+  productId?: string | null;
   description?: string | null;
+  productNameAr?: string | null;
   countryOfOrigin?: string | null;
   quantity: string;
   unitPrice: string;
@@ -140,6 +141,7 @@ const quotationSelect = {
         },
       },
       description: true,
+      productNameAr: true,
       countryOfOrigin: true,
       quantity: true,
       unitPrice: true,
@@ -279,8 +281,9 @@ export const QuotationsRepository = {
         country:           data.country ?? null,
         items: {
           create: data.items.map((item, idx) => ({
-            productId:       item.productId,
+            productId:       item.productId ?? null,
             description:     item.description ?? null,
+            productNameAr:   item.productNameAr ?? null,
             countryOfOrigin: item.countryOfOrigin ?? null,
             quantity:        new Prisma.Decimal(item.quantity),
             unitPrice:       new Prisma.Decimal(item.unitPrice),
@@ -323,8 +326,9 @@ export const QuotationsRepository = {
     if (data.items) {
       updateData.items = {
         create: data.items.map((item, idx) => ({
-          productId:       item.productId,
+          productId:       item.productId ?? null,
           description:     item.description ?? null,
+          productNameAr:   item.productNameAr ?? null,
           countryOfOrigin: item.countryOfOrigin ?? null,
           quantity:        new Prisma.Decimal(item.quantity),
           unitPrice:       new Prisma.Decimal(item.unitPrice),

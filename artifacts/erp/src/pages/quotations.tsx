@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProductCombobox } from '@/components/ui/product-combobox';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
@@ -53,6 +54,7 @@ interface QuotationItemForm {
   key: string;
   productId: string;
   description: string;
+  productNameAr: string;
   countryOfOrigin: string;
   quantity: string;
   unitPrice: string;
@@ -89,6 +91,7 @@ const emptyItem = (): QuotationItemForm => ({
   key: nextKey(),
   productId: '',
   description: '',
+  productNameAr: '',
   countryOfOrigin: '',
   quantity: '1',
   unitPrice: '0.000',
@@ -367,8 +370,9 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
         termsAndConditions: p.termsAndConditions ?? '',
         items: p.items.map((item: any) => ({
           key: nextKey(),
-          productId: item.productId,
+          productId: item.productId ?? '',
           description: item.description ?? '',
+          productNameAr: item.productNameAr ?? '',
           countryOfOrigin: item.countryOfOrigin ?? '',
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -447,7 +451,7 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
     setErrors({});
     const fe: any = {};
     if (!form.customerId && !form.customerName) fe.customerId = 'Customer or Customer Name is required';
-    if (!form.items.length || form.items.every(it => !it.productId)) fe.items = 'Items required';
+    if (!form.items.length || form.items.every(it => !it.productId && !it.description)) fe.items = 'Items required (Select a product or provide an ad-hoc name)';
     if (Object.keys(fe).length) { setErrors(fe); return; }
 
     const body: any = {
@@ -455,11 +459,12 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
       totalAmount: subtotal.toFixed(3),
       grandTotal: grandTotal.toFixed(3),
       validityDate: form.validityDate || undefined,
-      items: form.items.filter(it => it.productId).map(it => ({ 
-        productId: it.productId, 
+      items: form.items.filter(it => it.productId || it.description).map(it => ({ 
+        productId: it.productId || undefined, 
         quantity: it.quantity, 
         unitPrice: it.unitPrice,
         description: it.description || undefined,
+        productNameAr: it.productNameAr || undefined,
         countryOfOrigin: it.countryOfOrigin || undefined
       })),
     };
@@ -586,21 +591,22 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
               </div>
             </div>
 
-            {/* Items */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Items <span className="text-destructive">*</span></Label>
-                <Button type="button" variant="outline" size="sm" onClick={addItem} disabled={isPending}>
-                  <Plus className="h-3 w-3 me-1" /> Add Item
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={addItem} disabled={isPending}>
+                    <Plus className="h-3 w-3 me-1" /> Add Item
+                  </Button>
+                </div>
               </div>
               {errors.items && <p className="text-sm text-destructive">{errors.items}</p>}
               <div className="border rounded-md overflow-x-auto">
                 <Table className="min-w-[800px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[30%]">Product</TableHead>
-                      <TableHead className="w-[20%]">Description</TableHead>
+                      <TableHead className="w-[30%]">Product / Ad-Hoc Name</TableHead>
+                      <TableHead className="w-[20%]">Arabic Name / Description</TableHead>
                       <TableHead className="w-[15%]">Origin</TableHead>
                       <TableHead className="w-[10%]">Qty</TableHead>
                       <TableHead className="w-[15%]">Price</TableHead>
@@ -613,14 +619,36 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
                       const lineTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
                       return (
                         <TableRow key={item.key}>
-                          <TableCell className="align-top">
-                            <Select value={item.productId} onValueChange={v => handleProductSelect(item.key, v)} disabled={isPending}>
-                              <SelectTrigger className={errors[`items.${i}.productId`] ? 'border-destructive' : ''}><SelectValue placeholder="Select product" /></SelectTrigger>
-                              <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                            </Select>
+                          <TableCell className="align-top space-y-2">
+                            <ProductCombobox
+                              products={products}
+                              value={item.productId}
+                              onSelect={v => handleProductSelect(item.key, v)}
+                              disabled={isPending}
+                              placeholder="Select product..."
+                            />
+                            {!item.productId && (
+                              <Input
+                                placeholder="Ad-hoc Name (English)"
+                                value={item.description}
+                                onChange={e => updateItem(item.key, 'description', e.target.value)}
+                                disabled={isPending}
+                                className={errors[`items.${i}`] ? 'border-destructive' : ''}
+                              />
+                            )}
                           </TableCell>
                           <TableCell className="align-top">
-                            <Textarea rows={1} value={item.description} onChange={e => updateItem(item.key, 'description', e.target.value)} disabled={isPending} placeholder="Optional details..." className="min-h-[36px]" />
+                            {item.productId ? (
+                              <Textarea rows={1} value={item.description} onChange={e => updateItem(item.key, 'description', e.target.value)} disabled={isPending} placeholder="Optional details..." className="min-h-[36px]" />
+                            ) : (
+                              <Input
+                                placeholder="Ad-hoc Name (Arabic)"
+                                value={item.productNameAr}
+                                onChange={e => updateItem(item.key, 'productNameAr', e.target.value)}
+                                disabled={isPending}
+                                dir="rtl"
+                              />
+                            )}
                           </TableCell>
                           <TableCell className="align-top">
                             <Input value={item.countryOfOrigin} onChange={e => updateItem(item.key, 'countryOfOrigin', e.target.value)} disabled={isPending} placeholder="e.g. China" />
