@@ -37,8 +37,8 @@ export const FinanceProfitService = {
       return; // No partner accounts to distribute to
     }
 
-    // 3. Divide equally
-    const splitAmount = profit.div(partnerAccounts.length);
+    // 3. Divide equally and round to 3 decimal places to match DB precision
+    const splitAmount = profit.div(partnerAccounts.length).toDecimalPlaces(3);
 
     // 4. Create PROFIT_SHARE ledger entries
     for (const account of partnerAccounts) {
