@@ -468,6 +468,14 @@ export const PurchasesService = {
         );
         // 2. Post Financials
         await PurchaseFinancialService.postPurchase(tx, id, existing.netAmount);
+
+        // 3. Update Product Cost Price (Last Purchase Price)
+        for (const item of existing.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { costPrice: item.unitPrice }
+          });
+        }
       }
 
       // Moving FROM RECEIVED to CANCELLED

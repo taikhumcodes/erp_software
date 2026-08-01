@@ -438,6 +438,7 @@ export const QuotationsService = {
         quotationByAr: body['quotationByAr'] !== undefined ? normalise(body['quotationByAr']) : undefined,
         quotationByAddress: body['quotationByAddress'] !== undefined ? normalise(body['quotationByAddress']) : undefined,
         salespersonId: body['salespersonId'] !== undefined ? normalise(body['salespersonId']) : undefined,
+        status: body['status'] as any,
         quotationDate,
         validityDate,
         referenceNumber: body['referenceNumber'] !== undefined ? normalise(body['referenceNumber']) : undefined,

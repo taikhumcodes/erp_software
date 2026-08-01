@@ -75,6 +75,7 @@ export interface UpdateQuotationData {
   email?: string | null;
   address?: string | null;
   country?: string | null;
+  status?: QuotationStatus;
   items?: CreateQuotationItemData[];
 }
 
@@ -317,6 +318,7 @@ export const QuotationsRepository = {
     if (data.email !== undefined) updateData.email = data.email ?? null;
     if (data.address !== undefined) updateData.address = data.address ?? null;
     if (data.country !== undefined) updateData.country = data.country ?? null;
+    if (data.status !== undefined) updateData.status = data.status;
 
     if (data.items) {
       updateData.items = {
