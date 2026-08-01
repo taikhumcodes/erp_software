@@ -314,18 +314,18 @@ export default function Products() {
             {/* Row 3: Prices */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t('purchase_price')} <span className="text-destructive">*</span></label>
+                <label className="text-sm font-medium">{t('purchase_price')}</label>
                 <div className="relative">
                   <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">KD</span>
-                  <input required type="number" step="0.001" min="0" value={form.costPrice} onChange={sf('costPrice')}
+                  <input type="number" step="0.001" min="0" value={form.costPrice} onChange={sf('costPrice')}
                     className="form-input ps-10" placeholder="0.000" dir="ltr" />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t('selling_price')} <span className="text-destructive">*</span></label>
+                <label className="text-sm font-medium">{t('selling_price')}</label>
                 <div className="relative">
                   <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">KD</span>
-                  <input required type="number" step="0.001" min="0" value={form.sellingPrice} onChange={sf('sellingPrice')}
+                  <input type="number" step="0.001" min="0" value={form.sellingPrice} onChange={sf('sellingPrice')}
                     className="form-input ps-10" placeholder="0.000" dir="ltr" />
                 </div>
               </div>

@@ -111,7 +111,7 @@ export const PaymentsService = {
         // Apply all allocations to invoices and balance
         for (const alloc of payment.allocations) {
           if (payment.type === 'CUSTOMER' && alloc.saleId) {
-            await SalesFinancialService.registerPayment(tx, alloc.saleId, alloc.amount);
+            await SalesFinancialService.registerPayment(tx, alloc.saleId, alloc.amount, userId);
           } else if (payment.type === 'SUPPLIER' && alloc.purchaseId) {
             await PurchaseFinancialService.registerPayment(tx, alloc.purchaseId, alloc.amount);
           }

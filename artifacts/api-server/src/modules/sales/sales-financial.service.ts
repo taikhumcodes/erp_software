@@ -144,11 +144,12 @@ export const SalesFinancialService = {
   async registerPayment(
     tx: Prisma.TransactionClient,
     saleId: string,
-    paymentAmount: string | Prisma.Decimal
+    paymentAmount: string | Prisma.Decimal,
+    userId?: string
   ): Promise<void> {
     const sale = await tx.sale.findUnique({
       where: { id: saleId },
-      select: { customerId: true, paidAmount: true, outstandingAmount: true, netAmount: true, paymentStatus: true },
+      select: { customerId: true, userId: true, paidAmount: true, outstandingAmount: true, netAmount: true, paymentStatus: true },
     });
 
     if (!sale) throw new ValidationError('Sale not found');
@@ -179,10 +180,8 @@ export const SalesFinancialService = {
 
     // If just became fully paid, distribute profit
     if (sale.paymentStatus !== 'PAID' && newPaymentStatus === 'PAID') {
-      // We don't have userId directly here in registerPayment. We can just use a system ID or fetch from somewhere, but registerPayment is usually called from payment creation. 
-      // Wait, registerPayment doesn't take userId. I'll just use the customer's ID or pass 'system' since it's automated.
-      // Actually, passing 'system' is fine for createdById since it's an automated ledger entry.
-      await FinanceProfitService.distributeSaleProfit(tx, saleId, 'system');
+      // Use the provided userId, or fallback to the user who created the sale to avoid foreign key constraints failing
+      await FinanceProfitService.distributeSaleProfit(tx, saleId, userId || sale.userId);
     }
 
     // Decrease the customer's AR balance since they paid
