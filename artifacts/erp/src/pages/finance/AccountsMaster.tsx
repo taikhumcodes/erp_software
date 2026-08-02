@@ -6,13 +6,15 @@ import { useLocation } from 'wouter';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Building2, MoreHorizontal, History } from 'lucide-react';
+import { Plus, Search, Building2, MoreHorizontal, History, PlusCircle, ArrowDownToLine } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ACCOUNT_COLORS: Record<string, string> = {
@@ -33,6 +35,7 @@ export default function AccountsMaster() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingAccount, setDeletingAccount] = useState<FinanceAccount | null>(null);
+  const [depositTarget, setDepositTarget] = useState<FinanceAccount | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -45,9 +48,11 @@ export default function AccountsMaster() {
   const accounts: FinanceAccount[] = data?.data || [];
 
   const filtered = accounts.filter(a =>
-    a.name.toLowerCase().includes(search.toLowerCase()) ||
-    (a.bankName && a.bankName.toLowerCase().includes(search.toLowerCase())) ||
-    (a.accountNumber && a.accountNumber.includes(search))
+    a.type !== 'PARTNER_CAPITAL' && (
+      a.name.toLowerCase().includes(search.toLowerCase()) ||
+      (a.bankName && a.bankName.toLowerCase().includes(search.toLowerCase())) ||
+      (a.accountNumber && a.accountNumber.includes(search))
+    )
   );
 
   const statusMut = useMutation({
@@ -104,6 +109,12 @@ export default function AccountsMaster() {
                     <DropdownMenuItem onClick={() => setLocation(`/finance/ledger/${acc.id}`)}>
                       <History className="w-4 h-4 mr-2" /> View Ledger
                     </DropdownMenuItem>
+                    {acc.status === 'ACTIVE' && (
+                      <DropdownMenuItem onClick={() => setDepositTarget(acc)}>
+                        <ArrowDownToLine className="w-4 h-4 mr-2 text-green-600" />
+                        <span className="text-green-700 font-medium">Deposit Money</span>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => { setEditingId(acc.id); setIsModalOpen(true); }}>
                       Edit Account
                     </DropdownMenuItem>
@@ -148,12 +159,145 @@ export default function AccountsMaster() {
         account={accounts.find(a => a.id === editingId)}
       />
 
+      <DepositModal
+        account={depositTarget}
+        onClose={() => setDepositTarget(null)}
+      />
+
       <SecureDeleteModal
         account={deletingAccount}
         accounts={accounts}
         onClose={() => setDeletingAccount(null)}
       />
     </div>
+  );
+}
+
+// ─── Deposit Money Modal ─────────────────────────────────────────────────────
+
+function DepositModal({ account, onClose }: { account: FinanceAccount | null; onClose: () => void }) {
+  const [adjustmentType, setAdjustmentType] = useState('DEPOSIT');
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const mut = useMutation({
+    mutationFn: (data: any) => FinanceAPI.createAdjustment(account!.id, data),
+    onSuccess: () => {
+      toast({ title: 'Deposit successful', description: `Amount deposited into ${account?.name}. Ledger entry created.` });
+      queryClient.invalidateQueries({ queryKey: ['finance-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['finance-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['finance-ledger', account?.id] });
+      onClose();
+      setAmount('');
+      setDescription('');
+      setReferenceNumber('');
+      setAdjustmentType('DEPOSIT');
+    },
+    onError: (err: any) => toast({ variant: 'destructive', title: 'Failed', description: err.message }),
+  });
+
+  const handleSubmit = () => {
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      toast({ variant: 'destructive', title: 'Invalid amount', description: 'Please enter a valid positive amount.' });
+      return;
+    }
+    if (!description.trim()) {
+      toast({ variant: 'destructive', title: 'Description required', description: 'Please enter a description.' });
+      return;
+    }
+    mut.mutate({ adjustmentType, amount: Number(amount), description: description.trim(), referenceNumber: referenceNumber.trim() || undefined });
+  };
+
+  return (
+    <Dialog open={!!account} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ArrowDownToLine className="w-5 h-5 text-green-600" />
+            Deposit Money
+          </DialogTitle>
+          {account && (
+            <p className="text-sm text-muted-foreground">Depositing into: <strong>{account.name}</strong></p>
+          )}
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Deposit Type */}
+          <div className="space-y-1">
+            <Label>Deposit Type</Label>
+            <Select value={adjustmentType} onValueChange={setAdjustmentType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DEPOSIT">Cash Deposit</SelectItem>
+                <SelectItem value="OWNER_INVESTMENT">Owner / Partner Investment</SelectItem>
+                <SelectItem value="BANK_INTEREST">Bank Interest Earned</SelectItem>
+                <SelectItem value="MISC_INCOME">Miscellaneous Income</SelectItem>
+                <SelectItem value="OPENING_BALANCE">Opening Balance Adjustment</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Amount */}
+          <div className="space-y-1">
+            <Label>Amount (KWD) <span className="text-red-500">*</span></Label>
+            <Input
+              id="deposit-amount"
+              type="number"
+              min="0.001"
+              step="0.001"
+              placeholder="0.000"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              onFocus={e => e.target.select()}
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-1">
+            <Label>Description <span className="text-red-500">*</span></Label>
+            <Textarea
+              id="deposit-description"
+              placeholder="e.g. Cash deposit from sales, Bank transfer received..."
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={2}
+            />
+          </div>
+
+          {/* Reference Number (optional) */}
+          <div className="space-y-1">
+            <Label>Reference / Voucher No. <span className="text-muted-foreground text-xs">(optional)</span></Label>
+            <Input
+              id="deposit-reference"
+              placeholder="e.g. TXN-2026-001"
+              value={referenceNumber}
+              onChange={e => setReferenceNumber(e.target.value)}
+            />
+          </div>
+
+          <div className="rounded-md bg-green-50 border border-green-200 p-3 text-xs text-green-800">
+            ✅ A ledger entry will be automatically created for this deposit and will appear in the account's transaction history.
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={mut.isPending}>Cancel</Button>
+          <Button
+            id="deposit-submit-btn"
+            onClick={handleSubmit}
+            disabled={mut.isPending}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            {mut.isPending ? 'Processing...' : 'Confirm Deposit'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

@@ -7,7 +7,6 @@ import { api } from '@/lib/api';
 import type { Customer, Product, OrderSource } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ProductCombobox } from '@/components/ui/product-combobox';
-import { QuickCustomerDialog } from '@/components/customers/QuickCustomerDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

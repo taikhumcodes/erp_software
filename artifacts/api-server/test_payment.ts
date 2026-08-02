@@ -1,5 +1,6 @@
 import { prisma } from './src/lib/prisma.js';
 import { PaymentsRepository } from './src/modules/payments/payments.repository.js';
+import { DocumentNumberService } from './src/lib/document-number.service.js';
 
 (async () => {
   try {
@@ -7,7 +8,11 @@ import { PaymentsRepository } from './src/modules/payments/payments.repository.j
     const customerId = customer?.id;
     if (!customerId) throw new Error("No customer found");
 
-    const number = await PaymentsRepository.generateNextNumber();
+    const number = await DocumentNumberService.generateNextNumber({
+      model: 'payment',
+      prefix: 'PAY',
+      sequenceLength: 6,
+    });
     console.log('Next number:', number, 'CustomerId:', customerId);
 
     await prisma.$transaction(async (tx) => {

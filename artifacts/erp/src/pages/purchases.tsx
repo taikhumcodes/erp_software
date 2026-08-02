@@ -60,6 +60,7 @@ interface PurchaseForm {
   status: 'DRAFT' | 'CONFIRMED';
   discount: string;
   notes: string;
+  supplierBillNo: string;
   paymentMethod: string;
   items: PurchaseItemForm[];
 }
@@ -82,6 +83,7 @@ const emptyForm = (): PurchaseForm => ({
   status: 'DRAFT',
   discount: '0.000',
   notes: '',
+  supplierBillNo: '',
   paymentMethod: '',
   items: [emptyItem()],
 });
@@ -435,6 +437,7 @@ function PurchaseFormDialog({
         status: p.status === 'DRAFT' ? 'DRAFT' : 'CONFIRMED',
         discount: p.discount,
         notes: p.notes ?? '',
+        supplierBillNo: p.supplierBillNo ?? '',
         paymentMethod: p.paymentMethod ?? '',
         items: p.items.map(item => ({
           key: nextKey(),
@@ -569,6 +572,7 @@ function PurchaseFormDialog({
       status:       form.status,
       discount:     form.discount,
       notes:        form.notes || undefined,
+      supplierBillNo: form.supplierBillNo || undefined,
       paymentMethod: form.paymentMethod || undefined,
       items:        form.items
         .filter(it => it.productId)
@@ -636,6 +640,16 @@ function PurchaseFormDialog({
                   type="date"
                   value={form.purchaseDate}
                   onChange={e => setForm(prev => ({ ...prev, purchaseDate: e.target.value }))}
+                  disabled={isPending}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="p-bill-no">{t('supplier_bill_no') || 'Supplier Bill No.'}</Label>
+                <Input
+                  id="p-bill-no"
+                  placeholder="e.g. INV-2026-0001"
+                  value={form.supplierBillNo}
+                  onChange={e => setForm(prev => ({ ...prev, supplierBillNo: e.target.value }))}
                   disabled={isPending}
                 />
               </div>

@@ -38,7 +38,7 @@ export const FinanceAccountsRepository = {
 
     // Attach calculated balance to each account
     return Promise.all(accounts.map(async (acc) => {
-      const balance = await this.calculateBalance(acc.id);
+      const balance = await this.calculateBalance(acc.id, undefined, acc.type);
       return serialize(acc, balance);
     }));
   },
@@ -49,7 +49,7 @@ export const FinanceAccountsRepository = {
       select: accountSelect,
     });
     if (!acc) return null;
-    const balance = await this.calculateBalance(id);
+    const balance = await this.calculateBalance(id, undefined, acc.type);
     return serialize(acc, balance);
   },
 
@@ -78,14 +78,28 @@ export const FinanceAccountsRepository = {
 
   /**
    * Calculate balance from ledger entries — no stored value is trusted.
-   * Balance = SUM(credit) - SUM(debit) across all entries
+   * Balance = SUM(credit) - SUM(debit) across all entries.
+   * Excludes PROFIT_SHARE unless the account is PARTNER_CAPITAL (fixes double-counting of profit).
    */
-  async calculateBalance(accountId: string, tx?: Prisma.TransactionClient): Promise<Prisma.Decimal> {
+  async calculateBalance(accountId: string, tx?: Prisma.TransactionClient, accountType?: string): Promise<Prisma.Decimal> {
     const client = tx ?? prisma;
+    let type = accountType;
+    
+    if (!type) {
+      const acc = await client.financeAccount.findUnique({ where: { id: accountId }, select: { type: true } });
+      type = acc?.type;
+    }
+
+    const where: Prisma.FinanceLedgerWhereInput = { accountId };
+    if (type !== 'PARTNER_CAPITAL') {
+      where.entryType = { not: 'PROFIT_SHARE' };
+    }
+
     const agg = await client.financeLedger.aggregate({
-      where: { accountId },
+      where,
       _sum: { credit: true, debit: true },
     });
+    
     const totalCredit = agg._sum.credit ?? new Prisma.Decimal(0);
     const totalDebit = agg._sum.debit ?? new Prisma.Decimal(0);
     return totalCredit.sub(totalDebit);

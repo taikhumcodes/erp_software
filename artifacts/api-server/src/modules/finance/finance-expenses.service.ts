@@ -3,6 +3,7 @@ import { prisma } from '../../lib/prisma.js';
 import { AppError } from '../../errors/AppError.js';
 import { FinanceLedgerService } from './finance-ledger.service.js';
 import { FinanceAuditService } from './finance-audit.service.js';
+import { FinanceProfitService } from './finance-profit.service.js';
 import { DocumentNumberService } from '../../lib/document-number.service.js';
 import { addMonths, addQuarters, addYears } from 'date-fns';
 
@@ -156,6 +157,16 @@ export const FinanceExpensesService = {
         createdById: userId,
       });
 
+      // Split expense cost equally among all PARTNER_CAPITAL accounts (reduces partner equity)
+      await FinanceProfitService.distributeExpenseCost(
+        tx,
+        expense.id,
+        name.trim(),
+        number,
+        amt,
+        userId
+      );
+
       await FinanceAuditService.log(tx, {
         action: 'EXPENSE_CREATED',
         module: 'EXPENSE',
@@ -222,7 +233,10 @@ export const FinanceExpensesService = {
     }
 
     await prisma.$transaction(async (tx) => {
-      // 1. Delete associated ledger entries (if any exist, e.g. from CANCELLED reversal)
+      // 1. Revert partner capital expense share entries if any
+      await FinanceProfitService.revertExpenseCost(tx, id);
+
+      // 2. Delete associated ledger entries
       await tx.financeLedger.deleteMany({ where: { referenceId: id } });
 
       await tx.expense.delete({ where: { id } });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Plus, Trash2 } from 'lucide-react';
+import { Building2, Plus, Trash2, Edit2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -39,6 +39,17 @@ export const PartnerCapitalWidget = () => {
     }
   });
 
+  const { mutate: updateAccount } = useMutation({
+    mutationFn: ({ id, name }: { id: string, name: string }) => FinanceAPI.updateAccount(id, { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['finance-accounts'] });
+      toast({ title: 'Partner renamed successfully' });
+    },
+    onError: (err: any) => {
+      toast({ variant: 'destructive', title: 'Failed to rename partner', description: err.message });
+    }
+  });
+
   const handleAddPartner = () => {
     const name = window.prompt(t('Enter Partner Name:'));
     if (name) {
@@ -54,6 +65,13 @@ export const PartnerCapitalWidget = () => {
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this partner account?')) {
       deleteAccount(id);
+    }
+  };
+
+  const handleEdit = (id: string, currentName: string) => {
+    const newName = window.prompt(t('Enter New Partner Name:'), currentName);
+    if (newName && newName.trim() !== '' && newName.trim() !== currentName) {
+      updateAccount({ id, name: newName.trim() });
     }
   };
 
@@ -96,9 +114,14 @@ export const PartnerCapitalWidget = () => {
                       {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'KWD' }).format(Number(acc.calculatedBalance))}
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(acc.id)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted" onClick={() => handleEdit(acc.id, acc.name)}>
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(acc.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}

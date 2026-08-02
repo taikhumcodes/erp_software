@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import {
   TrendingUp, TrendingDown, DollarSign, Building2, Wallet, Clock,
-  ArrowLeftRight, Receipt, Users, AlertCircle, RefreshCw
+  ArrowLeftRight, Receipt, Users, AlertCircle, RefreshCw, BarChart3, TrendingDown as TrendDown
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,7 @@ const ACCOUNT_COLORS: Record<string, string> = {
   BANK:   'bg-blue-50 border-blue-200 text-blue-700',
   WALLET: 'bg-violet-50 border-violet-200 text-violet-700',
   OTHER:  'bg-gray-50 border-gray-200 text-gray-700',
+  PARTNER_CAPITAL: 'bg-amber-50 border-amber-200 text-amber-700',
 };
 
 export default function FinanceDashboard() {
@@ -58,16 +59,20 @@ export default function FinanceDashboard() {
 
   const { kpis, financialPosition, accountCards, latestActivity, expenseSummary, salarySummary, cashFlow } = stats;
 
+  const isNetProfitPositive = Number(kpis.netProfit) >= 0;
+
   const kpiCards = [
-    { label: 'Total Funds',        value: fmt(kpis.totalFunds),        icon: DollarSign, color: 'text-green-600',  bg: 'bg-green-50'  },
-    { label: 'Bank Balance',       value: fmt(kpis.bankBalance),       icon: Building2,  color: 'text-blue-600',   bg: 'bg-blue-50'   },
-    { label: 'Cash Balance',       value: fmt(kpis.cashBalance),       icon: Wallet,     color: 'text-emerald-600',bg: 'bg-emerald-50'},
-    { label: "Today's Collections",value: fmt(kpis.todayCollections),  icon: TrendingUp, color: 'text-green-600',  bg: 'bg-green-50'  },
-    { label: "Today's Payments",   value: fmt(kpis.todayPayments),     icon: TrendingDown,color:'text-red-600',    bg: 'bg-red-50'    },
-    { label: 'Monthly Expenses',   value: fmt(kpis.monthlyExpenses),   icon: Receipt,    color: 'text-orange-600', bg: 'bg-orange-50' },
-    { label: 'Pending Salary',     value: fmt(kpis.pendingSalary),     icon: Users,      color: 'text-violet-600', bg: 'bg-violet-50' },
-    { label: 'Money to Receive',   value: fmt(kpis.moneyToReceive),    icon: Clock,      color: 'text-amber-600',  bg: 'bg-amber-50'  },
-    { label: 'Money to Pay',       value: fmt(kpis.moneyToPay),        icon: Clock,      color: 'text-rose-600',   bg: 'bg-rose-50'   },
+    { label: 'Gross Profit',        value: fmt(kpis.grossProfit),      icon: BarChart3,   color: 'text-emerald-600', bg: 'bg-emerald-50', highlight: true },
+    { label: 'Net Profit',          value: fmt(kpis.netProfit),        icon: isNetProfitPositive ? TrendingUp : TrendDown, color: isNetProfitPositive ? 'text-green-700' : 'text-red-600', bg: isNetProfitPositive ? 'bg-green-50' : 'bg-red-50', highlight: true },
+    { label: 'Total Funds',         value: fmt(kpis.totalFunds),        icon: DollarSign,  color: 'text-green-600',   bg: 'bg-green-50'   },
+    { label: 'Bank Balance',        value: fmt(kpis.bankBalance),       icon: Building2,   color: 'text-blue-600',    bg: 'bg-blue-50'    },
+    { label: 'Cash Balance',        value: fmt(kpis.cashBalance),       icon: Wallet,      color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: "Today's Collections", value: fmt(kpis.todayCollections),  icon: TrendingUp,  color: 'text-green-600',   bg: 'bg-green-50'   },
+    { label: "Today's Payments",    value: fmt(kpis.todayPayments),     icon: TrendingDown,color: 'text-red-600',     bg: 'bg-red-50'     },
+    { label: 'Monthly Expenses',    value: fmt(kpis.monthlyExpenses),   icon: Receipt,     color: 'text-orange-600',  bg: 'bg-orange-50'  },
+    { label: 'Pending Salary',      value: fmt(kpis.pendingSalary),     icon: Users,       color: 'text-violet-600',  bg: 'bg-violet-50'  },
+    { label: 'Money to Receive',    value: fmt(kpis.moneyToReceive),    icon: Clock,       color: 'text-amber-600',   bg: 'bg-amber-50'   },
+    { label: 'Money to Pay',        value: fmt(kpis.moneyToPay),        icon: Clock,       color: 'text-rose-600',    bg: 'bg-rose-50'    },
   ];
 
   return (
@@ -84,14 +89,24 @@ export default function FinanceDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
         {kpiCards.map((kpi) => (
-          <Card key={kpi.label} className="border shadow-sm hover:shadow-md transition-shadow">
+          <Card
+            key={kpi.label}
+            className={`border shadow-sm hover:shadow-md transition-shadow ${
+              (kpi as any).highlight ? 'ring-2 ring-emerald-400/60 border-emerald-300' : ''
+            }`}
+          >
             <CardContent className="p-5">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{kpi.label}</p>
-                  <p className="text-xl font-bold text-foreground">{kpi.value}</p>
+                  <p className={`font-bold text-foreground ${(kpi as any).highlight ? 'text-2xl' : 'text-xl'}`}>{kpi.value}</p>
+                  {(kpi as any).highlight && (
+                    <p className="text-xs text-muted-foreground">
+                      {kpi.label === 'Gross Profit' ? 'Revenue − Cost of Goods' : 'Gross Profit − Expenses & Salary'}
+                    </p>
+                  )}
                 </div>
                 <div className={`w-10 h-10 rounded-lg ${kpi.bg} flex items-center justify-center shrink-0`}>
                   <kpi.icon className={`w-5 h-5 ${kpi.color}`} />

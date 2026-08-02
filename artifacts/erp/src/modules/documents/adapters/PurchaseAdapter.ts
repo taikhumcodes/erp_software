@@ -56,6 +56,7 @@ export function adaptPurchaseOrder(apiData: any): Omit<DocumentData, 'company'> 
     nameAr: apiData.supplier?.nameAr || '',
     fields: [
       { label: 'Mobile No.', labelAr: 'رقم الجوال', value: apiData.supplier?.phone || '—' },
+      { label: 'Supplier Bill No.', labelAr: 'رقم فاتورة المورد', value: apiData.supplierBillNo || '—' },
     ],
   };
 

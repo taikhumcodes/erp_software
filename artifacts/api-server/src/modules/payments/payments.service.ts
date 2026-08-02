@@ -48,6 +48,7 @@ export const PaymentsService = {
       const account = await prisma.financeAccount.findUnique({ where: { id: accountId } });
       if (!account) throw new AppError('Financial account not found', 404);
       if (account.status !== 'ACTIVE') throw new AppError('Selected financial account is not active', 400);
+      if (account.type === 'PARTNER_CAPITAL') throw new AppError('Cannot link standard payments to a Partner Capital account', 400);
     }
 
     const number = await DocumentNumberService.generateNextNumber({

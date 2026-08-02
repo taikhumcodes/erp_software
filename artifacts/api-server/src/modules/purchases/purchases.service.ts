@@ -109,6 +109,7 @@ export const PurchasesService = {
     }
 
     const notes = normalise(body['notes']);
+    const supplierBillNo = normalise(body['supplierBillNo']);
 
     if (fieldErrors.length > 0) {
       throw new ValidationError('Validation failed', { errors: fieldErrors });
@@ -209,6 +210,7 @@ export const PurchasesService = {
         discount: discount.toFixed(3),
         netAmount: grandTotal.toFixed(3),
         notes,
+        supplierBillNo,
         items: validatedItems,
       });
 
@@ -279,6 +281,7 @@ export const PurchasesService = {
       }
 
       const notes = 'notes' in body ? normalise(body['notes']) : undefined;
+      const supplierBillNo = 'supplierBillNo' in body ? normalise(body['supplierBillNo']) : undefined;
 
       // ── Validate items ────────────────────────────────────────────────
       interface ValidatedItem {
@@ -432,6 +435,7 @@ export const PurchasesService = {
         discount: headerDiscount,
         netAmount,
         notes,
+        supplierBillNo,
         items: validatedItems,
       });
     });

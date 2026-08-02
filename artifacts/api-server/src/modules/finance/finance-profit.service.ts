@@ -5,6 +5,7 @@ import { FinanceLedgerService } from './finance-ledger.service.js';
 export const FinanceProfitService = {
   /**
    * Distributes profit equally among all active PARTNER_CAPITAL accounts.
+   * Called when a sale is fully paid.
    */
   async distributeSaleProfit(tx: Prisma.TransactionClient, saleId: string, userId: string) {
     // 1. Calculate Profit
@@ -68,6 +69,50 @@ export const FinanceProfitService = {
         referenceId: saleId,
         entryType: 'PROFIT_SHARE'
       }
+    });
+  },
+
+  /**
+   * Distributes an expense cost equally among all active PARTNER_CAPITAL accounts
+   * by posting a PROFIT_SHARE debit to each. This ensures each partner bears their
+   * proportional share of operational expenses, reducing their capital balance.
+   */
+  async distributeExpenseCost(
+    tx: Prisma.TransactionClient,
+    expenseId: string,
+    expenseName: string,
+    expenseNumber: string,
+    amount: Prisma.Decimal | number,
+    userId: string
+  ) {
+    const partnerAccounts = await tx.financeAccount.findMany({
+      where: { type: 'PARTNER_CAPITAL', status: 'ACTIVE' }
+    });
+
+    if (partnerAccounts.length === 0) return; // No partner accounts — skip
+
+    const totalAmount = new Prisma.Decimal(amount.toString());
+    const splitAmount = totalAmount.div(partnerAccounts.length).toDecimalPlaces(3);
+
+    for (const account of partnerAccounts) {
+      await FinanceLedgerService.postEntry(tx, {
+        accountId: account.id,
+        entryType: 'PROFIT_SHARE',
+        debit: splitAmount,   // Debit reduces partner capital (expense burden)
+        description: `Expense Share: ${expenseName}`,
+        referenceNumber: expenseNumber,
+        referenceId: expenseId,
+        createdById: userId,
+      });
+    }
+  },
+
+  /**
+   * Reverts a previously distributed expense cost for a given expense.
+   */
+  async revertExpenseCost(tx: Prisma.TransactionClient, expenseId: string) {
+    await tx.financeLedger.deleteMany({
+      where: { referenceId: expenseId, entryType: 'PROFIT_SHARE' }
     });
   }
 };

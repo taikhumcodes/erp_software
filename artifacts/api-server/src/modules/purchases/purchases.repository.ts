@@ -30,6 +30,7 @@ export interface CreatePurchaseData {
   discount: string;
   netAmount: string;
   notes?: string | null;
+  supplierBillNo?: string | null;
   paymentMethod?: PaymentMethod | null;
   items: CreatePurchaseItemData[];
 }
@@ -41,6 +42,7 @@ export interface UpdatePurchaseData {
   discount?: string;
   netAmount?: string;
   notes?: string | null;
+  supplierBillNo?: string | null;
   paymentMethod?: PaymentMethod | null;
   items?: CreatePurchaseItemData[];
 }
@@ -64,6 +66,7 @@ const purchaseSelect = {
   discount: true,
   netAmount: true,
   notes: true,
+  supplierBillNo: true,
   paidAmount: true,
   outstandingAmount: true,
   paymentStatus: true,
@@ -110,6 +113,7 @@ const purchaseListSelect = {
   discount: true,
   netAmount: true,
   notes: true,
+  supplierBillNo: true,
   paidAmount: true,
   outstandingAmount: true,
   paymentStatus: true,
@@ -144,6 +148,7 @@ export const PurchasesRepository = {
         { supplier: { nameAr: { contains: q, mode: 'insensitive' } } },
         { supplier: { code: { contains: q, mode: 'insensitive' } } },
         { notes: { contains: q, mode: 'insensitive' } },
+        { supplierBillNo: { contains: q, mode: 'insensitive' } },
       ];
     }
 
@@ -202,6 +207,7 @@ export const PurchasesRepository = {
         discount:     new Prisma.Decimal(data.discount),
         netAmount:    new Prisma.Decimal(data.netAmount),
         notes:        data.notes ?? null,
+        supplierBillNo: data.supplierBillNo ?? null,
         paymentMethod: data.paymentMethod ?? null,
         items: {
           create: data.items.map(item => ({
@@ -233,6 +239,7 @@ export const PurchasesRepository = {
         ...(data.discount     !== undefined && { discount:     new Prisma.Decimal(data.discount) }),
         ...(data.netAmount    !== undefined && { netAmount:    new Prisma.Decimal(data.netAmount) }),
         ...(data.notes        !== undefined && { notes:        data.notes }),
+        ...(data.supplierBillNo !== undefined && { supplierBillNo: data.supplierBillNo }),
         ...(data.paymentMethod !== undefined && { paymentMethod: data.paymentMethod }),
         ...(data.items && {
           items: {
@@ -316,6 +323,7 @@ function serializePurchaseList(row: PurchaseListRow) {
     discount:     row.discount.toFixed(3),
     netAmount:    row.netAmount.toFixed(3),
     notes:        row.notes,
+    supplierBillNo: row.supplierBillNo,
     paidAmount:   row.paidAmount.toFixed(3),
     outstandingAmount: row.outstandingAmount.toFixed(3),
     paymentStatus: row.paymentStatus,
@@ -342,6 +350,7 @@ function serializePurchase(row: NonNullable<PurchaseRow>) {
     discount:     row.discount.toFixed(3),
     netAmount:    row.netAmount.toFixed(3),
     notes:        row.notes,
+    supplierBillNo: row.supplierBillNo,
     paidAmount:   row.paidAmount.toFixed(3),
     outstandingAmount: row.outstandingAmount.toFixed(3),
     paymentStatus: row.paymentStatus,

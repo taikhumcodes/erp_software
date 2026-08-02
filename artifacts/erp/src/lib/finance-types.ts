@@ -158,6 +158,7 @@ export interface FinanceDashboardStats {
     todayCollections: string; todayPayments: string;
     monthlyExpenses: string; pendingSalary: string;
     moneyToReceive: string; moneyToPay: string;
+    grossProfit: string; netProfit: string;
   };
   financialPosition: {
     cash: string; bank: string; receivable: string;

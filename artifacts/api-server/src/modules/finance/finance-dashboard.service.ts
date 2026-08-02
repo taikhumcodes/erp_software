@@ -28,23 +28,33 @@ export const FinanceDashboardService = {
       };
     }));
 
-    // Aggregate balances by type
-    const bankBalance = accountCards
+    // ── Aggregate LIQUID balances only (exclude PARTNER_CAPITAL — it's equity, not cash) ──
+    // PARTNER_CAPITAL holds profit/expense shares which are already counted in CASH/BANK amounts.
+    // Including them would double-count profit in totalFunds.
+    const liquidCards = accountCards.filter((a) => a.type !== 'PARTNER_CAPITAL');
+
+    const bankBalance = liquidCards
       .filter((a) => a.type === 'BANK')
       .reduce((sum, a) => sum + parseFloat(a.balance), 0);
-    const cashBalance = accountCards
+    const cashBalance = liquidCards
       .filter((a) => a.type === 'CASH' || a.type === 'WALLET')
       .reduce((sum, a) => sum + parseFloat(a.balance), 0);
-    const totalFunds = accountCards.reduce((sum, a) => sum + parseFloat(a.balance), 0);
+    const totalFunds = liquidCards.reduce((sum, a) => sum + parseFloat(a.balance), 0);
 
-    // Today's ledger activity
+    // ── Today's ledger activity (exclude PROFIT_SHARE — internal equity allocation) ──
     const [todayCredits, todayDebits] = await Promise.all([
       prisma.financeLedger.aggregate({
-        where: { createdAt: { gte: todayStart } },
+        where: {
+          createdAt: { gte: todayStart },
+          entryType: { not: 'PROFIT_SHARE' },
+        },
         _sum: { credit: true },
       }),
       prisma.financeLedger.aggregate({
-        where: { createdAt: { gte: todayStart } },
+        where: {
+          createdAt: { gte: todayStart },
+          entryType: { not: 'PROFIT_SHARE' },
+        },
         _sum: { debit: true },
       }),
     ]);
@@ -67,20 +77,50 @@ export const FinanceDashboardService = {
       prisma.purchase.aggregate({ where: { paymentStatus: { not: 'PAID' } }, _sum: { outstandingAmount: true } }),
     ]);
 
-    // Cash flow this month
+    // ── Cash flow this month (exclude PROFIT_SHARE — it's equity reallocation, not real cash in/out) ──
     const [monthCredits, monthDebits] = await Promise.all([
       prisma.financeLedger.aggregate({
-        where: { createdAt: { gte: monthStart, lte: monthEnd } },
+        where: {
+          createdAt: { gte: monthStart, lte: monthEnd },
+          entryType: { not: 'PROFIT_SHARE' },
+        },
         _sum: { credit: true },
       }),
       prisma.financeLedger.aggregate({
-        where: { createdAt: { gte: monthStart, lte: monthEnd } },
+        where: {
+          createdAt: { gte: monthStart, lte: monthEnd },
+          entryType: { not: 'PROFIT_SHARE' },
+        },
         _sum: { debit: true },
       }),
     ]);
 
     const moneyIn = Number(monthCredits._sum.credit ?? 0);
     const moneyOut = Number(monthDebits._sum.debit ?? 0);
+
+    // ── Gross Profit — sum of all PROFIT_SHARE credit entries (revenue minus COGS) ──
+    // This equals total sale profit distributed to partner accounts.
+    const grossProfitAgg = await prisma.financeLedger.aggregate({
+      where: { entryType: 'PROFIT_SHARE', credit: { gt: 0 } },
+      _sum: { credit: true },
+    });
+    const grossProfit = Number(grossProfitAgg._sum.credit ?? 0);
+
+    // ── Net Profit — Gross Profit minus all paid expenses and paid salaries (all time) ──
+    const [totalPaidExpenses, totalPaidSalaries] = await Promise.all([
+      prisma.expense.aggregate({
+        where: { status: 'PAID' },
+        _sum: { amount: true },
+      }),
+      prisma.salaryRecord.aggregate({
+        where: { status: 'PAID' },
+        _sum: { netSalary: true },
+      }),
+    ]);
+    const netProfit =
+      grossProfit
+      - Number(totalPaidExpenses._sum.amount ?? 0)
+      - Number(totalPaidSalaries._sum.netSalary ?? 0);
 
     // Latest activity (last 8 of each type)
     const [latestPayments, latestExpenses, latestSalary, latestTransfers] = await Promise.all([
@@ -161,6 +201,8 @@ export const FinanceDashboardService = {
         pendingSalary: (pendingSalary._sum.netSalary ?? new Prisma.Decimal(0)).toFixed(3),
         moneyToReceive: (toReceive._sum.outstandingAmount ?? new Prisma.Decimal(0)).toFixed(3),
         moneyToPay: (toPay._sum.outstandingAmount ?? new Prisma.Decimal(0)).toFixed(3),
+        grossProfit: grossProfit.toFixed(3),
+        netProfit: netProfit.toFixed(3),
       },
       financialPosition: {
         cash: cashBalance.toFixed(3),

@@ -156,6 +156,7 @@ export interface Purchase {
   discount: string;
   netAmount: string;
   notes: string | null;
+  supplierBillNo: string | null;
   paidAmount: string;
   outstandingAmount: string;
   paymentStatus: PaymentStatus;
@@ -178,6 +179,7 @@ export interface PurchaseListItem {
   discount: string;
   netAmount: string;
   notes: string | null;
+  supplierBillNo: string | null;
   paidAmount: string;
   outstandingAmount: string;
   paymentStatus: PaymentStatus;

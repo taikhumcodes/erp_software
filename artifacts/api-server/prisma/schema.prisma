@@ -389,6 +389,7 @@ model Purchase {
   discount          Decimal        @default(0) @db.Decimal(15, 3) // KWD
   netAmount         Decimal        @map("net_amount") @db.Decimal(15, 3) // KWD
   notes             String?
+  supplierBillNo    String?        @map("supplier_bill_no")  // Bill number given by supplier
   paidAmount        Decimal        @default(0) @map("paid_amount") @db.Decimal(15, 3) // KWD
   outstandingAmount Decimal        @default(0) @map("outstanding_amount") @db.Decimal(15, 3) // KWD
   paymentStatus     PaymentStatus  @default(UNPAID) @map("payment_status")
