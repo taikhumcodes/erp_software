@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { FinanceAccountsRepository } from '../finance/finance-accounts.repository.js';
 
 const prisma = new PrismaClient();
 
@@ -35,12 +36,23 @@ export class DashboardService {
       })
     ]);
 
-    // Calculate Cash Balance based on completed payments up to endDate
-    let cashBalance = 0;
-    completedPayments.forEach(p => {
-      if (p.type === 'CUSTOMER') cashBalance += Number(p._sum.amount || 0);
-      if (p.type === 'SUPPLIER') cashBalance -= Number(p._sum.amount || 0);
+    // Fetch real balances from Finance Module
+    const activeAccounts = await prisma.financeAccount.findMany({
+      where: { status: 'ACTIVE' },
+      select: { id: true, type: true }
     });
+
+    let realBankBalance = 0;
+    let realCashBalance = 0;
+
+    for (const acc of activeAccounts) {
+      if (acc.type === 'PARTNER_CAPITAL') continue;
+      const bal = await FinanceAccountsRepository.calculateBalance(acc.id);
+      if (acc.type === 'BANK') realBankBalance += bal.toNumber();
+      if (acc.type === 'CASH' || acc.type === 'WALLET') realCashBalance += bal.toNumber();
+    }
+
+    const totalBalance = realBankBalance + realCashBalance;
 
     const inventoryValueResult = await prisma.$queryRaw<[{ totalValue: number }]>`
       SELECT COALESCE(SUM(stock_quantity * cost_price), 0) as "totalValue"
@@ -74,8 +86,9 @@ export class DashboardService {
         netProfit: totalRevenue - totalCost // simplified for Phase 2
       },
       balances: {
-        cashBalance,
-        bankBalance: 0, // Placeholder
+        cashBalance: realCashBalance,
+        bankBalance: realBankBalance,
+        totalBalance: totalBalance,
         inventoryValue
       },
       receivables: Number(receivables._sum.balance || 0),

@@ -6,7 +6,9 @@ import {
   CreditCard, 
   Wallet, 
   Package,
-  Users
+  Users,
+  Building2,
+  DollarSign
 } from 'lucide-react';
 import { useDashboardStore } from '../store';
 import { 
@@ -30,6 +32,7 @@ import { ReceivablesCenter, PayablesCenter } from '../components/FinancialCenter
 import { BusinessHealthScore } from '../components/BusinessHealthScore';
 import { ActionCenterWidget } from '../components/ActionCenterWidget';
 import { PartnerCapitalWidget } from '../components/PartnerCapitalWidget';
+import { ActiveCustomersListWidget } from '../components/ActiveCustomersListWidget';
 
 export const ExecutiveDashboard = () => {
   const { t } = useTranslation();
@@ -72,11 +75,12 @@ export const ExecutiveDashboard = () => {
       </div>
       
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <KPICard title="Total Purchases" value={fmt(kpis.purchases.totalCost)} icon={ShoppingCart} colorClass="text-orange-600" bgClass="bg-orange-100 dark:bg-orange-900/20" />
-        <KPICard title="Cash Balance" value={fmt(kpis.balances.cashBalance)} icon={Wallet} colorClass="text-teal-600" bgClass="bg-teal-100 dark:bg-teal-900/20" />
+        <KPICard title="Total Balance" value={fmt(kpis.balances.totalBalance)} icon={DollarSign} colorClass="text-teal-600" bgClass="bg-teal-100 dark:bg-teal-900/20" />
+        <KPICard title="Bank Balance" value={fmt(kpis.balances.bankBalance)} icon={Building2} colorClass="text-blue-600" bgClass="bg-blue-100 dark:bg-blue-900/20" />
+        <KPICard title="Cash Balance" value={fmt(kpis.balances.cashBalance)} icon={Wallet} colorClass="text-emerald-600" bgClass="bg-emerald-100 dark:bg-emerald-900/20" />
         <KPICard title="Total Payables" value={fmt(kpis.payables)} icon={CreditCard} colorClass="text-red-600" bgClass="bg-red-100 dark:bg-red-900/20" />
-        <KPICard title="Active Customers" value={kpis.counts.customers} icon={Users} colorClass="text-indigo-600" bgClass="bg-indigo-100 dark:bg-indigo-900/20" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -104,6 +108,7 @@ export const ExecutiveDashboard = () => {
 
         {/* Sidebar / Action Area */}
         <div className="lg:col-span-1 space-y-6">
+          <ActiveCustomersListWidget data={customers} isLoading={custLoading} />
           <PartnerCapitalWidget />
           <BusinessHealthScore data={health} isLoading={healthLoading} />
           <ActionCenterWidget data={operations} isLoading={opsLoading} />

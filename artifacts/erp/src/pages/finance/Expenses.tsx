@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FinanceAPI } from '@/lib/finance-api';
 import type { Expense, FinanceAccount, ExpenseCategory } from '@/lib/finance-types';
@@ -11,12 +11,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Plus, Search, Receipt, Trash2, CalendarDays } from 'lucide-react';
+import { Plus, Search, Receipt, Trash2, CalendarDays, Edit2 } from 'lucide-react';
 
 export default function Expenses() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [search, setSearch] = useState('');
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => FinanceAPI.deleteExpense(id),
+    onSuccess: () => {
+      toast({ title: 'Expense deleted successfully' });
+      queryClient.invalidateQueries({ queryKey: ['finance-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['finance-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['finance-ledger'] });
+    },
+    onError: (err: any) => toast({ variant: 'destructive', title: 'Failed to delete expense', description: err.message }),
+  });
 
   const { data: expensesData, isLoading } = useQuery({ queryKey: ['finance-expenses'], queryFn: () => FinanceAPI.getExpenses() });
   const expenses: Expense[] = expensesData?.items || [];
@@ -32,7 +47,7 @@ export default function Expenses() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsCategoryModalOpen(true)}><CalendarDays className="w-4 h-4 mr-2" /> Categories</Button>
-          <Button onClick={() => setIsModalOpen(true)}><Plus className="w-4 h-4 mr-2" /> Record Expense</Button>
+          <Button onClick={() => { setEditingExpense(null); setIsModalOpen(true); }}><Plus className="w-4 h-4 mr-2" /> Record Expense</Button>
         </div>
       </div>
 
@@ -55,6 +70,7 @@ export default function Expenses() {
                 <TableHead>Account</TableHead>
                 <TableHead className="text-right">Amount (KWD)</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -80,6 +96,16 @@ export default function Expenses() {
                       </Badge>
                       {e.isRecurring && <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700">↻ {e.frequency}</Badge>}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => { setEditingExpense(e); setIsModalOpen(true); }} className="h-8 w-8 text-muted-foreground hover:bg-muted">
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => window.confirm('Are you sure you want to delete this expense? This will also revert the ledger entries and partner capital distributions.') && deleteMut.mutate(e.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10" disabled={deleteMut.isPending}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -88,22 +114,37 @@ export default function Expenses() {
         </CardContent>
       </Card>
 
-      <ExpenseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <ExpenseModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingExpense(null); }} expense={editingExpense} />
       <CategoryModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} />
     </div>
   );
 }
 
-function ExpenseModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+function ExpenseModal({ isOpen, onClose, expense }: { isOpen: boolean, onClose: () => void, expense?: Expense | null }) {
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
   const [name, setName] = useState('');
   const [vendor, setVendor] = useState('');
   const [amount, setAmount] = useState('');
-  const [expenseDate, setExpenseDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [expenseDate, setExpenseDate] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState('MONTHLY');
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  
+  
+  
+  useEffect(() => {
+    if (isOpen) {
+      setCategoryId(expense?.category?.id || '');
+      setAccountId(expense?.account?.id || '');
+      setName(expense?.name || '');
+      setVendor(expense?.vendor || '');
+      setAmount(expense?.amount || '');
+      setExpenseDate(expense ? format(new Date(expense.expenseDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
+      setIsRecurring(expense?.isRecurring || false);
+      setFrequency(expense?.frequency || 'MONTHLY');
+    }
+  }, [isOpen, expense]);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -121,9 +162,9 @@ function ExpenseModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => voi
   const isSalaryCategory = selectedCategory?.name === 'Salary';
 
   const mut = useMutation({
-    mutationFn: (data: any) => FinanceAPI.createExpense(data),
+    mutationFn: (data: any) => expense ? FinanceAPI.updateExpense(expense.id, data) : FinanceAPI.createExpense(data),
     onSuccess: () => {
-      toast({ title: 'Expense recorded' });
+      toast({ title: expense ? 'Expense updated' : 'Expense recorded' });
       queryClient.invalidateQueries({ queryKey: ['finance-expenses'] });
       queryClient.invalidateQueries({ queryKey: ['finance-accounts'] });
       queryClient.invalidateQueries({ queryKey: ['finance-ledger'] });
@@ -136,7 +177,8 @@ function ExpenseModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => voi
     <>
     <Dialog open={isOpen} onOpenChange={open => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader><DialogTitle>Record New Expense</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{expense ? 'Edit Expense' : 'Record New Expense'}</DialogTitle></DialogHeader>
+        {expense && <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">Amount and account cannot be changed after an expense is recorded. To change these, delete and recreate the expense.</div>}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
           <div className="space-y-2 col-span-2 md:col-span-1">
             <div className="flex justify-between items-center">
@@ -154,7 +196,7 @@ function ExpenseModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => voi
           </div>
           <div className="space-y-2 col-span-2 md:col-span-1">
             <label className="text-sm font-medium">Payment Account</label>
-            <Select value={accountId} onValueChange={setAccountId}>
+            <Select value={accountId} onValueChange={setAccountId} disabled={!!expense}>
               <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
               <SelectContent>
                 {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name} ({a.type})</SelectItem>)}
@@ -184,11 +226,11 @@ function ExpenseModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => voi
 
           <div className="space-y-2 col-span-2 md:col-span-1">
             <label className="text-sm font-medium">Amount (KWD)</label>
-            <Input type="number" step="0.001" value={amount} onChange={e => setAmount(e.target.value)} />
+            <Input type="number" step="0.001" value={amount} onChange={e => setAmount(e.target.value)} disabled={!!expense} />
           </div>
           <div className="space-y-2 col-span-2 md:col-span-1">
             <label className="text-sm font-medium">Expense Date</label>
-            <Input type="date" value={expenseDate} onChange={e => setExpenseDate(e.target.value)} />
+            <Input type="date" value={expenseDate} onChange={e => setExpenseDate(e.target.value)} disabled={!!expense} />
           </div>
 
           <div className="col-span-2 border rounded-md p-4 mt-2 bg-muted/20">
@@ -214,7 +256,7 @@ function ExpenseModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => voi
         <div className="flex justify-end gap-3">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={() => mut.mutate({ categoryId, accountId, name, vendor, amount, expenseDate, isRecurring, frequency: isRecurring ? frequency : null })} disabled={mut.isPending || !categoryId || !accountId || !name || !amount}>
-            {mut.isPending ? 'Saving...' : 'Record Expense'}
+            {mut.isPending ? 'Saving...' : (expense ? 'Save Changes' : 'Record Expense')}
           </Button>
         </div>
       </DialogContent>

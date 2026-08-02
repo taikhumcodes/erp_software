@@ -228,9 +228,7 @@ export const FinanceExpensesService = {
   async delete(userId: string, id: string) {
     const existing = await prisma.expense.findUnique({ where: { id } });
     if (!existing) throw new AppError('Expense not found', 404);
-    if (existing.status !== 'PENDING' && existing.status !== 'CANCELLED') {
-      throw new AppError('Only PENDING or CANCELLED expenses can be deleted', 400);
-    }
+    // Check removed so PAID expenses can be deleted
 
     await prisma.$transaction(async (tx) => {
       // 1. Revert partner capital expense share entries if any

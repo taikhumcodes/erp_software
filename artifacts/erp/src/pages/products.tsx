@@ -202,7 +202,6 @@ export default function Products() {
                 <th className="px-4 py-3 text-start font-medium">{t('product_code')}</th>
                 <th className="px-4 py-3 text-start font-medium">{t('name_en')}</th>
                 <th className="px-4 py-3 text-start font-medium">{t('categories')}</th>
-                <th className="px-4 py-3 text-start font-medium">{t('brands')}</th>
                 <th className="px-4 py-3 text-start font-medium">{t('units')}</th>
                 <th className="px-4 py-3 text-end font-medium">{t('selling_price')}</th>
                 <th className="px-4 py-3 text-end font-medium">{t('opening_stock')}</th>
@@ -212,12 +211,12 @@ export default function Products() {
             </thead>
             <tbody className="divide-y">
               {isLoading && (
-                <tr><td colSpan={9} className="px-6 py-12 text-center">
+                <tr><td colSpan={8} className="px-6 py-12 text-center">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
                 </td></tr>
               )}
               {!isLoading && data?.data.length === 0 && (
-                <tr><td colSpan={9} className="px-6 py-16 text-center">
+                <tr><td colSpan={8} className="px-6 py-16 text-center">
                   <PackageOpen className="w-10 h-10 mx-auto mb-3 text-muted-foreground/40" />
                   <p className="text-muted-foreground text-sm">{t('no_records')}</p>
                 </td></tr>
@@ -225,9 +224,8 @@ export default function Products() {
               {data?.data.map((p) => (
                 <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground" dir="ltr">{p.sku}</td>
-                  <td className="px-4 py-3 font-medium text-foreground max-w-[160px] truncate">{p.name}</td>
+                  <td className="px-4 py-3 font-medium text-foreground max-w-[320px] truncate">{p.name}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{p.category.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{p.brand?.name ?? '—'}</td>
                   <td className="px-4 py-3"><span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{p.unit.abbreviation}</span></td>
                   <td className="px-4 py-3 text-end font-medium" dir="ltr">KD {p.sellingPrice}</td>
                   <td className="px-4 py-3 text-end" dir="ltr">{p.stockQuantity}</td>
