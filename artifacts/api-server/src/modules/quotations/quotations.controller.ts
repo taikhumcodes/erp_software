@@ -26,7 +26,7 @@ export async function getQuotationHandler(req: Request, res: Response, next: Nex
   try {
     const { id } = req.params;
     const quotation = await QuotationsService.getById(id as string);
-    res.json(quotation);
+    res.json({ data: quotation });
   } catch (error) {
     next(error);
   }
@@ -35,7 +35,7 @@ export async function getQuotationHandler(req: Request, res: Response, next: Nex
 export async function getQuotationStatisticsHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const stats = await QuotationsService.getStatistics();
-    res.json(stats);
+    res.json({ data: stats });
   } catch (error) {
     next(error);
   }
@@ -45,7 +45,7 @@ export async function getQuotationHistoryHandler(req: Request, res: Response, ne
   try {
     const { id } = req.params;
     const history = await QuotationsService.getHistory(id as string);
-    res.json(history);
+    res.json({ data: history });
   } catch (error) {
     next(error);
   }
@@ -55,7 +55,7 @@ export async function createQuotationHandler(req: Request, res: Response, next: 
   try {
     const userId = req.user!.id;
     const quotation = await QuotationsService.create(userId, req.body);
-    res.status(201).json(quotation);
+    res.status(201).json({ data: quotation });
   } catch (error) {
     next(error);
   }
@@ -66,7 +66,7 @@ export async function updateQuotationHandler(req: Request, res: Response, next: 
     const { id } = req.params;
     const userId = req.user!.id;
     const quotation = await QuotationsService.update(id as string, userId, req.body);
-    res.json(quotation);
+    res.json({ data: quotation });
   } catch (error) {
     next(error);
   }
@@ -77,7 +77,7 @@ export async function updateQuotationStatusHandler(req: Request, res: Response, 
     const { id } = req.params;
     const userId = req.user!.id;
     const quotation = await QuotationsService.updateStatus(id as string, userId, req.body);
-    res.json(quotation);
+    res.json({ data: quotation });
   } catch (error) {
     next(error);
   }
@@ -88,7 +88,7 @@ export async function duplicateQuotationHandler(req: Request, res: Response, nex
     const { id } = req.params;
     const userId = req.user!.id;
     const quotation = await QuotationsService.duplicate(id as string, userId);
-    res.status(201).json(quotation);
+    res.status(201).json({ data: quotation });
   } catch (error) {
     next(error);
   }
@@ -99,7 +99,7 @@ export async function convertQuotationHandler(req: Request, res: Response, next:
     const { id } = req.params;
     const userId = req.user!.id;
     const quotation = await QuotationsService.convert(id as string, userId, req.body);
-    res.json(quotation);
+    res.json({ data: quotation });
   } catch (error) {
     next(error);
   }
@@ -148,11 +148,11 @@ export async function exportQuotationExcelHandler(req: Request, res: Response, n
     // Items Sheet
     const itemsData = quotation.items.map((item, idx) => ({
       '#': idx + 1,
-      'Product SKU': item.product.sku,
-      'Product Name': item.product.name,
+      'Product SKU': item.product?.sku ?? 'N/A',
+      'Product Name': item.product?.name ?? item.description ?? 'Ad-Hoc Item',
       'Description': item.description || '',
       'Country of Origin': item.countryOfOrigin || '',
-      'Unit': item.product.unit.abbreviation,
+      'Unit': item.product?.unit?.abbreviation ?? 'Pcs',
       'Quantity': item.quantity,
       'Unit Price (KWD)': item.unitPrice,
       'Total Amount (KWD)': item.amount,

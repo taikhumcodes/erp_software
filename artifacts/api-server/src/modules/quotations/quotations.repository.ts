@@ -41,8 +41,9 @@ export interface CreateQuotationData {
   customerReference?: string | null;
   totalAmount: string;
   discount: string;
-  roundOff: string;
-  grandTotal: string;
+  roundOff: number | string;
+  grandTotal: number | string;
+  creditLimit?: number | string | null;
   notes?: string | null;
   termsAndConditions?: string | null;
   contactPerson?: string | null;
@@ -66,9 +67,10 @@ export interface UpdateQuotationData {
   referenceNumber?: string | null;
   customerReference?: string | null;
   totalAmount?: string;
-  discount?: string;
-  roundOff?: string;
-  grandTotal?: string;
+  discount?: number | string;
+  roundOff?: number | string;
+  grandTotal?: number | string;
+  creditLimit?: number | string | null;
   notes?: string | null;
   termsAndConditions?: string | null;
   contactPerson?: string | null;
@@ -111,6 +113,7 @@ const quotationSelect = {
   discount: true,
   roundOff: true,
   grandTotal: true,
+  creditLimit: true,
   notes: true,
   termsAndConditions: true,
   contactPerson: true,
@@ -178,6 +181,7 @@ const quotationListSelect = {
   quotationDate: true,
   validityDate: true,
   grandTotal: true,
+  creditLimit: true,
   convertedToSaleId: true,
   createdAt: true,
   updatedAt: true,
@@ -272,6 +276,7 @@ export const QuotationsRepository = {
         discount:          new Prisma.Decimal(data.discount),
         roundOff:          new Prisma.Decimal(data.roundOff),
         grandTotal:        new Prisma.Decimal(data.grandTotal),
+        creditLimit:       new Prisma.Decimal(data.creditLimit || '0'),
         notes:             data.notes ?? null,
         termsAndConditions: data.termsAndConditions ?? null,
         contactPerson:     data.contactPerson ?? null,
@@ -294,7 +299,7 @@ export const QuotationsRepository = {
       },
       select: quotationSelect,
     });
-    return serializeQuotation(row);
+    return serializeQuotation(row as RawQuotation);
   },
 
   // ── Update (within transaction) ──────────────────────────────────────────
@@ -310,10 +315,11 @@ export const QuotationsRepository = {
     if (data.validityDate !== undefined)  updateData.validityDate = data.validityDate;
     if (data.referenceNumber !== undefined)   updateData.referenceNumber = data.referenceNumber;
     if (data.customerReference !== undefined) updateData.customerReference = data.customerReference;
-    if (data.totalAmount)  updateData.totalAmount = new Prisma.Decimal(data.totalAmount);
-    if (data.discount)     updateData.discount = new Prisma.Decimal(data.discount);
+    if (data.totalAmount !== undefined)  updateData.totalAmount = new Prisma.Decimal(data.totalAmount);
+    if (data.discount !== undefined)     updateData.discount = new Prisma.Decimal(data.discount);
     if (data.roundOff !== undefined) updateData.roundOff = new Prisma.Decimal(data.roundOff);
-    if (data.grandTotal)   updateData.grandTotal = new Prisma.Decimal(data.grandTotal);
+    if (data.grandTotal !== undefined)   updateData.grandTotal = new Prisma.Decimal(data.grandTotal);
+    if (data.creditLimit !== undefined) updateData.creditLimit = new Prisma.Decimal(data.creditLimit || '0');
     if (data.notes !== undefined) updateData.notes = data.notes ?? null;
     if (data.termsAndConditions !== undefined) updateData.termsAndConditions = data.termsAndConditions ?? null;
     if (data.contactPerson !== undefined) updateData.contactPerson = data.contactPerson ?? null;
@@ -405,6 +411,7 @@ function serializeQuotation(row: RawQuotation) {
     discount: row.discount.toFixed(3),
     roundOff: row.roundOff.toFixed(3),
     grandTotal: row.grandTotal.toFixed(3),
+    creditLimit: row.creditLimit ? row.creditLimit.toFixed(3) : null,
     quotationDate: row.quotationDate.toISOString(),
     validityDate: row.validityDate?.toISOString() ?? null,
     convertedAt: row.convertedAt?.toISOString() ?? null,
@@ -426,6 +433,7 @@ function serializeQuotationList(row: RawQuotationList) {
   return {
     ...rest,
     grandTotal: rest.grandTotal.toFixed(3),
+    creditLimit: rest.creditLimit ? rest.creditLimit.toFixed(3) : null,
     quotationDate: rest.quotationDate.toISOString(),
     validityDate: rest.validityDate?.toISOString() ?? null,
     createdAt: rest.createdAt.toISOString(),

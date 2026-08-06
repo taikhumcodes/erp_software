@@ -103,7 +103,7 @@ export default function DocumentViewer() {
   const TemplateComponent = docRegistration.templateComponent;
 
   return (
-    <div className="print:m-0 print:p-0 min-h-screen bg-gray-100 flex flex-col items-center py-8 print:bg-white print:py-0">
+    <div id="document-viewer-container" className="print:m-0 print:p-0 min-h-screen bg-gray-100 flex flex-col items-center py-8 print:bg-white print:py-0">
       <div className="print:hidden mb-6 flex flex-wrap gap-4 w-full max-w-[210mm] justify-end items-center">
         {data?.leftInfoFields?.some(f => f.label === 'Payment Status') && (
           <div className="flex items-center gap-2 mr-auto bg-white px-3 py-2 border shadow-sm rounded">
@@ -127,7 +127,17 @@ export default function DocumentViewer() {
           <Printer className="w-4 h-4" /> Print
         </button>
         <button 
-          onClick={() => DocumentService.downloadPdf(data.title)} 
+          onClick={() => {
+            let filename = data.title || 'Document';
+            const docNum = data.documentNumber || id || '';
+            const match = docNum.match(/\d+$/);
+            const shortNum = match ? match[0].slice(-3).padStart(3, '0') : docNum;
+            if (data.type === 'SALES_INVOICE') filename = `INV-${shortNum}`;
+            else if (data.type === 'PURCHASE_ORDER') filename = `PO-${shortNum}`;
+            else if (data.type === 'DELIVERY_ORDER') filename = `DO-${shortNum}`;
+            else if (data.type === 'QUOTATION') filename = `Quotation-${shortNum}`;
+            DocumentService.downloadPdf(filename);
+          }} 
           className="flex items-center gap-2 px-4 py-2 bg-black text-white shadow-sm text-sm font-medium rounded hover:bg-gray-900"
         >
           <Download className="w-4 h-4" /> Download PDF

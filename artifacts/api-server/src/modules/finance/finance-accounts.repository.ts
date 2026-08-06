@@ -93,6 +93,11 @@ export const FinanceAccountsRepository = {
     const where: Prisma.FinanceLedgerWhereInput = { accountId };
     if (type !== 'PARTNER_CAPITAL') {
       where.entryType = { not: 'PROFIT_SHARE' };
+    } else {
+      // User request: Capital partner account should only show sales-purchase (PROFIT_SHARE)
+      // Ignoring expenses (debits) and only showing the gross profit share (credits)
+      where.entryType = 'PROFIT_SHARE';
+      where.credit = { gt: 0 };
     }
 
     const agg = await client.financeLedger.aggregate({

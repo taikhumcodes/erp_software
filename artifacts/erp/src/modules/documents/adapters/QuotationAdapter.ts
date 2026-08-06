@@ -42,7 +42,8 @@ export class QuotationAdapter {
       { label: 'Date', labelAr: 'التاريخ', value: fmtDate(apiData.quotationDate) },
       { label: 'Validity Date', labelAr: 'تاريخ الصلاحية', value: fmtDate(apiData.validityDate) },
       { label: 'Status', labelAr: 'الحالة', value: fmtStatus(apiData.status) },
-      { label: 'Reference No.', labelAr: 'رقم المرجع', value: apiData.referenceNumber || '—' }
+      { label: 'Reference No.', labelAr: 'رقم المرجع', value: apiData.referenceNumber || '—' },
+      { label: 'Credit Limit (KWD)', labelAr: 'الحد الائتماني', value: apiData.creditLimit ? fmtCurrency(apiData.creditLimit) : '0.000' }
     );
 
     const counterpartyInfo: CounterpartyInfo = {
@@ -82,11 +83,12 @@ export class QuotationAdapter {
       columns: [
         { key: 'index', label: '#', labelAr: 'م', width: '5%', align: 'center' },
         { key: 'itemCode', label: 'Item Code', labelAr: 'رمز الصنف', width: '13%' },
-        { key: 'description', label: 'Description', labelAr: 'البيان', width: '32%' },
-        { key: 'unit', label: 'Unit', labelAr: 'الوحدة', width: '8%', align: 'center' },
-        { key: 'qty', label: 'Qty', labelAr: 'الكمية', width: '8%', align: 'center' },
-        { key: 'unitPrice', label: 'Unit Price', labelAr: 'سعر الوحدة', width: '15%', align: 'right', format: 'currency' },
-        { key: 'totalPrice', label: 'Total Price', labelAr: 'الإجمالي', width: '15%', align: 'right', format: 'currency' },
+        { key: 'description', label: 'Description', labelAr: 'البيان', width: '24%' },
+        { key: 'countryOfOrigin', label: 'Origin', labelAr: 'المنشأ', width: '8%', align: 'center' },
+        { key: 'unit', label: 'Unit', labelAr: 'الوحدة', width: '6%', align: 'center' },
+        { key: 'qty', label: 'Qty', labelAr: 'الكمية', width: '6%', align: 'center' },
+        { key: 'unitPrice', label: 'Unit Price', labelAr: 'سعر الوحدة', width: '14%', align: 'right', format: 'currency' },
+        { key: 'totalPrice', label: 'Total Price', labelAr: 'الإجمالي', width: '14%', align: 'right', format: 'currency' },
       ],
 
       items: items.map((item: any, idx: number) => ({
@@ -94,6 +96,7 @@ export class QuotationAdapter {
         itemCode: item.product?.sku || '—',
         description: item.description || item.product?.name || '—',
         descriptionAr: item.product?.nameAr || '',
+        countryOfOrigin: item.countryOfOrigin || item.product?.countryOfOrigin || '—',
         unit: item.product?.unit?.abbreviation || 'PCS',
         unitAr: item.product?.unit?.nameAr || 'قطعة',
         qty: safeNumber(item.quantity),

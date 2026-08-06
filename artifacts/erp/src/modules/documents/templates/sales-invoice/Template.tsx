@@ -48,8 +48,8 @@ export const SalesInvoiceTemplate: React.FC<{ data: DocumentData }> = ({ data })
         bilingual={company.bilingual}
       />
 
-      {/* Amount in Words + Totals */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-end' }}>
+      {/* Amount in Words + Totals + Authorized Signature */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginTop: '16px' }}>
         <div style={{ flex: 1 }}>
           <AmountInWords
             amountEn={data.amountInWords}
@@ -57,15 +57,17 @@ export const SalesInvoiceTemplate: React.FC<{ data: DocumentData }> = ({ data })
             color={color}
           />
         </div>
-        <TotalsSection
-          summaryLines={data.summaryLines}
-          bilingual={company.bilingual}
-          color={color}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          <TotalsSection
+            summaryLines={data.summaryLines}
+            bilingual={company.bilingual}
+            color={color}
+          />
+          <div style={{ marginTop: '64px', textAlign: 'center', minWidth: '200px' }}>
+            <div style={{ fontWeight: 600, color: '#333' }}>Authorized Signature</div>
+          </div>
+        </div>
       </div>
-
-      {/* Prepared By / Checked By / For Receiving Use */}
-      <SignatureSection signatures={data.signatures} bilingual={company.bilingual} color={color} isCompact={data.items && data.items.length >= 4} />
 
       <div className="avoid-break">
         {/* Terms & Conditions + QR */}

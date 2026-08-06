@@ -89,6 +89,10 @@ export const SignatureSection: React.FC<{ signatures: SignatureSlot[]; bilingual
                   <div style={{ borderBottom: `1px dashed ${borderColor}`, marginTop: lineMarginTop }} />
                 </div>
               </div>
+            ) : sig.title === 'Authorized Signature' ? (
+              <div style={{ width: '100%', marginTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ width: '80%', borderBottom: `1px solid ${borderColor}`, marginBottom: '12px' }} />
+              </div>
             ) : (
               /* Standard signature slot */
               <div style={{ width: '100%', marginTop: slotMarginTop, display: 'flex', flexDirection: 'column', gap: slotGap }}>

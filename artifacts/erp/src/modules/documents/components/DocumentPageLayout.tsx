@@ -33,7 +33,6 @@ export const DocumentPageLayout: React.FC<{ company: CompanyProfile, children: R
       color: colors.titleColor,
       boxShadow: '0 0 10px rgba(0,0,0,0.1)',
       position: 'relative',
-      overflow: 'hidden',
       fontFamily: typography.fontFamily,
       direction: 'ltr', // Force LTR as base, but allows bilingual inner content
       '--doc-title-size': typography.titleSize,

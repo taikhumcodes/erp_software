@@ -6,7 +6,7 @@ import { Plus, Search, Eye, Download, Printer, Banknote, Trash } from 'lucide-re
 import { api } from '@/lib/api';
 import { useDebounce } from '@/hooks/use-debounce';
 import { formatKWD } from '@/lib/utils';
-import type { PaginatedResponse, PaymentListItem, PaymentStatistics, TransactionStatus } from '@/lib/types';
+import type { PaginatedResponse, PaymentListItem, PaymentStatistics, TransactionStatus, Customer, Supplier } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,10 @@ export function PaymentsList() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 500);
   const [statusFilter, setStatusFilter] = useState<TransactionStatus | 'ALL'>('ALL');
+  const [daysFilter, setDaysFilter] = useState<string>('ALL');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [sortBy, setSortBy] = useState<string>('createdAt');
+  const [sortOrder, setSortOrder] = useState<string>('desc');
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
@@ -61,15 +65,29 @@ export function PaymentsList() {
     refetchInterval: 60000,
   });
 
+  const { data: customersData } = useQuery({
+    queryKey: ['payments-customers'],
+    queryFn: () => api.get<PaginatedResponse<Customer>>('/api/customers?limit=200'),
+  });
+
+  const { data: suppliersData } = useQuery({
+    queryKey: ['payments-suppliers'],
+    queryFn: () => api.get<PaginatedResponse<Supplier>>('/api/suppliers?limit=200'),
+  });
+
   const { data: listResponse, isLoading: isLoadingList, refetch } = useQuery({
-    queryKey: ['payments', { page, search: debouncedSearch, status: statusFilter }],
+    queryKey: ['payments', { page, search: debouncedSearch, status: statusFilter, days: daysFilter, type: typeFilter, sortBy, sortOrder }],
     queryFn: () => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '20',
+        sortBy,
+        sortOrder,
       });
       if (debouncedSearch) params.append('search', debouncedSearch);
       if (statusFilter !== 'ALL') params.append('status', statusFilter);
+      if (daysFilter !== 'ALL') params.append('days', daysFilter);
+      if (typeFilter !== 'ALL') params.append('type', typeFilter);
       
       return api.get<{ items: PaymentListItem[]; totalPages: number; totalCount: number; page: number; limit: number }>(`/api/payments?${params.toString()}`);
     },
@@ -179,6 +197,37 @@ export function PaymentsList() {
             <SelectItem value="PENDING">{t('payment_status_pending')}</SelectItem>
             <SelectItem value="COMPLETED">{t('payment_status_completed')}</SelectItem>
             <SelectItem value="CANCELLED">{t('payment_status_cancelled')}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border shadow-sm">
+        <Select value={daysFilter} onValueChange={(val) => { setDaysFilter(val); setPage(1); }}>
+          <SelectTrigger className="w-full sm:w-[150px] bg-background"><SelectValue placeholder="Time Filter" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Time</SelectItem>
+            <SelectItem value="7">Last 7 Days</SelectItem>
+            <SelectItem value="30">Last 30 Days</SelectItem>
+            <SelectItem value="90">Last 90 Days</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={typeFilter} onValueChange={(val) => { setTypeFilter(val); setPage(1); }}>
+          <SelectTrigger className="w-full sm:w-[180px] bg-background"><SelectValue placeholder="Payment Type" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Payments</SelectItem>
+            <SelectItem value="CUSTOMER">Customer Payments</SelectItem>
+            <SelectItem value="SUPPLIER">Supplier Payments</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={`${sortBy}-${sortOrder}`} onValueChange={(val) => { const [b, o] = val.split('-'); setSortBy(b); setSortOrder(o); setPage(1); }}>
+          <SelectTrigger className="w-full sm:w-[200px] bg-background"><SelectValue placeholder="Sort By" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="createdAt-desc">Newest First</SelectItem>
+            <SelectItem value="createdAt-asc">Oldest First</SelectItem>
+            <SelectItem value="amount-desc">Amount (High to Low)</SelectItem>
+            <SelectItem value="amount-asc">Amount (Low to High)</SelectItem>
           </SelectContent>
         </Select>
       </div>

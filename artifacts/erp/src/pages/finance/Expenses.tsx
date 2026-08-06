@@ -18,6 +18,9 @@ export default function Expenses() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -33,8 +36,20 @@ export default function Expenses() {
     onError: (err: any) => toast({ variant: 'destructive', title: 'Failed to delete expense', description: err.message }),
   });
 
-  const { data: expensesData, isLoading } = useQuery({ queryKey: ['finance-expenses'], queryFn: () => FinanceAPI.getExpenses() });
+  const { data: expensesData, isLoading } = useQuery({ 
+    queryKey: ['finance-expenses', { categoryId: categoryFilter, sortBy, sortOrder }], 
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (categoryFilter !== 'ALL') params.append('categoryId', categoryFilter);
+      params.append('sortBy', sortBy);
+      params.append('sortOrder', sortOrder);
+      params.append('limit', '1000');
+      return FinanceAPI.getExpenses(params.toString());
+    } 
+  });
   const expenses: Expense[] = expensesData?.items || [];
+  const { data: categoriesData } = useQuery({ queryKey: ['finance-expense-categories'], queryFn: () => FinanceAPI.getExpenseCategories() });
+  const categories: ExpenseCategory[] = categoriesData?.data || [];
 
   const filtered = expenses.filter(e => e.name.toLowerCase().includes(search.toLowerCase()) || e.number.includes(search));
 
@@ -51,11 +66,29 @@ export default function Expenses() {
         </div>
       </div>
 
-      <div className="flex gap-4 max-w-md">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search expenses..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border shadow-sm">
+        <div className="relative w-full sm:w-96">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search expenses..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-background" />
         </div>
+        
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-full sm:w-[180px] bg-background"><SelectValue placeholder="All Categories" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Categories</SelectItem>
+            {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select value={`${sortBy}-${sortOrder}`} onValueChange={(val) => { const [b, o] = val.split('-'); setSortBy(b); setSortOrder(o); }}>
+          <SelectTrigger className="w-full sm:w-[200px] bg-background"><SelectValue placeholder="Sort By" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="createdAt-desc">Newest First</SelectItem>
+            <SelectItem value="createdAt-asc">Oldest First</SelectItem>
+            <SelectItem value="amount-desc">Amount (High to Low)</SelectItem>
+            <SelectItem value="amount-asc">Amount (Low to High)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <Card>
@@ -110,6 +143,15 @@ export default function Expenses() {
                 ))
               )}
             </TableBody>
+            {filtered.length > 0 && (
+              <TableRow className="bg-muted/50 font-bold">
+                <TableCell colSpan={5} className="text-right">Total Amount:</TableCell>
+                <TableCell className="text-right text-red-600">
+                  {filtered.reduce((sum, e) => sum + Number(e.amount), 0).toLocaleString('en-KW', { minimumFractionDigits: 3 })} KWD
+                </TableCell>
+                <TableCell colSpan={2}></TableCell>
+              </TableRow>
+            )}
           </Table>
         </CardContent>
       </Card>

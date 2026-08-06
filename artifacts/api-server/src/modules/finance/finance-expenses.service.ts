@@ -46,8 +46,10 @@ export const FinanceExpensesService = {
     isRecurring?: boolean;
     dateFrom?: string;
     dateTo?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   } = {}) {
-    const { page = 1, limit = 20, categoryId, status, accountId, isRecurring, dateFrom, dateTo } = filters;
+    const { page = 1, limit = 20, categoryId, status, accountId, isRecurring, dateFrom, dateTo, sortBy = 'createdAt', sortOrder = 'desc' } = filters;
 
     const where: Prisma.ExpenseWhereInput = {};
     if (categoryId) where.categoryId = categoryId;
@@ -73,7 +75,7 @@ export const FinanceExpensesService = {
           account: { select: { id: true, name: true, type: true } },
           createdBy: { select: { id: true, name: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortBy]: sortOrder },
         skip,
         take: limit,
       }),
@@ -158,6 +160,8 @@ export const FinanceExpensesService = {
       });
 
       // Split expense cost equally among all PARTNER_CAPITAL accounts (reduces partner equity)
+      // NOTE: Disabled as per user request to show only Gross Profit in Partner Capital
+      /*
       await FinanceProfitService.distributeExpenseCost(
         tx,
         expense.id,
@@ -166,6 +170,7 @@ export const FinanceExpensesService = {
         amt,
         userId
       );
+      */
 
       await FinanceAuditService.log(tx, {
         action: 'EXPENSE_CREATED',
@@ -232,7 +237,8 @@ export const FinanceExpensesService = {
 
     await prisma.$transaction(async (tx) => {
       // 1. Revert partner capital expense share entries if any
-      await FinanceProfitService.revertExpenseCost(tx, id);
+      // NOTE: Disabled as per user request to show only Gross Profit in Partner Capital
+      // await FinanceProfitService.revertExpenseCost(tx, id);
 
       // 2. Delete associated ledger entries
       await tx.financeLedger.deleteMany({ where: { referenceId: id } });

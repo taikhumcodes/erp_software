@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, Search, Loader2, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Loader2, Users, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +9,9 @@ import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { api } from '@/lib/api';
 import type { Customer, PaginatedResponse } from '@/lib/types';
 import { formatKWD } from '@/lib/utils';
+import { DocumentService } from '@/modules/documents/services/DocumentService';
+import { CompanyProfileService } from '@/modules/documents/services/CompanyProfileService';
+import { OutstandingInvoicePdf } from '@/modules/documents/components/OutstandingInvoicePdf';
 
 const LIMIT = 20;
 
@@ -51,6 +54,10 @@ export default function Customers() {
   const [editing, setEditing] = useState<Customer | null>(null);
   const [form, setForm] = useState<CustomerForm>(emptyForm());
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
+  const [downloadTarget, setDownloadTarget] = useState<Customer | null>(null);
+  const [outstandingSales, setOutstandingSales] = useState<any[] | null>(null);
+  const [companyProfile, setCompanyProfile] = useState<any | null>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
   if (search) params.set('search', search);
@@ -130,6 +137,46 @@ export default function Customers() {
     else createMutation.mutate(payload);
   };
 
+  const handleDownloadClick = async (customer: Customer) => {
+    try {
+      const res: any = await api.get(`/sales?customerId=${customer.id}&limit=1000`);
+      const salesList = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      const outstanding = salesList.filter((s: any) => parseFloat(s.outstandingAmount) > 0);
+      
+      if (outstanding.length === 0) {
+        toast({ title: 'No Outstanding Invoices', description: 'This customer has no outstanding invoices.', variant: 'default' });
+        return;
+      }
+      
+      const profile = await CompanyProfileService.getProfile();
+      setCompanyProfile(profile);
+      setOutstandingSales(salesList);
+      setDownloadTarget(customer);
+    } catch (e) {
+      toast({ title: t('error'), description: 'Failed to fetch sales or company profile', variant: 'destructive' });
+    }
+  };
+
+  useEffect(() => {
+    if (!downloadTarget || !outstandingSales) return;
+    const timer = setTimeout(() => {
+      DocumentService.downloadPdf(`Outstanding_Invoice_${downloadTarget.name}`, 'outstanding-invoice-pdf')
+        .then(() => {
+          setDownloadTarget(null);
+          setOutstandingSales(null);
+          setCompanyProfile(null);
+        })
+        .catch((err) => {
+          console.error('PDF Generation Error:', err);
+          toast({ title: 'Error', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
+          setDownloadTarget(null);
+          setOutstandingSales(null);
+          setCompanyProfile(null);
+        });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [downloadTarget, outstandingSales]);
+
   const isPending = createMutation.isPending || updateMutation.isPending;
   const meta = data?.meta;
 
@@ -183,7 +230,7 @@ export default function Customers() {
                   <td className="px-6 py-4 text-muted-foreground">{formatPhoneDisplay(customer.phone)}</td>
                   <td className="px-6 py-4 text-foreground font-medium">{formatKWD(customer.balance)}</td>
                   <td className="px-6 py-4"><StatusBadge active={customer.isActive} t={t} /></td>
-                  <td className="px-6 py-4"><div className="flex items-center justify-end gap-1"><button onClick={() => openEdit(customer)} title={t('edit')} className="p-1.5 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"><Pencil className="w-4 h-4" /></button><button onClick={() => setDeleteTarget(customer)} title={t('delete')} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="w-4 h-4" /></button></div></td>
+                  <td className="px-6 py-4"><div className="flex items-center justify-end gap-1"><button onClick={() => handleDownloadClick(customer)} title="Download Outstanding Invoice" className="p-1.5 rounded hover:bg-blue-100 text-muted-foreground hover:text-blue-600 transition-colors"><Download className="w-4 h-4" /></button><button onClick={() => openEdit(customer)} title={t('edit')} className="p-1.5 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"><Pencil className="w-4 h-4" /></button><button onClick={() => setDeleteTarget(customer)} title={t('delete')} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="w-4 h-4" /></button></div></td>
                 </tr>
               ))}
             </tbody>
@@ -243,6 +290,10 @@ export default function Customers() {
       </Dialog>
 
       <ConfirmDialog open={!!deleteTarget} title={t('delete_customer_confirm')} description={`${t('delete_message')} "${deleteTarget?.name}"`} loading={deleteMutation.isPending} onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)} onCancel={() => setDeleteTarget(null)} />
+      
+      {downloadTarget && outstandingSales && companyProfile && (
+        <OutstandingInvoicePdf ref={pdfRef} customer={downloadTarget} sales={outstandingSales} company={companyProfile} />
+      )}
     </div>
   );
 }

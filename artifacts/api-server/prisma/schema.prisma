@@ -969,6 +969,7 @@ model Quotation {
   discount          Decimal         @default(0) @db.Decimal(15, 3)
   roundOff          Decimal         @default(0) @map("round_off") @db.Decimal(15, 3)
   grandTotal        Decimal         @map("grand_total") @db.Decimal(15, 3)
+  creditLimit       Decimal         @default(0) @map("credit_limit") @db.Decimal(15, 3)
 
   notes              String?  @db.Text
   termsAndConditions String?  @map("terms_and_conditions") @db.Text

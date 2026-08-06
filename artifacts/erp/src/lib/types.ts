@@ -204,8 +204,8 @@ export type QuotationStatus = 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPI
 
 export interface QuotationItem {
   id: string;
-  productId: string;
-  product: Product;
+  productId: string | null;
+  product: Product | null;
   description: string | null;
   countryOfOrigin: string | null;
   quantity: string;
@@ -239,6 +239,7 @@ export interface Quotation {
   discount: string;
   roundOff: string;
   grandTotal: string;
+  creditLimit: string | null;
   notes: string | null;
   termsAndConditions: string | null;
   contactPerson: string | null;
@@ -270,6 +271,7 @@ export interface QuotationListItem {
   quotationDate: string;
   validityDate: string | null;
   grandTotal: string;
+  creditLimit: string | null;
   convertedToSaleId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -597,7 +599,7 @@ export interface SalesOrderDetails {
 }
 
 // --- Finance Module ----------------------------------------------------------
-export type FinanceAccountType = 'CASH' | 'BANK' | 'WALLET' | 'OTHER';
+export type FinanceAccountType = 'CASH' | 'BANK' | 'WALLET' | 'OTHER' | 'PARTNER_CAPITAL';
 export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 export type LedgerEntryType = 'OPENING_BALANCE' | 'SALE_PAYMENT' | 'PURCHASE_PAYMENT' | 'OWNER_INVESTMENT' | 'OWNER_WITHDRAWAL' | 'DEPOSIT' | 'WITHDRAWAL' | 'BANK_INTEREST' | 'BANK_CHARGES' | 'EXPENSE' | 'SALARY' | 'SALARY_ADVANCE' | 'BONUS' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'MISC_INCOME' | 'MISC_EXPENSE' | 'ADJUSTMENT';
 export type ExpenseFrequency = 'ONCE' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';

@@ -170,6 +170,8 @@ export const FinanceController = {
         isRecurring: req.query['isRecurring'] === 'true' ? true : req.query['isRecurring'] === 'false' ? false : undefined,
         dateFrom: req.query['dateFrom'] ? String(req.query['dateFrom']) : undefined,
         dateTo: req.query['dateTo'] ? String(req.query['dateTo']) : undefined,
+        sortBy: req.query['sortBy'] ? String(req.query['sortBy']) : undefined,
+        sortOrder: req.query['sortOrder'] === 'asc' ? 'asc' : 'desc',
       });
       res.json(data);
     } catch (err) { next(err); }

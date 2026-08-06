@@ -77,6 +77,7 @@ interface QuotationForm {
   email: string;
   address: string;
   country: string;
+  creditLimit: string;
   discount: string;
   roundOff: string;
   notes: string;
@@ -114,6 +115,7 @@ const emptyForm = (): QuotationForm => ({
   email: '',
   address: '',
   country: '',
+  creditLimit: '0',
   discount: '0.000',
   roundOff: '0.000',
   notes: '',
@@ -255,13 +257,13 @@ function QuotationViewDialog({ open, onOpenChange, quotationId }: { open: boolea
                       <TableRow key={item.id}>
                         <TableCell>
                           <div>
-                            <span className="font-medium">{item.product.name}</span>
-                            <span className="block text-xs text-muted-foreground font-mono">{item.product.sku}</span>
+                            <span className="font-medium">{item.product?.name || item.description || 'Custom Item'}</span>
+                            <span className="block text-xs text-muted-foreground font-mono">{item.product?.sku || '-'}</span>
                             {item.description && <span className="block text-xs text-muted-foreground mt-0.5">{item.description}</span>}
                           </div>
                         </TableCell>
                         <TableCell>{item.countryOfOrigin || '-'}</TableCell>
-                        <TableCell>{item.product.unit.abbreviation}</TableCell>
+                        <TableCell>{item.product?.unit?.abbreviation || 'PCS'}</TableCell>
                         <TableCell className="text-end font-mono">{item.quantity}</TableCell>
                         <TableCell className="text-end font-mono">{formatKWD(item.unitPrice)}</TableCell>
                         <TableCell className="text-end font-mono">{formatKWD(item.amount)}</TableCell>
@@ -364,6 +366,7 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
         email: p.email ?? '',
         address: p.address ?? '',
         country: p.country ?? '',
+        creditLimit: p.creditLimit ?? '0',
         discount: p.discount,
         roundOff: p.roundOff,
         notes: p.notes ?? '',
@@ -546,7 +549,7 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
 
               {/* Quotation Details */}
               <div className="p-4 border rounded-md bg-muted/10">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-1">
                     <Label>Quotation Date</Label>
                     <Input type="date" value={form.quotationDate} onChange={e => setForm(prev => ({ ...prev, quotationDate: e.target.value }))} disabled={isPending} />
@@ -564,6 +567,10 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
                         <SelectItem value="SENT">Sent</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Credit Limit (KWD)</Label>
+                    <Input type="number" step="0.001" value={form.creditLimit} onChange={e => setForm(prev => ({ ...prev, creditLimit: e.target.value }))} disabled={isPending} placeholder="0.000" />
                   </div>
                 </div>
               </div>
@@ -906,9 +913,6 @@ export default function QuotationsPage() {
                           
                           <DropdownMenuItem onClick={() => handlePrint(q.id)}>
                             <Printer className="h-4 w-4 mr-2" /> Print PDF
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleExportExcel(q.id)}>
-                            <Download className="h-4 w-4 mr-2" /> Export Excel
                           </DropdownMenuItem>
                           
                           {canEdit && (

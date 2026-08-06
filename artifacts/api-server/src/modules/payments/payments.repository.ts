@@ -12,6 +12,7 @@ export interface PaymentFilters {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  days?: number;
 }
 
 const paymentSelect = {
@@ -119,9 +120,16 @@ export const PaymentsRepository = {
       limit = 20,
       sortBy = 'createdAt',
       sortOrder = 'desc',
+      days,
     } = filters;
 
     const where: Prisma.PaymentWhereInput = {};
+
+    if (days) {
+      const fromDate = new Date();
+      fromDate.setDate(fromDate.getDate() - days);
+      where.paymentDate = { gte: fromDate };
+    }
 
     if (search && search.trim()) {
       const q = search.trim();

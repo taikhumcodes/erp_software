@@ -22,6 +22,7 @@ export const PaymentsController = {
 
       const customerId = req.query['customerId'] ? String(req.query['customerId']) : undefined;
       const supplierId = req.query['supplierId'] ? String(req.query['supplierId']) : undefined;
+      const days = req.query['days'] ? parseInt(String(req.query['days']), 10) : undefined;
       const typeRaw = req.query['type'] ? String(req.query['type']) : undefined;
       const type = typeRaw as any; // Cast as any or PaymentType
       const methodRaw = req.query['method'] ? String(req.query['method']) : undefined;
@@ -41,6 +42,7 @@ export const PaymentsController = {
         method,
         customerId,
         supplierId,
+        days,
         page,
         limit,
         sortBy,

@@ -142,8 +142,9 @@ export const QuotationsService = {
     // ── Process items ──────────────────────────────────────────────────────
     let calculatedTotal = 0;
     const validatedItems: {
-      productId: string;
+      productId: string | null;
       description: string | null;
+      productNameAr?: string | null;
       countryOfOrigin: string | null;
       quantity: string;
       unitPrice: string;
@@ -239,6 +240,7 @@ export const QuotationsService = {
         discount: headerDiscount,
         roundOff,
         grandTotal: grandTotal.toFixed(3),
+        creditLimit: normalise(body['creditLimit']) || '0',
         notes: normalise(body['notes']),
         termsAndConditions: normalise(body['termsAndConditions']),
         contactPerson: normalise(body['contactPerson']),
@@ -460,6 +462,7 @@ export const QuotationsService = {
         discount: headerDiscount,
         roundOff,
         grandTotal: grandTotal.toFixed(3),
+        creditLimit: body['creditLimit'] !== undefined ? normalise(body['creditLimit']) : undefined,
         notes: body['notes'] !== undefined ? normalise(body['notes']) : undefined,
         termsAndConditions: body['termsAndConditions'] !== undefined ? normalise(body['termsAndConditions']) : undefined,
         contactPerson: body['contactPerson'] !== undefined ? normalise(body['contactPerson']) : undefined,

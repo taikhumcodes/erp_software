@@ -115,9 +115,7 @@ export function adaptSalesInvoice(apiData: any): Omit<DocumentData, 'company'> {
     amountInWordsAr: numberToWords(grandTotal, 'Arabic'),
 
     signatures: [
-      { title: 'Prepared By', titleAr: 'أعد بواسطة', name: apiData.user?.name || '', date: fmtDate(apiData.saleDate || apiData.createdAt) },
-      { title: 'Checked By', titleAr: 'تم الفحص بواسطة', name: '', date: fmtDate(apiData.saleDate || apiData.createdAt) },
-      { title: 'For Receiving Use /', titleAr: 'للاستلام', isReceiver: true },
+      { title: 'Authorized Signature', titleAr: 'توقيع معتمد' },
     ],
 
     qrData,
