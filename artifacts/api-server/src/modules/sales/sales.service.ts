@@ -246,6 +246,8 @@ export const SalesService = {
         discount: headerDiscount,
         netAmount: netAmount.toFixed(3),
         notes: normalise(body['notes']),
+        termsAndConditions: normalise(body['termsAndConditions']),
+        termsAndConditionsAr: normalise(body['termsAndConditionsAr']),
         paymentMethod: body['paymentMethod'] as any || null,
         items: validatedItems,
       });
@@ -471,6 +473,8 @@ export const SalesService = {
         discount: headerDiscount,
         netAmount: netAmount.toFixed(3),
         notes: body['notes'] !== undefined ? normalise(body['notes']) : undefined,
+        termsAndConditions: body['termsAndConditions'] !== undefined ? normalise(body['termsAndConditions']) : undefined,
+        termsAndConditionsAr: body['termsAndConditionsAr'] !== undefined ? normalise(body['termsAndConditionsAr']) : undefined,
         items: validatedItems,
       });
     });

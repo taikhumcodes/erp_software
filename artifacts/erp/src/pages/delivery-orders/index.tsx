@@ -42,6 +42,10 @@ export default function DeliveryOrdersPage() {
       <DeliveryOrderDetails 
         id={selectedId}
         onBack={handleBackToList}
+        onEdit={(id) => {
+          setSelectedId(id);
+          setView('edit');
+        }}
       />
     );
   }

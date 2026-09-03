@@ -46,6 +46,14 @@ export class QuotationAdapter {
       { label: 'Credit Limit (KWD)', labelAr: 'الحد الائتماني', value: apiData.creditLimit ? fmtCurrency(apiData.creditLimit) : '0.000' }
     );
 
+    if (apiData.creditLimitDays) {
+      leftInfoFields.push({
+        label: 'Credit Limit (Days)',
+        labelAr: 'مدة الائتمان (أيام)',
+        value: `${apiData.creditLimitDays} Days`,
+      });
+    }
+
     const counterpartyInfo: CounterpartyInfo = {
       title: 'Quotation To',
       titleAr: 'عرض السعر إلى',

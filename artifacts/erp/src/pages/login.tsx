@@ -4,6 +4,7 @@ import { useLocation } from 'wouter';
 import { useLogin } from '@workspace/api-client-react';
 import { useAuthStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
+import EvolixBadge from '@/components/common/EvolixBadge';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -55,8 +56,9 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="text-sm text-white/70">
-          © 2026 Shield Max • Phase 1 Release
+        <div className="text-sm text-white/70 flex flex-wrap items-center justify-between gap-2">
+          <span>© 2026 Shield Max • Phase 1 Release</span>
+          <EvolixBadge source="LOGIN_PAGE" variant="login" className="text-white/80 hover:text-white" />
         </div>
       </div>
 
@@ -110,7 +112,9 @@ export default function Login() {
             </button>
           </form>
 
-
+          <div className="mt-6 pt-4 border-t border-border/40 text-center">
+            <EvolixBadge source="LOGIN_PAGE" variant="login" />
+          </div>
         </div>
       </div>
     </div>

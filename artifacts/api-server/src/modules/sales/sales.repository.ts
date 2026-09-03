@@ -34,6 +34,8 @@ export interface CreateSaleData {
   discount: string;
   netAmount: string;
   notes?: string | null;
+  termsAndConditions?: string | null;
+  termsAndConditionsAr?: string | null;
   paymentMethod?: PaymentMethod | null;
   items: CreateSaleItemData[];
 }
@@ -45,6 +47,8 @@ export interface UpdateSaleData {
   discount?: string;
   netAmount?: string;
   notes?: string | null;
+  termsAndConditions?: string | null;
+  termsAndConditionsAr?: string | null;
   paymentMethod?: PaymentMethod | null;
   items?: CreateSaleItemData[];
 }
@@ -73,6 +77,8 @@ const saleSelect = {
   discount: true,
   netAmount: true,
   notes: true,
+  termsAndConditions: true,
+  termsAndConditionsAr: true,
   paidAmount: true,
   outstandingAmount: true,
   paymentStatus: true,
@@ -232,6 +238,8 @@ export const SalesRepository = {
         discount:     new Prisma.Decimal(data.discount),
         netAmount:    new Prisma.Decimal(data.netAmount),
         notes:        data.notes ?? null,
+        termsAndConditions: data.termsAndConditions ?? null,
+        termsAndConditionsAr: data.termsAndConditionsAr ?? null,
         paymentMethod: data.paymentMethod ?? null,
         items: {
           create: data.items.map(item => ({
@@ -262,6 +270,8 @@ export const SalesRepository = {
     if (data.discount)    updateData.discount = new Prisma.Decimal(data.discount);
     if (data.netAmount)   updateData.netAmount = new Prisma.Decimal(data.netAmount);
     if (data.notes !== undefined) updateData.notes = data.notes ?? null;
+    if (data.termsAndConditions !== undefined) updateData.termsAndConditions = data.termsAndConditions ?? null;
+    if (data.termsAndConditionsAr !== undefined) updateData.termsAndConditionsAr = data.termsAndConditionsAr ?? null;
     
     if (data.items) {
       updateData.items = {

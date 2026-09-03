@@ -82,7 +82,7 @@ export const FinanceController = {
     try {
       const accountId = req.params.accountId as string;
       const page = parseInt(String(req.query['page'] ?? '1'), 10) || 1;
-      const limit = Math.min(100, parseInt(String(req.query['limit'] ?? '50'), 10) || 50);
+      const limit = Math.min(1000, parseInt(String(req.query['limit'] ?? '50'), 10) || 50);
       const data = await FinanceLedgerService.getLedger(accountId, {
         page, limit,
         dateFrom: req.query['dateFrom'] ? String(req.query['dateFrom']) : undefined,
@@ -160,8 +160,8 @@ export const FinanceController = {
 
   async listExpenses(req: Request, res: Response, next: NextFunction) {
     try {
-      const page = parseInt(String(req.query['page'] ?? '1'), 10) || 1;
-      const limit = parseInt(String(req.query['limit'] ?? '20'), 10) || 20;
+      const page = Math.max(1, parseInt(String(req.query['page'] ?? '1'), 10) || 1);
+      const limit = Math.min(1000, Math.max(1, parseInt(String(req.query['limit'] ?? '20'), 10) || 20));
       const data = await FinanceExpensesService.list({
         page, limit,
         categoryId: req.query['categoryId'] ? String(req.query['categoryId']) : undefined,

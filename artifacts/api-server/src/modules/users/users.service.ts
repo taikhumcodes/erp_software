@@ -15,12 +15,30 @@ const ROLE_RANK: Record<string, number> = {
 
 const VALID_ROLES: UserRole[] = ['OWNER', 'ADMIN', 'MANAGER', 'SALES', 'WAREHOUSE'];
 
+// ─── Actor context (passed from controller via req.user) ──────────────────────
+
+export interface ActorContext {
+  id: string;
+  role: string;
+  email?: string;
+  /** Client IP address, if available — used for audit logging only. */
+  ip?: string;
+}
+
+/**
+ * Checks if the actor is the Super Admin / Developer (admin@albunyan.com)
+ */
+export function isSuperAdmin(actor: ActorContext): boolean {
+  return actor.email?.toLowerCase() === 'admin@albunyan.com';
+}
+
 function rankOf(role: string): number {
   return ROLE_RANK[role] ?? 0;
 }
 
-function canActOn(actorRole: string, targetRole: string): boolean {
-  return rankOf(actorRole) > rankOf(targetRole);
+function canActOn(actor: ActorContext, targetRole: string): boolean {
+  if (isSuperAdmin(actor)) return true;
+  return rankOf(actor.role) > rankOf(targetRole);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -49,15 +67,6 @@ function validatePassword(password: string): string | null {
 }
 
 const SALT_ROUNDS = 12;
-
-// ─── Actor context (passed from controller via req.user) ──────────────────────
-
-export interface ActorContext {
-  id: string;
-  role: string;
-  /** Client IP address, if available — used for audit logging only. */
-  ip?: string;
-}
 
 // ─── Service ──────────────────────────────────────────────────────────────────
 
@@ -123,8 +132,8 @@ export const UsersService = {
       throw new ValidationError('Validation failed', { errors: fieldErrors });
     }
 
-    // ── Role hierarchy: only higher-ranked actor can create a user ─────────────
-    if (!(canActOn(actor.role, role!) || (actor.role === 'OWNER' && role === 'OWNER'))) {
+    // ── Role hierarchy: only higher-ranked actor (or super admin) can create a user ─────────────
+    if (!isSuperAdmin(actor) && !(canActOn(actor, role!) || (actor.role === 'OWNER' && role === 'OWNER'))) {
       if (role === 'OWNER') {
         throw new ForbiddenError('Only an OWNER can create another OWNER account');
       }
@@ -165,9 +174,9 @@ export const UsersService = {
     if (!target) throw new NotFoundError('User');
 
     // ── Role-hierarchy checks ──────────────────────────────────────────────────
-    // Actor must outrank target (unless editing themselves — restricted fields only)
-    if (actor.id !== id) {
-      if (!canActOn(actor.role, target.role)) {
+    // Actor must outrank target (unless editing themselves or super admin)
+    if (actor.id !== id && !isSuperAdmin(actor)) {
+      if (!canActOn(actor, target.role)) {
         throw new ForbiddenError('You do not have permission to edit this user');
       }
     }
@@ -206,8 +215,8 @@ export const UsersService = {
         if (actor.id === id && r !== target.role) {
           throw new ForbiddenError('You cannot change your own role');
         }
-        // Cannot assign a role equal to or above your own
-        if (!canActOn(actor.role, r) && actor.id !== id) {
+        // Cannot assign a role equal to or above your own (unless super admin)
+        if (!isSuperAdmin(actor) && !canActOn(actor, r) && actor.id !== id) {
           throw new ForbiddenError('You cannot assign a role equal to or above your own');
         }
         role = r;
@@ -274,8 +283,8 @@ export const UsersService = {
       throw new ForbiddenError('You cannot deactivate your own account');
     }
 
-    // Role-hierarchy check
-    if (!canActOn(actor.role, target.role)) {
+    // Role-hierarchy check (bypassed for super admin)
+    if (!isSuperAdmin(actor) && !canActOn(actor, target.role)) {
       throw new ForbiddenError('You do not have permission to change this user\'s status');
     }
 
@@ -311,8 +320,7 @@ export const UsersService = {
 
   // ── Reset password (PATCH /:id/password) ────────────────────────────────────
   async resetPassword(actor: ActorContext, id: string, body: Record<string, unknown>) {
-    // TASK 7: Block self-reset through the admin endpoint.
-    // Users must use a dedicated "change my password" flow (requiring the old password).
+    // Block self-reset through the admin endpoint.
     if (actor.id === id) {
       throw new ForbiddenError('You cannot reset your own password through this endpoint');
     }
@@ -320,8 +328,8 @@ export const UsersService = {
     const target = await UsersRepository.findById(id);
     if (!target) throw new NotFoundError('User');
 
-    // Actor must outrank target
-    if (!canActOn(actor.role, target.role)) {
+    // Actor must outrank target (bypassed for super admin)
+    if (!isSuperAdmin(actor) && !canActOn(actor, target.role)) {
       throw new ForbiddenError('You do not have permission to reset this user\'s password');
     }
 
@@ -361,13 +369,13 @@ export const UsersService = {
     const target = await UsersRepository.findById(id);
     if (!target) throw new NotFoundError('User');
 
-    // Role-hierarchy check
-    if (!canActOn(actor.role, target.role)) {
+    // Role-hierarchy check (bypassed for super admin)
+    if (!isSuperAdmin(actor) && !canActOn(actor, target.role)) {
       throw new ForbiddenError('You do not have permission to delete this user');
     }
 
-    // Owner protection — OWNER accounts cannot be deleted
-    if (target.role === 'OWNER') {
+    // Owner protection — OWNER accounts cannot be deleted (unless super admin)
+    if (target.role === 'OWNER' && !isSuperAdmin(actor)) {
       throw new ForbiddenError(
         'OWNER accounts cannot be deleted. Deactivate the account instead.',
       );

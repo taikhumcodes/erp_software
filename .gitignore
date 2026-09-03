@@ -52,3 +52,7 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Backups
+artifacts/api-server/backups/*.json
+

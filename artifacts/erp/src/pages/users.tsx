@@ -147,12 +147,13 @@ function StatCard({
 // ─── Create / Edit dialog ─────────────────────────────────────────────────────
 
 function UserDialog({
-  open, onOpenChange, user, currentUserRole, onSuccess,
+  open, onOpenChange, user, currentUserRole, isSuperAdmin, onSuccess,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   user?: User | null;
   currentUserRole: UserRole;
+  isSuperAdmin?: boolean;
   onSuccess: () => void;
 }) {
   const { t } = useTranslation();
@@ -186,10 +187,9 @@ function UserDialog({
     return true;
   };
 
-  // Roles the current actor can assign (must outrank the target role)
+  // Roles the current actor can assign (super admin can assign any role)
   const assignableRoles = ALL_ROLES.filter(r =>
-    // Same as canActOn but ≥ for self-editing same role
-    ROLE_RANK[currentUserRole] >= ROLE_RANK[r],
+    isSuperAdmin || ROLE_RANK[currentUserRole] >= ROLE_RANK[r],
   );
 
   const createMutation = useMutation({
@@ -487,6 +487,7 @@ export default function UsersPage() {
 
   // Current authenticated user (for permission checks)
   const { data: currentUser } = useGetCurrentUser();
+  const isSuperAdmin = currentUser?.email?.toLowerCase() === 'admin@albunyan.com';
   const meRole = (currentUser?.role ?? 'WAREHOUSE') as UserRole;
   const meId   = currentUser?.id ?? '';
 
@@ -572,16 +573,13 @@ export default function UsersPage() {
   const list  = usersQuery.data;
 
   // ── Permission helpers ──────────────────────────────────────────────────────
-  const canCreate  = ROLE_RANK[meRole] >= ROLE_RANK['MANAGER'];
-  const canEdit    = (u: User) => meId !== u.id
-    ? canActOn(meRole, u.role)
-    : true;                              // can always edit own name/nameAr
-  const canStatus  = (u: User) => meId !== u.id && canActOn(meRole, u.role);
+  const canCreate  = isSuperAdmin || ROLE_RANK[meRole] >= ROLE_RANK['MANAGER'];
+  const canEdit    = (u: User) => isSuperAdmin || (meId !== u.id ? canActOn(meRole, u.role) : true);
+  const canStatus  = (u: User) => meId !== u.id && (isSuperAdmin || canActOn(meRole, u.role));
   const canReset   = (u: User) =>
-    meId !== u.id && ROLE_RANK[meRole] >= ROLE_RANK['MANAGER'] && canActOn(meRole, u.role);
+    meId !== u.id && (isSuperAdmin || (ROLE_RANK[meRole] >= ROLE_RANK['MANAGER'] && canActOn(meRole, u.role)));
   const canDelete  = (u: User) =>
-    meId !== u.id && u.role !== 'OWNER' && canActOn(meRole, u.role) &&
-    ROLE_RANK[meRole] >= ROLE_RANK['ADMIN'];
+    meId !== u.id && (isSuperAdmin ? true : (u.role !== 'OWNER' && canActOn(meRole, u.role) && ROLE_RANK[meRole] >= ROLE_RANK['ADMIN']));
 
   function formatDate(iso: string | null): string {
     if (!iso) return t('user_never_logged_in');
@@ -860,6 +858,7 @@ export default function UsersPage() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         currentUserRole={meRole}
+        isSuperAdmin={isSuperAdmin}
         onSuccess={invalidate}
       />
 
@@ -868,6 +867,7 @@ export default function UsersPage() {
         onOpenChange={open => !open && setEditTarget(null)}
         user={editTarget}
         currentUserRole={meRole}
+        isSuperAdmin={isSuperAdmin}
         onSuccess={invalidate}
       />
 

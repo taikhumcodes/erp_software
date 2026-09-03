@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Eye, Download, Printer, Banknote, Trash } from 'lucide-react';
+import { Plus, Search, Eye, Download, Printer, Banknote, Trash, FileText } from 'lucide-react';
 
 import { api } from '@/lib/api';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PaymentForm } from './PaymentForm';
 import { PaymentDetails } from './PaymentDetails';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { OutstandingInvoiceModal } from '@/components/common/OutstandingInvoiceModal';
 import { useToast } from '@/hooks/use-toast';
 
 export function PaymentsList() {
@@ -34,6 +35,7 @@ export function PaymentsList() {
   const [sortOrder, setSortOrder] = useState<string>('desc');
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isOutstandingModalOpen, setIsOutstandingModalOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
 
@@ -112,9 +114,20 @@ export function PaymentsList() {
             Manage customer receipts and supplier payments
           </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)} className="w-full sm:w-auto shadow-md">
-          <Plus className="mr-2 h-4 w-4" /> {t('payment_add')}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={() => setIsOutstandingModalOpen(true)}
+            className="flex items-center gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
+          >
+            <FileText className="mr-2 h-4 w-4 text-primary" />
+            {t('outstanding_invoices', 'Outstanding Invoices')}
+          </Button>
+
+          <Button onClick={() => setIsFormOpen(true)} className="shadow-md">
+            <Plus className="mr-2 h-4 w-4" /> {t('payment_add')}
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -386,6 +399,11 @@ export function PaymentsList() {
         loading={deleteMutation.isPending}
         onConfirm={() => deletePaymentId && deleteMutation.mutate(deletePaymentId)}
         onCancel={() => setDeletePaymentId(null)}
+      />
+
+      <OutstandingInvoiceModal
+        open={isOutstandingModalOpen}
+        onClose={() => setIsOutstandingModalOpen(false)}
       />
     </div>
   );

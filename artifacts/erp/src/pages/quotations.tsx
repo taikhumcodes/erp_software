@@ -78,6 +78,7 @@ interface QuotationForm {
   address: string;
   country: string;
   creditLimit: string;
+  creditLimitDays: string;
   discount: string;
   roundOff: string;
   notes: string;
@@ -116,6 +117,7 @@ const emptyForm = (): QuotationForm => ({
   address: '',
   country: '',
   creditLimit: '0',
+  creditLimitDays: '',
   discount: '0.000',
   roundOff: '0.000',
   notes: '',
@@ -367,6 +369,7 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
         address: p.address ?? '',
         country: p.country ?? '',
         creditLimit: p.creditLimit ?? '0',
+        creditLimitDays: p.creditLimitDays ? String(p.creditLimitDays) : '',
         discount: p.discount,
         roundOff: p.roundOff,
         notes: p.notes ?? '',
@@ -570,8 +573,25 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
                   </div>
                   <div className="space-y-1">
                     <Label>Credit Limit (KWD)</Label>
-                    <Input type="number" step="0.001" value={form.creditLimit} onChange={e => setForm(prev => ({ ...prev, creditLimit: e.target.value }))} disabled={isPending} placeholder="0.000" />
+                    <Input type="number" step="0.001" value={form.creditLimit} onChange={e => {
+                      const val = e.target.value;
+                      setForm(prev => ({ ...prev, creditLimit: val, creditLimitDays: Number(val) > 0 ? prev.creditLimitDays : '' }));
+                    }} disabled={isPending} placeholder="0.000" />
                   </div>
+                  {Number(form.creditLimit) > 0 && (
+                    <div className="space-y-1">
+                      <Label>Credit Limit (Days) <span className="text-muted-foreground text-xs">(How many days)</span></Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={form.creditLimitDays}
+                        onChange={e => setForm(prev => ({ ...prev, creditLimitDays: e.target.value }))}
+                        disabled={isPending}
+                        placeholder="e.g. 30"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Extra Optional Fields */}

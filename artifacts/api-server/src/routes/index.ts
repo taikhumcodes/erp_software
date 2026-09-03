@@ -16,6 +16,9 @@ import settingsRouter from "../modules/settings/settings.routes.js";
 import dashboardRouter from "../modules/dashboard/dashboard.routes.js";
 import financeRouter from "../modules/finance/finance.routes.js";
 import quotationsRouter from "../modules/quotations/quotations.routes.js";
+import backupRouter from "../modules/backup/backup.routes.js";
+import analyticsRouter from "../modules/analytics/analytics.routes.js";
+import reportsRouter from "../modules/reports/reports.routes.js";
 
 const router: IRouter = Router();
 
@@ -61,6 +64,15 @@ router.use("/dashboard", dashboardRouter);
 
 // Finance Module — /api/finance
 router.use("/finance", financeRouter);
+
+// System Backup & Restore (admin@albunyan.com only) — /api/backup
+router.use("/backup", backupRouter);
+
+// Page Visits & Evolix Click Analytics — /api/analytics
+router.use("/analytics", analyticsRouter);
+
+// Enterprise Reporting Engine & Custom Report Builder — /api/reports
+router.use("/reports", reportsRouter);
 
 export default router;
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Printer, Download, Truck, Check, CheckCircle, XCircle, MoreHorizontal, Loader2, Play } from 'lucide-react';
+import { ArrowLeft, Printer, Download, Truck, Check, CheckCircle, XCircle, MoreHorizontal, Loader2, Play, Pencil } from 'lucide-react';
 
 import { api } from '@/lib/api';
 import type { DeliveryOrder, DeliveryOrderStatus } from '@/lib/types';
@@ -24,9 +24,10 @@ const STATUS_COLORS: Record<DeliveryOrderStatus, string> = {
 interface DeliveryOrderDetailsProps {
   id: string;
   onBack: () => void;
+  onEdit?: (id: string) => void;
 }
 
-export function DeliveryOrderDetails({ id, onBack }: DeliveryOrderDetailsProps) {
+export function DeliveryOrderDetails({ id, onBack, onEdit }: DeliveryOrderDetailsProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -125,6 +126,13 @@ export function DeliveryOrderDetails({ id, onBack }: DeliveryOrderDetailsProps) 
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {deliveryOrder.status === 'DRAFT' && onEdit && (
+            <Button variant="default" onClick={() => onEdit(deliveryOrder.id)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              {t('do_edit') || 'Edit'}
+            </Button>
+          )}
 
           <Button variant="outline" onClick={() => window.open(`/documents/delivery-order/${deliveryOrder.id}?print=true`, '_blank')}>
             <Printer className="mr-2 h-4 w-4" />

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Plus, Search, Receipt, Trash2, CalendarDays, Edit2 } from 'lucide-react';
+import { Plus, Search, Receipt, Trash2, CalendarDays, Edit2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 export default function Expenses() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,6 +21,8 @@ export default function Expenses() {
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -37,17 +39,22 @@ export default function Expenses() {
   });
 
   const { data: expensesData, isLoading } = useQuery({ 
-    queryKey: ['finance-expenses', { categoryId: categoryFilter, sortBy, sortOrder }], 
+    queryKey: ['finance-expenses', { categoryId: categoryFilter, sortBy, sortOrder, page, pageSize }], 
     queryFn: () => {
       const params = new URLSearchParams();
       if (categoryFilter !== 'ALL') params.append('categoryId', categoryFilter);
       params.append('sortBy', sortBy);
       params.append('sortOrder', sortOrder);
-      params.append('limit', '1000');
+      params.append('page', String(page));
+      params.append('limit', String(pageSize));
       return FinanceAPI.getExpenses(params.toString());
     } 
   });
   const expenses: Expense[] = expensesData?.items || [];
+  const totalEntries: number = expensesData?.meta?.total ?? expenses.length;
+  const totalPages: number = Math.max(1, expensesData?.meta?.pages ?? Math.ceil(totalEntries / pageSize));
+  const currentPage: number = expensesData?.meta?.page ?? page;
+
   const { data: categoriesData } = useQuery({ queryKey: ['finance-expense-categories'], queryFn: () => FinanceAPI.getExpenseCategories() });
   const categories: ExpenseCategory[] = categoriesData?.data || [];
 
@@ -89,6 +96,18 @@ export default function Expenses() {
             <SelectItem value="amount-asc">Amount (Low to High)</SelectItem>
           </SelectContent>
         </Select>
+
+        <Select value={String(pageSize)} onValueChange={(val) => { setPageSize(Number(val)); setPage(1); }}>
+          <SelectTrigger className="w-full sm:w-[150px] bg-background"><SelectValue placeholder="Per Page" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="25">25 per page</SelectItem>
+            <SelectItem value="50">50 per page</SelectItem>
+            <SelectItem value="100">100 per page</SelectItem>
+            <SelectItem value="250">250 per page</SelectItem>
+            <SelectItem value="500">500 per page</SelectItem>
+            <SelectItem value="1000">Show All (1000)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <Card>
@@ -108,7 +127,7 @@ export default function Expenses() {
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No expenses found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No expenses found</TableCell></TableRow>
               ) : (
                 filtered.map((e) => (
                   <TableRow key={e.id}>
@@ -145,7 +164,7 @@ export default function Expenses() {
             </TableBody>
             {filtered.length > 0 && (
               <TableRow className="bg-muted/50 font-bold">
-                <TableCell colSpan={5} className="text-right">Total Amount:</TableCell>
+                <TableCell colSpan={5} className="text-right">Page Total Amount:</TableCell>
                 <TableCell className="text-right text-red-600">
                   {filtered.reduce((sum, e) => sum + Number(e.amount), 0).toLocaleString('en-KW', { minimumFractionDigits: 3 })} KWD
                 </TableCell>
@@ -153,6 +172,97 @@ export default function Expenses() {
               </TableRow>
             )}
           </Table>
+
+          {/* Pagination Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t bg-muted/20">
+            <div className="flex items-center gap-3">
+              <div className="text-xs text-muted-foreground">
+                Showing <span className="font-semibold text-foreground">{totalEntries === 0 ? 0 : (currentPage - 1) * pageSize + 1}</span> to{' '}
+                <span className="font-semibold text-foreground">{Math.min(currentPage * pageSize, totalEntries)}</span> of{' '}
+                <span className="font-semibold text-foreground">{totalEntries}</span> expenses
+              </div>
+              {pageSize < 1000 && totalEntries > pageSize && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-7 text-xs" 
+                  onClick={() => { setPageSize(1000); setPage(1); }}
+                >
+                  Show More / All ({totalEntries})
+                </Button>
+              )}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setPage(1)}
+                  disabled={currentPage <= 1}
+                  title="First Page"
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                  title="Previous Page"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                {/* Page numbers */}
+                <div className="flex items-center gap-1 px-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+                    .map((p, idx, arr) => {
+                      const showEllipsis = idx > 0 && p - arr[idx - 1] > 1;
+                      return (
+                        <div key={p} className="flex items-center gap-1">
+                          {showEllipsis && <span className="text-xs text-muted-foreground px-1">...</span>}
+                          <Button
+                            variant={p === currentPage ? 'default' : 'outline'}
+                            size="sm"
+                            className={`h-8 min-w-[32px] px-2 text-xs font-semibold ${
+                              p === currentPage ? 'shadow-sm pointer-events-none' : 'hover:bg-muted'
+                            }`}
+                            onClick={() => setPage(p)}
+                          >
+                            {p}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                  title="Next Page"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setPage(totalPages)}
+                  disabled={currentPage >= totalPages}
+                  title="Last Page"
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

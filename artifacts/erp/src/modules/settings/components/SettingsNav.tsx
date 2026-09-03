@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useGetCurrentUser } from '@workspace/api-client-react';
 import { 
   Building2, 
   Palette, 
@@ -10,7 +11,8 @@ import {
   Users, 
   Bell, 
   DatabaseBackup, 
-  Settings 
+  Settings,
+  Activity
 } from 'lucide-react';
 import type { SettingsSection } from '../types';
 
@@ -30,7 +32,8 @@ const navItems: NavItem[] = [
   { id: 'language', icon: Globe, labelKey: 'language_region' },
   { id: 'users', icon: Users, labelKey: 'users_permissions', disabled: true },
   { id: 'notifications', icon: Bell, labelKey: 'notifications', disabled: true },
-  { id: 'backup', icon: DatabaseBackup, labelKey: 'backup_restore', disabled: true },
+  { id: 'backup', icon: DatabaseBackup, labelKey: 'backup_restore', disabled: false },
+  { id: 'page-visits', icon: Activity, labelKey: 'page_visits', disabled: false },
   { id: 'system', icon: Settings, labelKey: 'system_preferences' },
 ];
 
@@ -44,10 +47,18 @@ export const SettingsNav: React.FC<SettingsNavProps> = ({
   onSectionChange 
 }) => {
   const { t } = useTranslation();
+  const { data: user } = useGetCurrentUser();
+  const isSuperAdmin = user?.email === 'admin@albunyan.com';
+
+  const visibleItems = navItems.filter(item => {
+    // Only visible if logged in as admin@albunyan.com
+    if (item.id === 'backup' || item.id === 'page-visits') return isSuperAdmin;
+    return true;
+  });
 
   return (
     <nav className="flex flex-col space-y-1">
-      {navItems.map((item) => {
+      {visibleItems.map((item) => {
         const Icon = item.icon;
         const isActive = activeSection === item.id;
         

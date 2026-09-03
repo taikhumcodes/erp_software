@@ -296,6 +296,7 @@ export type SettingsSection =
   | 'users'
   | 'notifications'
   | 'backup'
+  | 'page-visits'
   | 'system';
 
 export type DocumentSettingsTab =

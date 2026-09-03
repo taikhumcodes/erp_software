@@ -44,6 +44,7 @@ export interface CreateQuotationData {
   roundOff: number | string;
   grandTotal: number | string;
   creditLimit?: number | string | null;
+  creditLimitDays?: number | null;
   notes?: string | null;
   termsAndConditions?: string | null;
   contactPerson?: string | null;
@@ -71,6 +72,7 @@ export interface UpdateQuotationData {
   roundOff?: number | string;
   grandTotal?: number | string;
   creditLimit?: number | string | null;
+  creditLimitDays?: number | null;
   notes?: string | null;
   termsAndConditions?: string | null;
   contactPerson?: string | null;
@@ -114,6 +116,7 @@ const quotationSelect = {
   roundOff: true,
   grandTotal: true,
   creditLimit: true,
+  creditLimitDays: true,
   notes: true,
   termsAndConditions: true,
   contactPerson: true,
@@ -182,6 +185,7 @@ const quotationListSelect = {
   validityDate: true,
   grandTotal: true,
   creditLimit: true,
+  creditLimitDays: true,
   convertedToSaleId: true,
   createdAt: true,
   updatedAt: true,
@@ -277,6 +281,7 @@ export const QuotationsRepository = {
         roundOff:          new Prisma.Decimal(data.roundOff),
         grandTotal:        new Prisma.Decimal(data.grandTotal),
         creditLimit:       new Prisma.Decimal(data.creditLimit || '0'),
+        creditLimitDays:   data.creditLimitDays ?? null,
         notes:             data.notes ?? null,
         termsAndConditions: data.termsAndConditions ?? null,
         contactPerson:     data.contactPerson ?? null,
@@ -320,6 +325,7 @@ export const QuotationsRepository = {
     if (data.roundOff !== undefined) updateData.roundOff = new Prisma.Decimal(data.roundOff);
     if (data.grandTotal !== undefined)   updateData.grandTotal = new Prisma.Decimal(data.grandTotal);
     if (data.creditLimit !== undefined) updateData.creditLimit = new Prisma.Decimal(data.creditLimit || '0');
+    if (data.creditLimitDays !== undefined) updateData.creditLimitDays = data.creditLimitDays;
     if (data.notes !== undefined) updateData.notes = data.notes ?? null;
     if (data.termsAndConditions !== undefined) updateData.termsAndConditions = data.termsAndConditions ?? null;
     if (data.contactPerson !== undefined) updateData.contactPerson = data.contactPerson ?? null;
@@ -412,6 +418,7 @@ function serializeQuotation(row: RawQuotation) {
     roundOff: row.roundOff.toFixed(3),
     grandTotal: row.grandTotal.toFixed(3),
     creditLimit: row.creditLimit ? row.creditLimit.toFixed(3) : null,
+    creditLimitDays: row.creditLimitDays,
     quotationDate: row.quotationDate.toISOString(),
     validityDate: row.validityDate?.toISOString() ?? null,
     convertedAt: row.convertedAt?.toISOString() ?? null,
@@ -434,6 +441,7 @@ function serializeQuotationList(row: RawQuotationList) {
     ...rest,
     grandTotal: rest.grandTotal.toFixed(3),
     creditLimit: rest.creditLimit ? rest.creditLimit.toFixed(3) : null,
+    creditLimitDays: rest.creditLimitDays,
     quotationDate: rest.quotationDate.toISOString(),
     validityDate: rest.validityDate?.toISOString() ?? null,
     createdAt: rest.createdAt.toISOString(),

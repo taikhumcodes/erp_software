@@ -44,6 +44,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { OutstandingInvoiceModal } from '@/components/common/OutstandingInvoiceModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,9 @@ interface SaleItemForm {
   unitPrice: string;
 }
 
+const DEFAULT_SALE_TERMS_EN = 'Goods sold can be exchanged or returned within 15 days from the date of purchase if the goods are in same condition as the time of purchase';
+const DEFAULT_SALE_TERMS_AR = 'يمكن استبدال أو إرجاع السلع المباعة خلال 15 يوما من تاريخ الشراء، شريطة أن تكون السلع بحالتها الأصلية وقت الشراء';
+
 interface SaleForm {
   deliveryOrderId: string;
   customerId: string;
@@ -61,6 +65,8 @@ interface SaleForm {
   status: 'DRAFT' | 'CONFIRMED';
   discount: string;
   notes: string;
+  termsAndConditions: string;
+  termsAndConditionsAr: string;
   paymentMethod: string;
   items: SaleItemForm[];
 }
@@ -84,6 +90,8 @@ const emptyForm = (): SaleForm => ({
   status: 'DRAFT',
   discount: '0.000',
   notes: '',
+  termsAndConditions: DEFAULT_SALE_TERMS_EN,
+  termsAndConditionsAr: DEFAULT_SALE_TERMS_AR,
   paymentMethod: '',
   items: [emptyItem()],
 });
@@ -406,6 +414,12 @@ function SaleFormDialog({
   const [quickCustomerOpen, setQuickCustomerOpen] = useState(false);
   const queryClient = useQueryClient();
 
+  const { handleArabicChange: handleTermsArChange, resetTranslationState: resetTermsTranslation } = useAutoTranslate(
+    form.termsAndConditions || '',
+    form.termsAndConditionsAr || '',
+    (val: string) => setForm((prev: any) => ({ ...prev, termsAndConditionsAr: val }))
+  );
+
   const customersQuery = useQuery({ queryKey: ['customers-list'], queryFn: fetchCustomers, enabled: open });
   const productsQuery  = useQuery({ queryKey: ['products-list'], queryFn: fetchProducts, enabled: open });
   const saleQuery      = useQuery({ queryKey: ['sale', saleId], queryFn: () => fetchSale(saleId!), enabled: isEdit && open });
@@ -422,6 +436,8 @@ function SaleFormDialog({
         status: p.status === 'DRAFT' ? 'DRAFT' : 'CONFIRMED',
         discount: p.discount,
         notes: p.notes ?? '',
+        termsAndConditions: p.termsAndConditions ?? DEFAULT_SALE_TERMS_EN,
+        termsAndConditionsAr: p.termsAndConditionsAr ?? DEFAULT_SALE_TERMS_AR,
         paymentMethod: p.paymentMethod ?? '',
         items: p.items.map((item: any) => ({
           key: nextKey(),
@@ -430,8 +446,10 @@ function SaleFormDialog({
           unitPrice: item.unitPrice,
         })),
       });
+      resetTermsTranslation();
     } else if (!isEdit) {
       setForm(emptyForm());
+      resetTermsTranslation();
     }
     setErrors({});
   }, [open, isEdit, saleQuery.data]);
@@ -538,6 +556,8 @@ function SaleFormDialog({
       status: form.status,
       discount: form.discount,
       notes: form.notes || undefined,
+      termsAndConditions: form.termsAndConditions || undefined,
+      termsAndConditionsAr: form.termsAndConditionsAr || undefined,
       paymentMethod: form.paymentMethod || undefined,
       items: form.items.filter((it: any) => it.productId).map((it: any) => ({ productId: it.productId, quantity: it.quantity, unitPrice: it.unitPrice })),
     };
@@ -697,6 +717,32 @@ function SaleFormDialog({
               <Textarea id="p-notes" value={form.notes} onChange={e => setForm((prev: any) => ({ ...prev, notes: e.target.value }))} rows={2} disabled={isPending} />
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="p-terms">{t('terms_and_conditions') || 'Terms & Conditions (English)'}</Label>
+                <Textarea
+                  id="p-terms"
+                  value={form.termsAndConditions}
+                  onChange={e => setForm((prev: any) => ({ ...prev, termsAndConditions: e.target.value }))}
+                  rows={3}
+                  disabled={isPending}
+                  placeholder="Terms & Conditions in English..."
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="p-terms-ar">الشروط والأحكام (العربية) (Auto-translated)</Label>
+                <Textarea
+                  id="p-terms-ar"
+                  dir="rtl"
+                  value={form.termsAndConditionsAr}
+                  onChange={e => handleTermsArChange(e.target.value)}
+                  rows={3}
+                  disabled={isPending}
+                  placeholder="الشروط والأحكام بالعربية..."
+                />
+              </div>
+            </div>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>{t('cancel')}</Button>
               <Button type="submit" disabled={isPending}>{isPending ? t('saving') : isEdit ? t('save_changes') : t('create')}</Button>
@@ -744,6 +790,8 @@ export default function SalesPage() {
   const [viewTargetId,    setViewTargetId]    = useState<string | null>(null);
   const [deleteTarget,    setDeleteTarget]    = useState<SaleListItem | null>(null);
   const [statusTarget,    setStatusTarget]    = useState<{ id: string; newStatus: SaleStatus } | null>(null);
+  const [outstandingModalOpen, setOutstandingModalOpen] = useState(false);
+  const [outstandingModalCustomerId, setOutstandingModalCustomerId] = useState<string | undefined>(undefined);
 
   // ── Build query string ──────────────────────────────────────────────────────
   const qs = new URLSearchParams({
@@ -812,10 +860,24 @@ export default function SalesPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t('sales')}</h1>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="me-2 h-4 w-4" />
-          {t('add_sale')}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setOutstandingModalCustomerId(undefined);
+              setOutstandingModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
+          >
+            <FileText className="h-4 w-4 text-primary" />
+            {t('outstanding_invoices', 'Outstanding Invoices')}
+          </Button>
+
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="me-2 h-4 w-4" />
+            {t('add_sale')}
+          </Button>
+        </div>
       </div>
 
       {/* Statistics */}
@@ -1028,6 +1090,14 @@ export default function SalesPage() {
                               {t('print')}
                             </DropdownMenuItem>
 
+                            <DropdownMenuItem onClick={() => {
+                              setOutstandingModalCustomerId(sale.customerId);
+                              setOutstandingModalOpen(true);
+                            }}>
+                              <FileText className="mr-2 h-4 w-4 text-primary" />
+                              {t('customer_outstanding_reminder', 'Outstanding Statement')}
+                            </DropdownMenuItem>
+
                             <DropdownMenuSeparator />
 
                             {sale.status !== 'CANCELLED' && (
@@ -1141,6 +1211,13 @@ export default function SalesPage() {
         onConfirm={() => statusMutation.mutate()}
         onCancel={() => setStatusTarget(null)}
         loading={statusMutation.isPending}
+      />
+
+      {/* Customer Outstanding Invoice Modal */}
+      <OutstandingInvoiceModal
+        open={outstandingModalOpen}
+        onClose={() => setOutstandingModalOpen(false)}
+        initialCustomerId={outstandingModalCustomerId}
       />
     </div>
   );

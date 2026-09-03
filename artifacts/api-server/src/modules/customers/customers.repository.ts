@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma.js';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 export interface CustomerRow {
   id: string;

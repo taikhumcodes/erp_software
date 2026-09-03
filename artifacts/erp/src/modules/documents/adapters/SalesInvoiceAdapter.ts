@@ -120,6 +120,10 @@ export function adaptSalesInvoice(apiData: any): Omit<DocumentData, 'company'> {
 
     qrData,
 
+    terms: apiData.termsAndConditions || undefined,
+    termsAr: apiData.termsAndConditionsAr || undefined,
+    notes: apiData.notes || undefined,
+
     // Legacy compat
     infoFields: leftInfoFields,
   };

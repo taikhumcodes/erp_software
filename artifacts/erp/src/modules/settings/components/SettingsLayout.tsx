@@ -14,6 +14,8 @@ import { NumberingPage } from '../pages/NumberingPage';
 import { CurrencyPage } from '../pages/CurrencyPage';
 import { LanguageRegionPage } from '../pages/LanguageRegionPage';
 import { SystemPreferencesPage } from '../pages/SystemPreferencesPage';
+import { BackupRestorePage } from '../pages/BackupRestorePage';
+import { PageVisitsPage } from '../pages/PageVisitsPage';
 import type { SettingsSection } from '../types';
 
 const sectionComponents: Record<SettingsSection, React.ComponentType | null> = {
@@ -25,7 +27,8 @@ const sectionComponents: Record<SettingsSection, React.ComponentType | null> = {
   language: LanguageRegionPage,
   users: null, // Links to /users page
   notifications: null, // Future
-  backup: null, // Future
+  backup: BackupRestorePage,
+  'page-visits': PageVisitsPage,
   system: SystemPreferencesPage,
 };
 

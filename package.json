@@ -5,7 +5,11 @@
   "scripts": {
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "backend": "pnpm --filter @workspace/api-server run start:local",
+    "frontend": "pnpm --filter @workspace/erp run dev",
+    "backup": "pnpm --filter @workspace/api-server run backup",
+    "restore": "pnpm --filter @workspace/api-server run restore"
   },
   "private": true,
   "dependencies": {

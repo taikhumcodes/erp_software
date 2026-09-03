@@ -457,6 +457,8 @@ model Sale {
   paymentStatus     PaymentStatus @default(UNPAID) @map("payment_status")
   paymentMethod     PaymentMethod? @map("payment_method")
   notes             String?
+  termsAndConditions   String?  @map("terms_and_conditions") @db.Text
+  termsAndConditionsAr String?  @map("terms_and_conditions_ar") @db.Text
   // Customer PO Number — single source of truth for corporate customer reference
   customerPONumber  String?       @map("customer_po_number")
   internalSONumber  String        @unique @map("internal_so_number") // e.g. SO-2026-0001
@@ -970,6 +972,7 @@ model Quotation {
   roundOff          Decimal         @default(0) @map("round_off") @db.Decimal(15, 3)
   grandTotal        Decimal         @map("grand_total") @db.Decimal(15, 3)
   creditLimit       Decimal         @default(0) @map("credit_limit") @db.Decimal(15, 3)
+  creditLimitDays   Int?            @map("credit_limit_days")
 
   notes              String?  @db.Text
   termsAndConditions String?  @map("terms_and_conditions") @db.Text
@@ -1038,3 +1041,68 @@ model QuotationHistory {
 
   @@map("quotation_history")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page Visit / Evolix Lead Tracking
+// ─────────────────────────────────────────────────────────────────────────────
+
+model PageVisitLog {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now()) @map("created_at")
+  source     String   // "SIDEBAR" | "LOGIN_PAGE"
+  targetUrl  String   @default("https://evolix-studio.in/contact") @map("target_url")
+  userId     String?  @map("user_id")
+  userName   String?  @map("user_name")
+  userEmail  String?  @map("user_email")
+  userRole   String?  @map("user_role")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  browser    String?
+  os         String?
+  device     String?
+  referrer   String?
+
+  @@index([createdAt])
+  @@index([source])
+  @@map("page_visit_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enterprise Reports & Custom Saved Reports
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SavedReport {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  category    String   // "SALES" | "PURCHASES" | "INVENTORY" | "CUSTOM" | etc.
+  dataSource  String   @map("data_source")
+  config      Json     // columns, filters, groupings, sorting, aggregations, chartType
+  isShared    Boolean  @default(false) @map("is_shared")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([createdById])
+  @@index([isShared])
+  @@index([category])
+  @@map("saved_reports")
+}
+
+model ReportExecutionLog {
+  id         String   @id @default(cuid())
+  reportType String   @map("report_type")
+  reportName String   @map("report_name")
+  userId     String   @map("user_id")
+  filters    Json?
+  durationMs Int      @map("duration_ms")
+  rowCount   Int      @map("row_count")
+  format     String   // "VIEW" | "CSV" | "EXCEL" | "PRINT"
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([reportType])
+  @@index([createdAt])
+  @@map("report_execution_logs")
+}
+

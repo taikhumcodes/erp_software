@@ -32,6 +32,7 @@ import {
   PiggyBank,
 } from 'lucide-react';
 import { useState } from 'react';
+import EvolixBadge from '@/components/common/EvolixBadge';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
@@ -246,6 +247,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </div>
           )})}
         </div>
+        <EvolixBadge source="SIDEBAR" />
       </aside>
 
       {/* Main Content */}

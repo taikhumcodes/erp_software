@@ -1,6 +1,6 @@
 import { customersRepository } from './customers.repository.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../errors/AppError.js';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { formatPhoneNumber, generateCustomerCode, getPhoneValidationError, normalizeUniqueValue } from './customers.utils.js';
 
 export class CustomersService {

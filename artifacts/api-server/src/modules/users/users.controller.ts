@@ -12,12 +12,13 @@ const VALID_ROLES: UserRole[] = ['OWNER', 'ADMIN', 'MANAGER', 'SALES', 'WAREHOUS
  * Also captures client IP for audit logging.
  */
 function getActor(req: Request): ActorContext {
-  const user = (req as Request & { user?: ActorContext }).user;
+  const user = (req as Request & { user?: any }).user;
   if (!user) throw new Error('No actor on request — authenticate middleware missing');
   return {
-    id:   user.id,
-    role: user.role,
-    ip:   req.ip ?? (req.socket?.remoteAddress ?? undefined),
+    id:    user.id,
+    role:  user.role,
+    email: user.email,
+    ip:    req.ip ?? (req.socket?.remoteAddress ?? undefined),
   };
 }
 

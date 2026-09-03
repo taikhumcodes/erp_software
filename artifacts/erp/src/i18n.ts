@@ -38,6 +38,7 @@ const en = {
     system: 'SYSTEM',
     users: 'Users',
     settings: 'Settings',
+    page_visits: 'Page Visit',
     coming_soon: 'Coming soon',
     feature_coming_soon: 'Available in a future update',
     login: 'Log in',
@@ -212,6 +213,8 @@ const en = {
     print: 'Print',
     // Sales
     add_sale: 'Add Sale',
+    outstanding_invoices: 'Outstanding Invoices',
+    customer_outstanding_reminder: 'Outstanding Statement',
     edit_sale: 'Edit Sale',
     view_sale: 'View Sale',
     confirm_sale: 'Confirm',
@@ -474,6 +477,7 @@ const ar = {
     system: 'النظام',
     users: 'المستخدمين',
     settings: 'الإعدادات',
+    page_visits: 'زيارات الصفحة',
     coming_soon: 'قريباً',
     feature_coming_soon: 'سيتوفر في تحديث قادم',
     login: 'تسجيل الدخول',
@@ -648,6 +652,8 @@ const ar = {
     print: 'طباعة',
     // Sales
     add_sale: 'إضافة بيع',
+    outstanding_invoices: 'الفواتير المستحقة',
+    customer_outstanding_reminder: 'كشف الفواتير المستحقة',
     edit_sale: 'تعديل البيع',
     view_sale: 'عرض البيع',
     confirm_sale: 'تأكيد',

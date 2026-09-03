@@ -1,8 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from './logger.js';
 
+import { ensureDbProxy } from './db-proxy.js';
+
 // Singleton pattern — avoids creating multiple connections during hot reloads.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+
+await ensureDbProxy();
 
 export const prisma: PrismaClient =
   globalForPrisma.prisma ??

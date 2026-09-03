@@ -240,6 +240,7 @@ export interface Quotation {
   roundOff: string;
   grandTotal: string;
   creditLimit: string | null;
+  creditLimitDays?: number | null;
   notes: string | null;
   termsAndConditions: string | null;
   contactPerson: string | null;
@@ -328,6 +329,8 @@ export interface Sale {
   discount: string;
   netAmount: string;
   notes: string | null;
+  termsAndConditions?: string | null;
+  termsAndConditionsAr?: string | null;
   paidAmount: string;
   outstandingAmount: string;
   paymentStatus: PaymentStatus;
@@ -342,6 +345,8 @@ export interface SaleListItem {
   number: string;
   internalSONumber: string;
   customerPONumber: string | null;
+  termsAndConditions?: string | null;
+  termsAndConditionsAr?: string | null;
   deliveryOrderId: string | null;
   deliveryOrder?: { number: string } | null;
   orderSource: OrderSource;

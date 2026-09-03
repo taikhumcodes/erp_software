@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma.js';
 import { FinanceAccountsRepository } from '../finance/finance-accounts.repository.js';
-
-const prisma = new PrismaClient();
 
 export class DashboardService {
   /**
