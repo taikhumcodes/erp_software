@@ -45,6 +45,7 @@ export interface CreateQuotationData {
   grandTotal: number | string;
   creditLimit?: number | string | null;
   creditLimitDays?: number | null;
+  paymentType?: string | null;
   notes?: string | null;
   termsAndConditions?: string | null;
   contactPerson?: string | null;
@@ -73,6 +74,7 @@ export interface UpdateQuotationData {
   grandTotal?: number | string;
   creditLimit?: number | string | null;
   creditLimitDays?: number | null;
+  paymentType?: string | null;
   notes?: string | null;
   termsAndConditions?: string | null;
   contactPerson?: string | null;
@@ -117,6 +119,7 @@ const quotationSelect = {
   grandTotal: true,
   creditLimit: true,
   creditLimitDays: true,
+  paymentType: true,
   notes: true,
   termsAndConditions: true,
   contactPerson: true,
@@ -186,6 +189,7 @@ const quotationListSelect = {
   grandTotal: true,
   creditLimit: true,
   creditLimitDays: true,
+  paymentType: true,
   convertedToSaleId: true,
   createdAt: true,
   updatedAt: true,
@@ -282,6 +286,7 @@ export const QuotationsRepository = {
         grandTotal:        new Prisma.Decimal(data.grandTotal),
         creditLimit:       new Prisma.Decimal(data.creditLimit || '0'),
         creditLimitDays:   data.creditLimitDays ?? null,
+        paymentType:       data.paymentType ?? null,
         notes:             data.notes ?? null,
         termsAndConditions: data.termsAndConditions ?? null,
         contactPerson:     data.contactPerson ?? null,
@@ -326,6 +331,7 @@ export const QuotationsRepository = {
     if (data.grandTotal !== undefined)   updateData.grandTotal = new Prisma.Decimal(data.grandTotal);
     if (data.creditLimit !== undefined) updateData.creditLimit = new Prisma.Decimal(data.creditLimit || '0');
     if (data.creditLimitDays !== undefined) updateData.creditLimitDays = data.creditLimitDays;
+    if (data.paymentType !== undefined) updateData.paymentType = data.paymentType ?? null;
     if (data.notes !== undefined) updateData.notes = data.notes ?? null;
     if (data.termsAndConditions !== undefined) updateData.termsAndConditions = data.termsAndConditions ?? null;
     if (data.contactPerson !== undefined) updateData.contactPerson = data.contactPerson ?? null;

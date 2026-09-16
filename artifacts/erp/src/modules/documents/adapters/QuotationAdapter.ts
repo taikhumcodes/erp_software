@@ -46,6 +46,14 @@ export class QuotationAdapter {
       { label: 'Credit Limit (KWD)', labelAr: 'الحد الائتماني', value: apiData.creditLimit ? fmtCurrency(apiData.creditLimit) : '0.000' }
     );
 
+    if (apiData.paymentType) {
+      leftInfoFields.push({
+        label: 'Type of Payment',
+        labelAr: 'نوع الدفع',
+        value: apiData.paymentType,
+      });
+    }
+
     if (apiData.creditLimitDays) {
       leftInfoFields.push({
         label: 'Credit Limit (Days)',

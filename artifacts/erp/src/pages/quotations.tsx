@@ -79,6 +79,7 @@ interface QuotationForm {
   country: string;
   creditLimit: string;
   creditLimitDays: string;
+  paymentType: string;
   discount: string;
   roundOff: string;
   notes: string;
@@ -118,6 +119,7 @@ const emptyForm = (): QuotationForm => ({
   country: '',
   creditLimit: '0',
   creditLimitDays: '',
+  paymentType: '',
   discount: '0.000',
   roundOff: '0.000',
   notes: '',
@@ -370,6 +372,7 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
         country: p.country ?? '',
         creditLimit: p.creditLimit ?? '0',
         creditLimitDays: p.creditLimitDays ? String(p.creditLimitDays) : '',
+        paymentType: (p as any).paymentType ?? '',
         discount: p.discount,
         roundOff: p.roundOff,
         notes: p.notes ?? '',
@@ -577,6 +580,17 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
                       const val = e.target.value;
                       setForm(prev => ({ ...prev, creditLimit: val, creditLimitDays: Number(val) > 0 ? prev.creditLimitDays : '' }));
                     }} disabled={isPending} placeholder="0.000" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Type of Payment</Label>
+                    <Select value={form.paymentType} onValueChange={v => setForm(prev => ({ ...prev, paymentType: v }))} disabled={isPending}>
+                      <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="Credit">Credit</SelectItem>
+                        <SelectItem value="Online">Online</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   {Number(form.creditLimit) > 0 && (
                     <div className="space-y-1">

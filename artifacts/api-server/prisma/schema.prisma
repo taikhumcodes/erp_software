@@ -978,6 +978,7 @@ model Quotation {
   termsAndConditions String?  @map("terms_and_conditions") @db.Text
 
   // Customer snapshot fields (editable per quotation)
+  paymentType       String?         @map("payment_type") // Cash, Credit, Online
   contactPerson     String?  @map("contact_person")
   phone             String?
   email             String?
