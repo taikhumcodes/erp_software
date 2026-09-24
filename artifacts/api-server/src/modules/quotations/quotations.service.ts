@@ -19,6 +19,7 @@ const VALID_TRANSITIONS: Record<QuotationStatus, QuotationStatus[]> = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function normalise(value: unknown): string | null {
+  if (typeof value === 'number') value = String(value);
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;

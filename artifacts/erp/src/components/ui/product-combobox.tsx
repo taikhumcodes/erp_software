@@ -26,10 +26,17 @@ export interface ProductComboboxProps {
 
 export function ProductCombobox({ products, value, onSelect, disabled, placeholder = "Select product..." }: ProductComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const [search, setSearch] = React.useState("")
 
   const selectedProduct = React.useMemo(() => {
     return products.find((product) => product.id === value)
   }, [products, value])
+
+  const filteredProducts = React.useMemo(() => {
+    if (!search) return products.slice(0, 50);
+    const lowerSearch = search.toLowerCase();
+    return products.filter(p => `${p.name} ${p.sku}`.toLowerCase().includes(lowerSearch)).slice(0, 50);
+  }, [products, search]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -48,15 +55,12 @@ export function ProductCombobox({ products, value, onSelect, disabled, placehold
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">
-        <Command filter={(value, search) => {
-          if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-          return 0;
-        }}>
-          <CommandInput placeholder="Search by name or code..." />
+        <Command shouldFilter={false}>
+          <CommandInput placeholder="Search by name or code..." value={search} onValueChange={setSearch} />
           <CommandList>
             <CommandEmpty>No product found.</CommandEmpty>
             <CommandGroup>
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <CommandItem
                   key={product.id}
                   value={`${product.name} ${product.sku} ${product.id}`}

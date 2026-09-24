@@ -319,7 +319,12 @@ export const QuotationsRepository = {
     }
 
     const updateData: Prisma.QuotationUncheckedUpdateInput = {};
-    if (data.customerId)        updateData.customerId = data.customerId;
+    if (data.customerId !== undefined) updateData.customerId = data.customerId;
+    if (data.customerName !== undefined) updateData.customerName = data.customerName;
+    if (data.customerNameAr !== undefined) updateData.customerNameAr = data.customerNameAr;
+    if (data.quotationBy !== undefined) updateData.quotationBy = data.quotationBy;
+    if (data.quotationByAr !== undefined) updateData.quotationByAr = data.quotationByAr;
+    if (data.quotationByAddress !== undefined) updateData.quotationByAddress = data.quotationByAddress;
     if (data.salespersonId !== undefined) updateData.salespersonId = data.salespersonId;
     if (data.quotationDate)     updateData.quotationDate = data.quotationDate;
     if (data.validityDate !== undefined)  updateData.validityDate = data.validityDate;
