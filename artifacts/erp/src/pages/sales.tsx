@@ -846,6 +846,7 @@ export default function SalesPage() {
 
   const invalidate = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['sales'] });
+    void queryClient.invalidateQueries({ queryKey: ['sale'] });
     void queryClient.invalidateQueries({ queryKey: ['sales-statistics'] });
     void queryClient.invalidateQueries({ queryKey: ['dos-for-invoice'] });
   }, [queryClient]);

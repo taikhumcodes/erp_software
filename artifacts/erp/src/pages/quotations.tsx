@@ -795,6 +795,7 @@ export default function QuotationsPage() {
 
   const invalidate = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['quotations'] });
+    void queryClient.invalidateQueries({ queryKey: ['quotation'] });
     void queryClient.invalidateQueries({ queryKey: ['quotations-statistics'] });
   }, [queryClient]);
 

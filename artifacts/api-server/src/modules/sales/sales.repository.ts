@@ -264,14 +264,15 @@ export const SalesRepository = {
 
     // 2. Build update payload
     const updateData: Prisma.SaleUncheckedUpdateInput = {};
-    if (data.customerId) updateData.customerId = data.customerId;
-    if (data.saleDate)   updateData.saleDate = data.saleDate;
-    if (data.totalAmount) updateData.totalAmount = new Prisma.Decimal(data.totalAmount);
-    if (data.discount)    updateData.discount = new Prisma.Decimal(data.discount);
-    if (data.netAmount)   updateData.netAmount = new Prisma.Decimal(data.netAmount);
+    if (data.customerId !== undefined) updateData.customerId = data.customerId;
+    if (data.saleDate !== undefined)   updateData.saleDate = data.saleDate;
+    if (data.totalAmount !== undefined) updateData.totalAmount = new Prisma.Decimal(data.totalAmount);
+    if (data.discount !== undefined)    updateData.discount = new Prisma.Decimal(data.discount);
+    if (data.netAmount !== undefined)   updateData.netAmount = new Prisma.Decimal(data.netAmount);
     if (data.notes !== undefined) updateData.notes = data.notes ?? null;
     if (data.termsAndConditions !== undefined) updateData.termsAndConditions = data.termsAndConditions ?? null;
     if (data.termsAndConditionsAr !== undefined) updateData.termsAndConditionsAr = data.termsAndConditionsAr ?? null;
+    if (data.paymentMethod !== undefined) updateData.paymentMethod = data.paymentMethod ?? null;
     
     if (data.items) {
       updateData.items = {

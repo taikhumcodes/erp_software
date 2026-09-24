@@ -896,6 +896,7 @@ export default function PurchasesPage() {
 
   const invalidate = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['purchases'] });
+    void queryClient.invalidateQueries({ queryKey: ['purchase'] });
     void queryClient.invalidateQueries({ queryKey: ['purchases-statistics'] });
   }, [queryClient]);
 
