@@ -392,6 +392,7 @@ function QuotationFormDialog({ open, onOpenChange, quotationId, onSuccess }: { o
       resetIssuerTranslation();
       const newForm = emptyForm();
       newForm.quotationBy = companyProfile?.nameEn || user?.name || '';
+      newForm.quotationByAr = companyProfile?.nameAr || '';
       newForm.quotationByAddress = companyProfile?.addressEn || '';
       setForm(newForm);
     }

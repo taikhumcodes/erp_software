@@ -51,18 +51,17 @@ export default defineConfig(async ({ mode }) => {
   server: {
   port,
   strictPort: true,
-  host: '0.0.0.0',
-  allowedHosts: true,
+    host: '0.0.0.0',
   fs: {
     strict: true,
   },
   proxy: {
     '/api': {
-      target: 'http://localhost:8081',
+      target: 'http://localhost:3001',
       changeOrigin: true,
     },
     '/uploads': {
-      target: 'http://localhost:8081',
+      target: 'http://localhost:3001',
       changeOrigin: true,
     },
   },
@@ -70,7 +69,6 @@ export default defineConfig(async ({ mode }) => {
   preview: {
     port,
     host: '0.0.0.0',
-    allowedHosts: true,
   },
   };
 });
