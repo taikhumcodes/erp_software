@@ -273,6 +273,11 @@ export const QuotationsRepository = {
       data: {
         number:            data.number,
         customerId:        data.customerId,
+        customerName:      data.customerName ?? null,
+        customerNameAr:    data.customerNameAr ?? null,
+        quotationBy:       data.quotationBy ?? null,
+        quotationByAr:     data.quotationByAr ?? null,
+        quotationByAddress: data.quotationByAddress ?? null,
         userId:            data.userId,
         salespersonId:     data.salespersonId ?? null,
         status:            data.status,
