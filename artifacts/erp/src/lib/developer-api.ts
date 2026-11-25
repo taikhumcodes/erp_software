@@ -11,7 +11,7 @@ export interface UserSession {
   browser?: string;
   os?: string;
   device?: string;
-  status: 'ACTIVE' | 'TERMINATED' | 'EXPIRED';
+  status: 'ACTIVE' | 'TERMINATED' | 'EXPIRED' | 'LOGGED_OUT';
   loggedInAt: string;
   lastActiveAt: string;
   expiresAt?: string;

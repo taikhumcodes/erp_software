@@ -5,11 +5,12 @@ const router = Router();
 
 async function translateWithGoogle(text: string, from: string, to: string): Promise<string | null> {
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(from)}&tl=${encodeURIComponent(to)}&dt=t&q=${encodeURIComponent(text.trim())}`;
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(from)}&tl=${encodeURIComponent(to)}&dt=t&q=${encodeURIComponent(text)}`;
     const res = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
     const data = await res.json() as any;
@@ -29,8 +30,8 @@ async function translateWithGoogle(text: string, from: string, to: string): Prom
 async function translateWithMyMemory(text: string, from: string, to: string): Promise<string | null> {
   try {
     const langpair = `${from}|${to}`;
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.trim())}&langpair=${encodeURIComponent(langpair)}`;
-    const res = await fetch(url);
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
     const data = await res.json() as any;
     if (data?.responseData?.translatedText) {
@@ -50,12 +51,16 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    const cleanText = text.trim().slice(0, 2000);
+    const cleanFrom = typeof from === 'string' && /^[a-zA-Z-]{2,10}$/.test(from) ? from : 'en';
+    const cleanTo = typeof to === 'string' && /^[a-zA-Z-]{2,10}$/.test(to) ? to : 'ar';
+
     // Provider 1: Google Translate (executed on server; eliminates browser CORS and ad-blockers)
-    let translated = await translateWithGoogle(text, from, to);
+    let translated = await translateWithGoogle(cleanText, cleanFrom, cleanTo);
 
     // Provider 2: MyMemory fallback if Google is unavailable
     if (!translated) {
-      translated = await translateWithMyMemory(text, from, to);
+      translated = await translateWithMyMemory(cleanText, cleanFrom, cleanTo);
     }
 
     res.json({

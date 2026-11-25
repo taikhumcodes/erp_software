@@ -5,7 +5,7 @@ import { ForbiddenError, ValidationError } from '../../errors/AppError.js';
 export class DeveloperController {
   private ensureDeveloperAdmin(req: Request) {
     const user = req.user;
-    if (!user || user.email !== 'admin@albunyan.com') {
+    if (!user || user.email?.toLowerCase() !== 'admin@albunyan.com') {
       throw new ForbiddenError(
         'Access Denied: Only the Evolix developer administrator (admin@albunyan.com) is authorized to access developer controls.'
       );

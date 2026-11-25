@@ -24,6 +24,8 @@ export async function ensureDbProxy(): Promise<string> {
 
   const targetHost = parsed.hostname;
   const targetPort = Number(parsed.port || 5432);
+  const originalSslMode = parsed.searchParams.get('sslmode') ?? '';
+  const requiresSsl = ['require', 'verify-ca', 'verify-full'].includes(originalSslMode);
 
   // If proxy already running, return cached proxy URL
   if (proxyServer) {
@@ -34,7 +36,8 @@ export async function ensureDbProxy(): Promise<string> {
     return parsed.toString();
   }
 
-  // Resolve target IP using public DNS (8.8.8.8, 1.1.1.1) to bypass local router DNS blocks
+  // Resolve target IP using public DNS (8.8.8.8, 1.1.1.1) first to bypass local router DNS blocks,
+  // then fall back to system DNS lookup for internal/VPC hosts (e.g. Docker, Replit, Render private DBs).
   const resolver = new dns.Resolver();
   resolver.setServers(['8.8.8.8', '1.1.1.1']);
 
@@ -48,14 +51,24 @@ export async function ensureDbProxy(): Promise<string> {
       const domainToResolve = cnameMatch ? cnameMatch[1] : targetHost;
       const ips = await resolver.resolve4(domainToResolve);
       targetIp = ips[0];
-    } catch (resolveErr) {
-      logger.warn({ err: resolveErr }, 'DNS resolution via public DNS failed, using fallback IP');
-      targetIp = '13.251.213.89';
+    } catch {
+      try {
+        const lookedUp = await dns.lookup(targetHost, { family: 4 });
+        targetIp = lookedUp.address;
+      } catch (resolveErr) {
+        if (targetHost.includes('neon.tech')) {
+          logger.warn({ err: resolveErr }, 'DNS resolution failed for Neon, using fallback IP');
+          targetIp = '13.251.213.89';
+        } else {
+          logger.warn({ err: resolveErr, targetHost }, 'DNS resolution failed, using targetHost directly');
+          targetIp = targetHost;
+        }
+      }
     }
   }
 
   if (!targetIp) {
-    targetIp = '13.251.213.89';
+    targetIp = targetHost.includes('neon.tech') ? '13.251.213.89' : targetHost;
   }
 
   logger.info({ targetHost, targetIp }, 'Initializing local database proxy');
@@ -63,8 +76,8 @@ export async function ensureDbProxy(): Promise<string> {
   await new Promise<void>((resolve, reject) => {
     proxyServer = net.createServer((clientSocket) => {
       // Prevent unhandled error crashes on client socket disconnect
-      clientSocket.on('error', (err) => {
-        // Ignored or logged at debug — client dropped connection
+      clientSocket.on('error', () => {
+        // Client dropped connection gracefully
       });
 
       clientSocket.once('data', (rawChunk) => {
@@ -115,20 +128,29 @@ export async function ensureDbProxy(): Promise<string> {
                   },
                 );
 
-                activeTlsSocket.on('error', (_err) => {
+                activeTlsSocket.on('error', () => {
                   clientSocket.destroy();
                 });
 
                 clientSocket.on('close', () => {
                   activeTlsSocket?.destroy();
                 });
+              } else if (resp.toString() === 'N' && !requiresSsl) {
+                // Remote internal Postgres server does not use SSL; pass through unencrypted
+                clientSocket.off('data', onData);
+                for (const chunk of queuedChunks) {
+                  remoteSocket.write(chunk);
+                }
+                clientSocket.pipe(remoteSocket);
+                remoteSocket.pipe(clientSocket);
+                clientSocket.resume();
               } else {
                 clientSocket.destroy();
               }
             });
           });
 
-          remoteSocket.on('error', (_err) => {
+          remoteSocket.on('error', () => {
             clientSocket.destroy();
           });
 

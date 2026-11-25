@@ -102,7 +102,10 @@ export class DeveloperService {
       throw new ConflictError(`A user with email ${cleanEmail} already exists`);
     }
 
-    const password = input.password && input.password.length >= 6 ? input.password : 'Demo@1234';
+    if (input.password !== undefined && input.password.trim() !== '' && input.password.trim().length < 6) {
+      throw new ValidationError('Password must be at least 6 characters');
+    }
+    const password = input.password && input.password.trim().length >= 6 ? input.password.trim() : 'Demo@1234';
     const passwordHash = await bcrypt.hash(password, 10);
 
     const days = input.expiresInDays && input.expiresInDays > 0 ? input.expiresInDays : 7;

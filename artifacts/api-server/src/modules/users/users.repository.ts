@@ -1,4 +1,4 @@
-import { prisma } from '../../lib/prisma.js';
+import { prisma, tenantStorage } from '../../lib/prisma.js';
 import { Prisma } from '@prisma/client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -72,10 +72,9 @@ export const UsersRepository = {
       sortOrder = 'desc',
     } = filters;
 
-    // Demo accounts are strictly isolated and only managed in the Developer Hub
-    const where: Prisma.UserWhereInput = {
-      isDemo: false,
-    };
+    // Demo accounts are strictly isolated and hidden from normal user management
+    const inDemoSandbox = Boolean(tenantStorage.getStore()?.isDemo);
+    const where: Prisma.UserWhereInput = inDemoSandbox ? {} : { isDemo: false };
 
     if (search && search.trim()) {
       const q = search.trim();
@@ -125,7 +124,11 @@ export const UsersRepository = {
 
   // ── Single (no password) ──────────────────────────────────────────────────
   async findById(id: string) {
-    const row = await prisma.user.findUnique({ where: { id }, select });
+    const inDemoSandbox = Boolean(tenantStorage.getStore()?.isDemo);
+    const row = await prisma.user.findFirst({
+      where: inDemoSandbox ? { id } : { id, isDemo: false },
+      select,
+    });
     return row ? serializeUser(row) : null;
   },
 
@@ -142,15 +145,23 @@ export const UsersRepository = {
 
   // ── Fetch with password hash (auth / password reset only) ─────────────────
   async findByIdWithPassword(id: string) {
-    return prisma.user.findUnique({
-      where: { id },
+    const inDemoSandbox = Boolean(tenantStorage.getStore()?.isDemo);
+    return prisma.user.findFirst({
+      where: inDemoSandbox ? { id } : { id, isDemo: false },
       select: { ...select, passwordHash: true },
     });
   },
 
   // ── Count active OWNERs (owner protection guard) ──────────────────────────
   async countActiveOwners(): Promise<number> {
-    return prisma.user.count({ where: { role: { name: 'OWNER' }, isActive: true } });
+    const inDemoSandbox = Boolean(tenantStorage.getStore()?.isDemo);
+    return prisma.user.count({
+      where: {
+        ...(inDemoSandbox ? {} : { isDemo: false }),
+        role: { name: 'OWNER' },
+        isActive: true,
+      },
+    });
   },
 
   // ── Create ────────────────────────────────────────────────────────────────
@@ -225,12 +236,14 @@ export const UsersRepository = {
   // ── Statistics ────────────────────────────────────────────────────────────
   async getStatistics() {
     const ROLES: UserRole[] = ['OWNER', 'ADMIN', 'MANAGER', 'SALES', 'WAREHOUSE'];
+    const inDemoSandbox = Boolean(tenantStorage.getStore()?.isDemo);
+    const demoFilter: Prisma.UserWhereInput = inDemoSandbox ? {} : { isDemo: false };
 
     const [total, active, inactive, ...roleCounts] = await Promise.all([
-      prisma.user.count({ where: { isDemo: false } }),
-      prisma.user.count({ where: { isDemo: false, isActive: true } }),
-      prisma.user.count({ where: { isDemo: false, isActive: false } }),
-      ...ROLES.map(r => prisma.user.count({ where: { isDemo: false, role: { name: r } } })),
+      prisma.user.count({ where: demoFilter }),
+      prisma.user.count({ where: { ...demoFilter, isActive: true } }),
+      prisma.user.count({ where: { ...demoFilter, isActive: false } }),
+      ...ROLES.map(r => prisma.user.count({ where: { ...demoFilter, role: { name: r } } })),
     ]);
 
     const byRole: Record<string, number> = {};

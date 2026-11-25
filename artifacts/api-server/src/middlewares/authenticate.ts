@@ -61,6 +61,9 @@ export async function authenticate(
         if (session.status === 'TERMINATED') {
           throw new ForbiddenError('Your session has been terminated by the administrator.');
         }
+        if (session.status === 'LOGGED_OUT') {
+          throw new UnauthorizedError('Your session has ended. Please sign in again.');
+        }
         if (session.expiresAt && new Date() > session.expiresAt) {
           throw new ForbiddenError('Your session has expired.');
         }

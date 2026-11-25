@@ -134,6 +134,9 @@ export class AuthService {
         if (session.status === 'TERMINATED') {
           throw new ForbiddenError('Your session has been terminated by the administrator.');
         }
+        if (session.status === 'LOGGED_OUT') {
+          throw new UnauthorizedError('Your session has ended. Please sign in again.');
+        }
         if (session.expiresAt && new Date() > session.expiresAt) {
           throw new ForbiddenError('Your session has expired.');
         }
@@ -169,6 +172,15 @@ export class AuthService {
       throw new UnauthorizedError('User not found or inactive');
     }
     return this.toProfile(user);
+  }
+
+  /**
+   * End an active session on explicit logout.
+   */
+  async logout(sessionId?: string): Promise<void> {
+    if (sessionId) {
+      await authRepository.endSession(sessionId);
+    }
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────

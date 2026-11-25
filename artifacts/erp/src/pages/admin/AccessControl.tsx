@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useGetCurrentUser, getGetCurrentUserQueryKey } from '@workspace/api-client-react';
 import { DeveloperAPI, UserSession, DemoUser } from '@/lib/developer-api';
 import { useToast } from '@/hooks/use-toast';
+import NotFound from '@/pages/not-found';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -56,7 +57,8 @@ export default function AccessControl() {
   const [resetModalOpen, setResetModalOpen] = useState(false);
 
   // Strictly verify user authorization: Evolix developer only
-  const isDeveloperAdmin = currentUser?.email === 'admin@albunyan.com';
+  const { data: currentUserData, isLoading: userLoading } = (() => ({ data: currentUser, isLoading: !currentUser }))();
+  const isDeveloperAdmin = currentUserData?.email?.toLowerCase() === 'admin@albunyan.com';
 
   const loadData = async () => {
     try {
@@ -84,19 +86,17 @@ export default function AccessControl() {
     }
   }, [isDeveloperAdmin]);
 
-  if (!isDeveloperAdmin) {
+  if (userLoading) {
     return (
-      <div className="p-8 max-w-2xl mx-auto text-center">
-        <div className="inline-flex p-4 rounded-full bg-destructive/10 text-destructive mb-4">
-          <ShieldAlert className="w-10 h-10" />
-        </div>
-        <h1 className="text-2xl font-bold text-foreground">Access Restricted</h1>
-        <p className="text-muted-foreground mt-2">
-          Only the Evolix developer administrator (<code>admin@albunyan.com</code>) is authorized
-          to access this portal.
-        </p>
+      <div className="p-12 flex justify-center">
+        <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  // Return standard 404 to all non-admin@albunyan.com accounts so demo control remains hidden
+  if (!isDeveloperAdmin) {
+    return <NotFound />;
   }
 
   // Session termination handler
@@ -137,7 +137,7 @@ export default function AccessControl() {
       });
       toast({
         title: 'Demo Account Created',
-        description: `Created ${res.data.email} valid for ${newDays} days.`,
+        description: `Email: ${res.data.email} | Password: ${res.data.initialPassword || newPassword} (valid ${newDays} days).`,
       });
       setCreateModalOpen(false);
       setNewEmail('');
@@ -218,8 +218,11 @@ export default function AccessControl() {
     }
   };
 
-  const activeSessionsCount = sessions.filter(s => s.status === 'ACTIVE').length;
-  const demoSessionsCount = sessions.filter(s => s.isDemo && s.status === 'ACTIVE').length;
+  const isSessionEffectivelyActive = (s: UserSession) =>
+    s.status === 'ACTIVE' && (!s.expiresAt || new Date(s.expiresAt) > new Date());
+
+  const activeSessionsCount = sessions.filter(isSessionEffectivelyActive).length;
+  const demoSessionsCount = sessions.filter(s => s.isDemo && isSessionEffectivelyActive(s)).length;
 
   return (
     <div className="space-y-6">
@@ -361,8 +364,9 @@ export default function AccessControl() {
                     </tr>
                   ) : (
                     sessions.map((sess) => {
-                      const isActive = sess.status === 'ACTIVE';
+                      const isActive = isSessionEffectivelyActive(sess);
                       const isTerminated = sess.status === 'TERMINATED';
+                      const isLoggedOut = sess.status === 'LOGGED_OUT';
 
                       return (
                         <tr key={sess.id} className="hover:bg-muted/30 transition-colors">
@@ -402,6 +406,10 @@ export default function AccessControl() {
                             ) : isTerminated ? (
                               <Badge variant="destructive" className="text-xs">
                                 Terminated
+                              </Badge>
+                            ) : isLoggedOut ? (
+                              <Badge variant="secondary" className="text-xs">
+                                Logged Out
                               </Badge>
                             ) : (
                               <Badge variant="secondary" className="text-xs">

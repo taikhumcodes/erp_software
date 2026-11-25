@@ -34,12 +34,11 @@ export class AuthController {
 
   /**
    * POST /api/auth/logout (protected)
-   * Stateless JWT implementation — client should discard its tokens.
-   * A token blocklist (Redis-backed) can be added here in a future iteration.
+   * Marks the session as LOGGED_OUT in user_session_logs so old JWTs cannot be reused.
    */
-  async logout(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // Future: add token to a blocklist here
+      await authService.logout(req.user?.sessionId);
       res.json({ message: 'Logged out successfully' });
     } catch (err) {
       next(err);

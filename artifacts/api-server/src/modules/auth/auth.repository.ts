@@ -145,6 +145,19 @@ export class AuthRepository {
       data: { lastActiveAt: new Date() },
     }).catch(() => {});
   }
+
+  /**
+   * Mark a session as logged out when the user signs out cleanly.
+   */
+  async endSession(sessionId: string) {
+    await realPrisma.userSessionLog.updateMany({
+      where: { id: sessionId, status: 'ACTIVE' },
+      data: {
+        status: 'LOGGED_OUT',
+        lastActiveAt: new Date(),
+      },
+    }).catch(() => {});
+  }
 }
 
 export const authRepository = new AuthRepository();

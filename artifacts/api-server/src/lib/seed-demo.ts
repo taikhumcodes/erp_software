@@ -1,16 +1,9 @@
-import { ensureDbProxy } from './db-proxy.js';
-import { PrismaClient, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
+import { demoPrisma, realPrisma } from './prisma.js';
 import bcrypt from 'bcryptjs';
 
 export async function seedDemoData() {
-  const proxiedUrl = await ensureDbProxy();
-  const urlObj = new URL(proxiedUrl);
-  urlObj.searchParams.set('schema', 'demo');
-  const demoUrl = urlObj.toString();
-
-  const prisma = new PrismaClient({
-    datasources: { db: { url: demoUrl } },
-  });
+  const prisma = demoPrisma;
 
   // 1. Roles
   const roles: { name: UserRole; description: string }[] = [
@@ -34,12 +27,14 @@ export async function seedDemoData() {
 
   // 2. Demo User in demo schema
   const demoPasswordHash = await bcrypt.hash('Demo@1234', 10);
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const demoUser = await prisma.user.upsert({
     where: { email: 'demo@gmail.com' },
     update: {
       passwordHash: demoPasswordHash,
       isActive: true,
       isDemo: true,
+      demoExpiresAt: expiresAt,
       name: 'Demo Client User',
       nameAr: 'مستخدم تجريبي',
       roleId: roleMap['ADMIN'] || Object.values(roleMap)[0],
@@ -52,17 +47,21 @@ export async function seedDemoData() {
       roleId: roleMap['ADMIN'] || Object.values(roleMap)[0],
       isActive: true,
       isDemo: true,
+      demoExpiresAt: expiresAt,
     },
   });
 
   // Also ensure demo user exists in public schema so login can authenticate and route them
-  const publicPrisma = new PrismaClient();
-  await publicPrisma.user.upsert({
+  const publicAdminRole =
+    (await realPrisma.role.findFirst({ where: { name: 'ADMIN' } })) ??
+    (await realPrisma.role.findFirst());
+  await realPrisma.user.upsert({
     where: { email: 'demo@gmail.com' },
     update: {
       passwordHash: demoPasswordHash,
       isActive: true,
       isDemo: true,
+      demoExpiresAt: expiresAt,
       name: 'Demo Client User',
       nameAr: 'مستخدم تجريبي',
     },
@@ -71,12 +70,12 @@ export async function seedDemoData() {
       passwordHash: demoPasswordHash,
       name: 'Demo Client User',
       nameAr: 'مستخدم تجريبي',
-      roleId: (await publicPrisma.role.findFirst())?.id || roleMap['ADMIN'],
+      roleId: publicAdminRole?.id || roleMap['ADMIN'],
       isActive: true,
       isDemo: true,
+      demoExpiresAt: expiresAt,
     },
   });
-  await publicPrisma.$disconnect();
 
   // 3. Units
   const unitsData = [
@@ -496,6 +495,4 @@ export async function seedDemoData() {
       },
     });
   }
-
-  await prisma.$disconnect();
 }

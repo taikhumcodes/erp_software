@@ -92,7 +92,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     // dir/lang are synced by the useEffect above
   };
 
-  const isDeveloperAdmin = user?.email === 'admin@albunyan.com';
+  const isDeveloperAdmin = user?.email?.toLowerCase() === 'admin@albunyan.com';
 
   const navigation = [
     {
