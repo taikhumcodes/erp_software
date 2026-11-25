@@ -40,28 +40,33 @@ export async function ensureDbProxy(): Promise<string> {
 
   let targetIp = '';
   try {
-    const cnameMatch = targetHost.match(/^[^.]+\.(.+)$/);
-    const domainToResolve = cnameMatch ? cnameMatch[1] : targetHost;
-    const ips = await resolver.resolve4(domainToResolve);
+    const ips = await resolver.resolve4(targetHost);
     targetIp = ips[0];
   } catch {
     try {
-      const ips = await resolver.resolve4(targetHost);
+      const cnameMatch = targetHost.match(/^[^.]+\.(.+)$/);
+      const domainToResolve = cnameMatch ? cnameMatch[1] : targetHost;
+      const ips = await resolver.resolve4(domainToResolve);
       targetIp = ips[0];
     } catch (resolveErr) {
       logger.warn({ err: resolveErr }, 'DNS resolution via public DNS failed, using fallback IP');
-      targetIp = '52.76.128.157';
+      targetIp = '13.251.213.89';
     }
   }
 
   if (!targetIp) {
-    targetIp = '52.76.128.157';
+    targetIp = '13.251.213.89';
   }
 
   logger.info({ targetHost, targetIp }, 'Initializing local database proxy');
 
   await new Promise<void>((resolve, reject) => {
     proxyServer = net.createServer((clientSocket) => {
+      // Prevent unhandled error crashes on client socket disconnect
+      clientSocket.on('error', (err) => {
+        // Ignored or logged at debug — client dropped connection
+      });
+
       clientSocket.once('data', (rawChunk) => {
         const firstChunk = Buffer.isBuffer(rawChunk) ? rawChunk : Buffer.from(rawChunk);
         const isSslRequest =
@@ -73,46 +78,62 @@ export async function ensureDbProxy(): Promise<string> {
           clientSocket.write('N');
           clientSocket.once('data', (rawStartup) => {
             const startupChunk = Buffer.isBuffer(rawStartup) ? rawStartup : Buffer.from(rawStartup);
-            connectToRemote(startupChunk);
+            handleStartup(startupChunk);
           });
         } else {
-          connectToRemote(firstChunk);
+          handleStartup(firstChunk);
         }
 
-        function connectToRemote(initialData: Buffer) {
+        function handleStartup(startupData: Buffer) {
+          clientSocket.pause();
+          const queuedChunks: Buffer[] = [startupData];
+          const onData = (c: Buffer) => queuedChunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c));
+          clientSocket.on('data', onData);
+
+          let activeTlsSocket: tls.TLSSocket | null = null;
+
           const remoteSocket = net.connect(targetPort, targetIp, () => {
             const sslReq = Buffer.from([0x00, 0x00, 0x00, 0x08, 0x04, 0xd2, 0x16, 0x2f]);
             remoteSocket.write(sslReq);
 
             remoteSocket.once('data', (resp) => {
               if (resp.toString() === 'S') {
-                const tlsSocket = tls.connect(
+                activeTlsSocket = tls.connect(
                   {
                     socket: remoteSocket,
                     servername: targetHost,
                     rejectUnauthorized: false,
                   },
                   () => {
-                    tlsSocket.write(initialData);
-                    clientSocket.pipe(tlsSocket);
-                    tlsSocket.pipe(clientSocket);
+                    clientSocket.off('data', onData);
+                    for (const chunk of queuedChunks) {
+                      activeTlsSocket?.write(chunk);
+                    }
+                    clientSocket.pipe(activeTlsSocket!);
+                    activeTlsSocket!.pipe(clientSocket);
+                    clientSocket.resume();
                   },
                 );
 
-                tlsSocket.on('error', (err) => {
-                  logger.error({ err }, 'Proxy TLS connection error');
+                activeTlsSocket.on('error', (_err) => {
                   clientSocket.destroy();
                 });
+
+                clientSocket.on('close', () => {
+                  activeTlsSocket?.destroy();
+                });
               } else {
-                logger.error('Remote DB server rejected SSL');
                 clientSocket.destroy();
               }
             });
           });
 
-          remoteSocket.on('error', (err) => {
-            logger.error({ err }, 'Proxy remote connection error');
+          remoteSocket.on('error', (_err) => {
             clientSocket.destroy();
+          });
+
+          clientSocket.on('close', () => {
+            remoteSocket.destroy();
           });
         }
       });

@@ -15,6 +15,8 @@ export interface JwtPayload {
   email: string;
   name: string;
   role: UserRole;
+  isDemo?: boolean;
+  sessionId?: string;
   iat?: number;
   exp?: number;
 }
@@ -29,6 +31,8 @@ export interface AuthUser {
   name: string;
   role: UserRole;
   isActive: boolean;
+  isDemo: boolean;
+  sessionId?: string;
 }
 
 // Augment Express Request so TypeScript knows req.user is AuthUser

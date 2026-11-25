@@ -30,9 +30,11 @@ import {
   BarChart3,
   ClipboardList,
   PiggyBank,
+  ShieldCheck,
 } from 'lucide-react';
 import { useState } from 'react';
 import EvolixBadge from '@/components/common/EvolixBadge';
+import DemoBanner from '@/components/common/DemoBanner';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
@@ -90,6 +92,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     // dir/lang are synced by the useEffect above
   };
 
+  const isDeveloperAdmin = user?.email === 'admin@albunyan.com';
+
   const navigation = [
     {
       items: [
@@ -141,7 +145,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         { name: t('users'), path: '/users', icon: Users, disabled: false },
         { name: t('settings'), path: '/settings', icon: SettingsIcon, disabled: false }
       ]
-    }
+    },
+    // Developer Portal: ONLY visible to admin@albunyan.com; client info@shieldmaxsafetykw.com never sees this
+    ...(isDeveloperAdmin ? [
+      {
+        label: 'Developer Hub',
+        items: [
+          { name: 'Access & Demo Control', path: '/admin/access-control', icon: ShieldCheck, disabled: false }
+        ]
+      }
+    ] : [])
   ];
 
   // Derive breadcrumb from path
@@ -160,6 +173,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       '/delivery-orders': t('delivery_orders'),
       '/quotations': t('quotations'),
       '/payments': t('payments'),
+      '/admin/access-control': 'Access & Demo Control',
     };
     return map[location] ?? '';
   };
@@ -252,6 +266,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Trial Demo Mode Banner (only shown if signed-in account is in demo mode) */}
+        {(user as any)?.isDemo && (
+          <DemoBanner demoExpiresAt={(user as any)?.demoExpiresAt} />
+        )}
+
         {/* Top Navbar */}
         <header className="h-[60px] bg-background border-b flex items-center justify-between px-4 sm:px-6 shrink-0 z-30">
           <div className="flex items-center">

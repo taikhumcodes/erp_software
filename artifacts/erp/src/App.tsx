@@ -27,6 +27,7 @@ import Payments from '@/pages/payments';
 import DeliveryOrdersPage from '@/pages/delivery-orders';
 import QuotationsPage from '@/pages/quotations';
 import DocumentViewer from '@/pages/document-viewer';
+import AccessControl from '@/pages/admin/AccessControl';
 
 // Finance Module Pages
 import FinanceDashboard from '@/pages/finance/FinanceDashboard';
@@ -55,17 +56,6 @@ const queryClient = new QueryClient();
 setAuthTokenGetter(() => localStorage.getItem('erp_access_token'));
 
 // ── Startup hydration ──────────────────────────────────────────────────────
-//
-// When the page loads (or is refreshed), if we have stored tokens we must
-// validate them BEFORE rendering any protected content.  The access token
-// (15-min TTL) may have expired; in that case we silently refresh it.
-//
-// Flow:
-//   1. Try GET /api/auth/me with the stored access token.
-//   2. 200 → tokens are valid → mark isAuthenticated.
-//   3. 401 → attempt refresh → on success retry /me → mark isAuthenticated.
-//   4. Any failure → clear auth → redirect to /login.
-// ───────────────────────────────────────────────────────────────────────────
 function AuthHydrator() {
   const { login, logout } = useAuthStore();
   const [, setLocation] = useLocation();
@@ -220,6 +210,12 @@ function Router() {
         <Route path="/quotations">
           <ProtectedRoute component={QuotationsPage} />
         </Route>
+
+        {/* Developer Admin Access Control (admin@albunyan.com only) */}
+        <Route path="/admin/access-control">
+          <ProtectedRoute component={AccessControl} />
+        </Route>
+
         {/* Finance Module Routes */}
         <Route path="/finance/dashboard">
           <ProtectedRoute component={FinanceDashboard} />

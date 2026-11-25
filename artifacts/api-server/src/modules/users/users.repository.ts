@@ -72,7 +72,10 @@ export const UsersRepository = {
       sortOrder = 'desc',
     } = filters;
 
-    const where: Prisma.UserWhereInput = {};
+    // Demo accounts are strictly isolated and only managed in the Developer Hub
+    const where: Prisma.UserWhereInput = {
+      isDemo: false,
+    };
 
     if (search && search.trim()) {
       const q = search.trim();
@@ -224,10 +227,10 @@ export const UsersRepository = {
     const ROLES: UserRole[] = ['OWNER', 'ADMIN', 'MANAGER', 'SALES', 'WAREHOUSE'];
 
     const [total, active, inactive, ...roleCounts] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({ where: { isActive: true } }),
-      prisma.user.count({ where: { isActive: false } }),
-      ...ROLES.map(r => prisma.user.count({ where: { role: { name: r } } })),
+      prisma.user.count({ where: { isDemo: false } }),
+      prisma.user.count({ where: { isDemo: false, isActive: true } }),
+      prisma.user.count({ where: { isDemo: false, isActive: false } }),
+      ...ROLES.map(r => prisma.user.count({ where: { isDemo: false, role: { name: r } } })),
     ]);
 
     const byRole: Record<string, number> = {};

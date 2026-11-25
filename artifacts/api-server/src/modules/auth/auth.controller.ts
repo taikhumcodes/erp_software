@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { authService } from './auth.service.js';
 import { ValidationError } from '../../errors/AppError.js';
+import { parseClientMeta } from '../../lib/user-agent.js';
 
 /**
  * HTTP layer for authentication endpoints.
@@ -23,7 +24,8 @@ export class AuthController {
         throw new ValidationError('password must be at least 6 characters');
       }
 
-      const result = await authService.login(email, password);
+      const clientMeta = parseClientMeta(req);
+      const result = await authService.login(email, password, clientMeta);
       res.json(result);
     } catch (err) {
       next(err);
