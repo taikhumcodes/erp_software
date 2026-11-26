@@ -112,14 +112,14 @@ export function CreateDeliveryOrder({ onBack, onSuccess }: CreateDeliveryOrderPr
   const [quickCustomerOpen, setQuickCustomerOpen] = useState(false);
 
   const { data: customersResponse } = useQuery({
-    queryKey: ['customers', { limit: 1000 }],
-    queryFn: () => api.get<{ data: Customer[] }>('/api/customers?limit=1000'),
+    queryKey: ['customers', { limit: 5000 }],
+    queryFn: () => api.get<{ data: Customer[] }>('/api/customers?limit=5000&isActive=true'),
   });
   const customers = customersResponse?.data || [];
 
   const { data: productsResponse } = useQuery({
-    queryKey: ['products', { limit: 1000 }],
-    queryFn: () => api.get<{ data: Product[] }>('/api/products?limit=1000'),
+    queryKey: ['products', { limit: 5000 }],
+    queryFn: () => api.get<{ data: Product[] }>('/api/products?limit=5000&isActive=true'),
   });
   const products = productsResponse?.data || [];
 

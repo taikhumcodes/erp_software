@@ -4,10 +4,11 @@ import { Prisma } from '@prisma/client';
 import { formatPhoneNumber, generateCustomerCode, getPhoneValidationError, normalizeUniqueValue } from './customers.utils.js';
 
 export class CustomersService {
-  async list(query: { search?: string; page?: number | string; limit?: number | string; active?: string }) {
+  async list(query: { search?: string; page?: number | string; limit?: number | string; active?: string; isActive?: string }) {
     const page = Math.max(1, Number(query.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
-    const active = query.active === 'true' ? true : query.active === 'false' ? false : undefined;
+    const limit = Math.min(5000, Math.max(1, Number(query.limit) || 20));
+    const activeParam = query.active ?? query.isActive;
+    const active = activeParam === 'true' ? true : activeParam === 'false' ? false : undefined;
 
     const { data, total } = await customersRepository.findAll({
       search: query.search?.trim(),

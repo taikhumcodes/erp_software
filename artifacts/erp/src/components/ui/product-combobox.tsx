@@ -32,14 +32,33 @@ export function ProductCombobox({ products, value, onSelect, disabled, placehold
     return products.find((product) => product.id === value)
   }, [products, value])
 
-  const filteredProducts = React.useMemo(() => {
-    if (!search) return products.slice(0, 50);
-    const lowerSearch = search.toLowerCase();
-    return products.filter(p => `${p.name} ${p.sku}`.toLowerCase().includes(lowerSearch)).slice(0, 50);
+  const { filteredProducts, totalMatches } = React.useMemo(() => {
+    const trimmed = search.trim();
+    if (!trimmed) {
+      return {
+        filteredProducts: products.slice(0, 200),
+        totalMatches: products.length,
+      };
+    }
+    const lowerSearch = trimmed.toLowerCase();
+    const matches = products.filter((p) =>
+      `${p.name ?? ''} ${p.nameAr ?? ''} ${p.sku ?? ''}`
+        .toLowerCase()
+        .includes(lowerSearch)
+    );
+    return {
+      filteredProducts: matches.slice(0, 150),
+      totalMatches: matches.length,
+    };
   }, [products, search]);
 
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) setSearch("");
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -54,7 +73,7 @@ export function ProductCombobox({ products, value, onSelect, disabled, placehold
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent className="w-[320px] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput placeholder="Search by name or code..." value={search} onValueChange={setSearch} />
           <CommandList>
@@ -66,7 +85,7 @@ export function ProductCombobox({ products, value, onSelect, disabled, placehold
                   value={`${product.name} ${product.sku} ${product.id}`}
                   onSelect={() => {
                     onSelect(product.id)
-                    setOpen(false)
+                    handleOpenChange(false)
                   }}
                 >
                   <Check
@@ -82,6 +101,11 @@ export function ProductCombobox({ products, value, onSelect, disabled, placehold
                 </CommandItem>
               ))}
             </CommandGroup>
+            {totalMatches > filteredProducts.length && (
+              <div className="px-3 py-1.5 text-[11px] text-muted-foreground border-t">
+                Showing {filteredProducts.length} of {totalMatches} — type to filter
+              </div>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

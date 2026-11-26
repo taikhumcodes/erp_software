@@ -82,7 +82,13 @@ export default function Products() {
     queryFn: () => api.get(`/products?${params}`),
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['products'] });
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ['products'] });
+    void qc.invalidateQueries({ queryKey: ['products-list-for-purchase'] });
+    void qc.invalidateQueries({ queryKey: ['products-list-for-sale'] });
+    void qc.invalidateQueries({ queryKey: ['products-list-for-quotation'] });
+    void qc.invalidateQueries({ queryKey: ['products-for-do'] });
+  };
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const createMutation = useMutation({

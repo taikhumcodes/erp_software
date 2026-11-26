@@ -123,10 +123,10 @@ const fetchStats = () =>
   api.get<{ data: SaleStatistics }>('/api/sales/statistics');
 
 const fetchCustomers = () =>
-  api.get<PaginatedResponse<Customer>>('/api/customers?limit=200&isActive=true');
+  api.get<PaginatedResponse<Customer>>('/api/customers?limit=5000&isActive=true');
 
 const fetchProducts = () =>
-  api.get<PaginatedResponse<Product>>('/api/products?limit=500&isActive=true');
+  api.get<PaginatedResponse<Product>>('/api/products?limit=5000&isActive=true');
 
 const createSale = (body: Record<string, unknown>) =>
   api.post<{ data: Sale }>('/api/sales', body);

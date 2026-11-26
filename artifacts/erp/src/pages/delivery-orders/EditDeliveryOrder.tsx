@@ -61,7 +61,7 @@ export function EditDeliveryOrder({ id, onBack, onSuccess }: EditDeliveryOrderPr
 
   const productsQuery = useQuery({
     queryKey: ['products-for-do'],
-    queryFn: () => api.get<{ data: Product[] }>('/api/products?limit=500&isActive=true'),
+    queryFn: () => api.get<{ data: Product[] }>('/api/products?limit=5000&isActive=true'),
   });
 
   const deliveryOrder = doQuery.data?.data;

@@ -9,11 +9,13 @@ export class BrandsService {
     page?: number;
     limit?: number;
     active?: string;
+    isActive?: string;
   }) {
     const page = Math.max(1, Number(query.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
+    const limit = Math.min(5000, Math.max(1, Number(query.limit) || 20));
+    const activeParam = query.active ?? query.isActive;
     const active =
-      query.active === 'true' ? true : query.active === 'false' ? false : undefined;
+      activeParam === 'true' ? true : activeParam === 'false' ? false : undefined;
 
     const { data, total } = await brandsRepository.findAll({
       search: query.search?.trim(),

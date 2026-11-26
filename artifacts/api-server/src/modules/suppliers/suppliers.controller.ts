@@ -8,11 +8,12 @@ export const SuppliersController = {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const page  = Math.max(1, parseInt(String(req.query['page']  ?? '1'),  10) || 1);
-      const limit = Math.min(100, Math.max(1, parseInt(String(req.query['limit'] ?? '20'), 10) || 20));
+      const limit = Math.min(5000, Math.max(1, parseInt(String(req.query['limit'] ?? '20'), 10) || 20));
 
       let isActive: boolean | undefined;
-      if (req.query['isActive'] === 'true')  isActive = true;
-      if (req.query['isActive'] === 'false') isActive = false;
+      const activeRaw = req.query['isActive'] ?? req.query['active'];
+      if (activeRaw === 'true')  isActive = true;
+      if (activeRaw === 'false') isActive = false;
 
       const sortByRaw = String(req.query['sortBy'] ?? 'createdAt');
       const sortBy: SortField = (VALID_SORT_FIELDS as readonly string[]).includes(sortByRaw)

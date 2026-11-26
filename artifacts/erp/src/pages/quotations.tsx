@@ -144,8 +144,8 @@ const STATUS_COLORS: Record<QuotationStatus, string> = {
 const fetchQuotations = (qs: string) => api.get<PaginatedResponse<QuotationListItem>>(`/api/quotations?${qs}`);
 const fetchQuotation = (id: string) => api.get<{ data: Quotation }>(`/api/quotations/${id}`);
 const fetchStats = () => api.get<{ data: QuotationStatistics }>('/api/quotations/statistics');
-const fetchCustomers = () => api.get<PaginatedResponse<Customer>>('/api/customers?limit=200&isActive=true');
-const fetchProducts = () => api.get<PaginatedResponse<Product>>('/api/products?limit=500&isActive=true');
+const fetchCustomers = () => api.get<PaginatedResponse<Customer>>('/api/customers?limit=5000&isActive=true');
+const fetchProducts = () => api.get<PaginatedResponse<Product>>('/api/products?limit=5000&isActive=true');
 
 const createQuotation = (body: Record<string, unknown>) => api.post<{ data: Quotation }>('/api/quotations', body);
 const updateQuotation = (id: string, body: Record<string, unknown>) => api.put<{ data: Quotation }>(`/api/quotations/${id}`, body);

@@ -115,10 +115,10 @@ const fetchStats = () =>
   api.get<{ data: PurchaseStatistics }>('/api/purchases/statistics');
 
 const fetchSuppliers = () =>
-  api.get<PaginatedResponse<Supplier>>('/api/suppliers?limit=200&isActive=true');
+  api.get<PaginatedResponse<Supplier>>('/api/suppliers?limit=5000&isActive=true');
 
 const fetchProducts = () =>
-  api.get<PaginatedResponse<Product>>('/api/products?limit=500&isActive=true');
+  api.get<PaginatedResponse<Product>>('/api/products?limit=5000&isActive=true');
 
 const createPurchase = (body: Record<string, unknown>) =>
   api.post<{ data: Purchase }>('/api/purchases', body);
